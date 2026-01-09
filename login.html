@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MAN CAFE</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js" defer></script>
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <img src="assets/logo.png" alt="Logo Kafe" style="width: 80px; height: 80px;">
+                <h2>Login ke Kafe Bahagia</h2>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+
+            <div class="login-footer">
+                <p><a href="index.html">Kembali ke halaman utama</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const userType = document.getElementById('userType').value;
+            
+            // Simulasi login (nanti akan diganti dengan Supabase Auth)
+            if (email && password) {
+                if (userType === 'admin') {
+                    // Redirect ke dashboard admin
+                    window.location.href = 'admin/dashboard.html';
+                } else {
+                    // Redirect ke dashboard pelanggan
+                    window.location.href = 'customer/dashboard.html';
+                }
+            } else {
+                alert('Harap isi email dan password!');
+            }
+        });
+    </script>
+</body>
+</html>

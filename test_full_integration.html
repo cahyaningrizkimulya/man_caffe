@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Full Integration</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #8B4513;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #8B4513;
+            padding-bottom: 5px;
+        }
+        
+        .config-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: #8B4513;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .data-table th {
+            background: #f2f2f2;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Database Integration</h1>
+    
+    <!-- Config Section -->
+    <div class="section config-form">
+        <h2>1. Configure Supabase</h2>
+        <div class="form-group">
+            <label>Supabase URL</label>
+            <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+        </div>
+        <div class="form-group">
+            <label>Supabase Anon Key</label>
+            <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+        <button class="btn btn-primary" onclick="saveConfig()">💾 Save Configuration</button>
+        <div id="configResult" class="result"></div>
+    </div>
+    
+    <!-- Connection Test -->
+    <div class="section">
+        <h2>2. Test Connection</h2>
+        <button class="btn btn-success" onclick="testConnection()">🔌 Test Database Connection</button>
+        <button class="btn btn-info" onclick="testAllTables()">📊 Test All Tables</button>
+        <div id="connectionResult" class="result"></div>
+    </div>
+    
+    <!-- CRUD Operations -->
+    <div class="section">
+        <h2>3. CRUD Operations</h2>
+        
+        <h3>Menu Items</h3>
+        <button class="btn btn-primary" onclick="getMenuItems()">📋 Get Menu Items</button>
+        <button class="btn btn-success" onclick="showAddMenuForm()">➕ Add Menu Item</button>
+        <div id="menuResult" class="result"></div>
+        
+        <h3>Orders</h3>
+        <button class="btn btn-primary" onclick="getOrders()">📦 Get Orders</button>
+        <button class="btn btn-success" onclick="createTestOrder()">🛒 Create Test Order</button>
+        <div id="orderResult" class="result"></div>
+        
+        <h3>Reservations</h3>
+        <button class="btn btn-primary" onclick="getReservations()">📅 Get Reservations</button>
+        <div id="reservationResult" class="result"></div>
+    </div>
+    
+    <!-- Data Display -->
+    <div class="section">
+        <h2>4. Live Data</h2>
+        <button class="btn btn-info" onclick="loadAllData()">🔄 Refresh All Data</button>
+        
+        <h3>Menu Items</h3>
+        <div id="menuData"></div>
+        
+        <h3>Today's Orders</h3>
+        <div id="ordersData"></div>
+        
+        <h3>Tables Status</h3>
+        <div id="tablesData"></div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script src="js/database-functions.js"></script>
+    <script>
+        // Configuration functions
+        function saveConfig() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            if (!url || !key) {
+                showResult('configResult', 'Please enter both URL and Key!', false);
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            
+            // Update supabase-config.js content
+            updateConfigFile(url, key);
+            
+            showResult('configResult', 'Configuration saved successfully!', true);
+        }
+        
+        function updateConfigFile(url, key) {
+            const configContent = `// js/supabase-config.js
+const SUPABASE_URL = '${url}';
+const SUPABASE_ANON_KEY = '${key}';
+
+if (typeof supabase !== 'undefined') {
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase configured:', SUPABASE_URL);
+}`;
+            
+            // Note: In real app, you would save this to file via backend
+            console.log('Copy this to js/supabase-config.js:');
+            console.log(configContent);
+        }
+        
+        // Test functions
+        async function testConnection() {
+            if (!window.supabaseClient) {
+                showResult('connectionResult', 'Supabase client not initialized!', false);
+                return;
+            }
+            
+            showResult('connectionResult', 'Testing connection...', true);
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('categories')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) throw error;
+                
+                showResult('connectionResult', 
+                    `✅ Connection successful! Found ${data?.length || 0} categories.`, 
+                    true
+                );
+                
+            } catch (error) {
+                showResult('connectionResult', 
+                    `❌ Connection failed: ${error.message}`, 
+                    false
+                );
+            }
+        }
+        
+        async function testAllTables() {
+            if (!window.supabaseClient) {
+                showResult('connectionResult', 'Supabase client not initialized!', false);
+                return;
+            }
+            
+            showResult('connectionResult', 'Testing all tables...', true);
+            
+            const tables = ['categories', 'menu_items', 'orders', 'customers', 'tables', 'reservations'];
+            let results = [];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+                    
+                    if (error) {
+                        results.push(`${table}: ❌ ${error.message}`);
+                    } else {
+                        results.push(`${table}: ✅ ${data?.length || 0} rows`);
+                    }
+                } catch (error) {
+                    results.push(`${table}: ❌ ${error.message}`);
+                }
+            }
+            
+            showResult('connectionResult', 
+                `Test Results:<br>${results.join('<br>')}`, 
+                true
+            );
+        }
+        
+        // CRUD functions using DatabaseService
+        async function getMenuItems() {
+            if (!window.db) {
+                showResult('menuResult', 'Database service not available!', false);
+                return;
+            }
+            
+            const result = await db.getMenuItems({ is_available: true });
+            
+            if (result.success) {
+                let html = `<h4>✅ Found ${result.data.length} menu items:</h4>`;
+                html += '<table class="data-table">';
+                html += '<tr><th>Name</th><th>Price</th><th>Stock</th><th>Status</th></tr>';
+                
+                result.data.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>Rp ${item.price.toLocaleString()}</td>
+                            <td>${item.stock_quantity}</td>
+                            <td>${item.is_available ? '✅ Available' : '❌ Unavailable'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+                showResult('menuResult', html, true);
+            } else {
+                showResult('menuResult', `❌ Error: ${result.error}`, false);
+            }
+        }
+        
+        async function createTestOrder() {
+            if (!window.db) {
+                showResult('orderResult', 'Database service not available!', false);
+                return;
+            }
+            
+            const orderData = {
+                customerName: 'Test Customer',
+                customerPhone: '081234567890',
+                total: 85000,
+                notes: 'Test order from integration test',
+                items: [
+                    { id: 1, name: 'Espresso', price: 35000, quantity: 2 },
+                    { id: 2, name: 'Croissant', price: 28000, quantity: 1 }
+                ]
+            };
+            
+            const result = await db.createOrder(orderData);
+            
+            if (result.success) {
+                showResult('orderResult', 
+                    `✅ Order created successfully!<br>
+                     Order Number: ${result.data.order_number}<br>
+                     Total: Rp ${result.data.total_amount.toLocaleString()}<br>
+                     Status: ${result.data.status}`, 
+                    true
+                );
+            } else {
+                showResult('orderResult', `❌ Error: ${result.error}`, false);
+            }
+        }
+        
+        async function getOrders() {
+            if (!window.db) {
+                showResult('orderResult', 'Database service not available!', false);
+                return;
+            }
+            
+            const result = await db.getOrders({ limit: 5 });
+            
+            if (result.success) {
+                let html = `<h4>✅ Recent Orders (${result.data.length}):</h4>`;
+                html += '<table class="data-table">';
+                html += '<tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr>';
+                
+                result.data.forEach(order => {
+                    const date = new Date(order.created_at).toLocaleDateString('id-ID');
+                    html += `
+                        <tr>
+                            <td>${order.order_number}</td>
+                            <td>${order.customer_name || 'N/A'}</td>
+                            <td>Rp ${order.total_amount.toLocaleString()}</td>
+                            <td>${order.status}</td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+                showResult('orderResult', html, true);
+            } else {
+                showResult('orderResult', `❌ Error: ${result.error}`, false);
+            }
+        }
+        
+        async function getReservations() {
+            if (!window.db) {
+                showResult('reservationResult', 'Database service not available!', false);
+                return;
+            }
+            
+            const result = await db.getReservations({ upcoming: true });
+            
+            if (result.success) {
+                let html = `<h4>✅ Upcoming Reservations (${result.data.length}):</h4>`;
+                html += '<table class="data-table">';
+                html += '<tr><th>Customer</th><th>Date</th><th>Time</th><th>Guests</th><th>Status</th></tr>';
+                
+                result.data.forEach(res => {
+                    html += `
+                        <tr>
+                            <td>${res.customer_name || 'N/A'}</td>
+                            <td>${res.reservation_date}</td>
+                            <td>${res.reservation_time}</td>
+                            <td>${res.number_of_guests}</td>
+                            <td>${res.status}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+                showResult('reservationResult', html, true);
+            } else {
+                showResult('reservationResult', `❌ Error: ${result.error}`, false);
+            }
+        }
+        
+        // Data loading functions
+        async function loadAllData() {
+            await loadMenuData();
+            await loadOrdersData();
+            await loadTablesData();
+        }
+        
+        async function loadMenuData() {
+            if (!window.db) return;
+            
+            const result = await db.getMenuItems();
+            if (result.success) {
+                let html = '<table class="data-table">';
+                html += '<tr><th>Name</th><th>Price</th><th>Stock</th></tr>';
+                
+                result.data.slice(0, 5).forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>Rp ${item.price.toLocaleString()}</td>
+                            <td>${item.stock_quantity}</td>
+                        </tr>
+                    `;
+                });
+                
+                if (result.data.length > 5) {
+                    html += `<tr><td colspan="3">... and ${result.data.length - 5} more items</td></tr>`;
+                }
+                
+                html += '</table>';
+                document.getElementById('menuData').innerHTML = html;
+            }
+        }
+        
+        async function loadOrdersData() {
+            if (!window.db) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const result = await db.getOrders({ date: today });
+            
+            if (result.success) {
+                let html = `<p>Today's orders: ${result.data.length}</p>`;
+                
+                if (result.data.length > 0) {
+                    html += '<table class="data-table">';
+                    html += '<tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th></tr>';
+                    
+                    result.data.forEach(order => {
+                        html += `
+                            <tr>
+                                <td>${order.order_number}</td>
+                                <td>${order.customer_name || 'N/A'}</td>
+                                <td>Rp ${order.total_amount.toLocaleString()}</td>
+                                <td>${order.status}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</table>';
+                } else {
+                    html += '<p>No orders today</p>';
+                }
+                
+                document.getElementById('ordersData').innerHTML = html;
+            }
+        }
+        
+        async function loadTablesData() {
+            if (!window.db) return;
+            
+            const result = await db.getTables();
+            if (result.success) {
+                let html = '<table class="data-table">';
+                html += '<tr><th>Table</th><th>Capacity</th><th>Location</th><th>Status</th></tr>';
+                
+                result.data.forEach(table => {
+                    const statusColor = {
+                        'available': '#28a745',
+                        'occupied': '#dc3545',
+                        'reserved': '#ffc107',
+                        'maintenance': '#6c757d'
+                    }[table.status] || '#6c757d';
+                    
+                    html += `
+                        <tr>
+                            <td>${table.table_number}</td>
+                            <td>${table.capacity} orang</td>
+                            <td>${table.location}</td>
+                            <td style="color: ${statusColor}; font-weight: bold;">
+                                ${table.status.toUpperCase()}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+                document.getElementById('tablesData').innerHTML = html;
+            }
+        }
+        
+        // Utility function
+        function showResult(elementId, message, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.style.display = 'block';
+        }
+        
+        function showAddMenuForm() {
+            const html = `
+                <h4>Add New Menu Item</h4>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="menuName" placeholder="Menu name">
+                </div>
+                <div class="form-group">
+                    <label>Price</label>
+                    <input type="number" id="menuPrice" placeholder="Price in IDR">
+                </div>
+                <button class="btn btn-success" onclick="addNewMenuItem()">Add Menu</button>
+            `;
+            showResult('menuResult', html, true);
+        }
+        
+        async function addNewMenuItem() {
+            const name = document.getElementById('menuName').value;
+            const price = document.getElementById('menuPrice').value;
+            
+            if (!name || !price) {
+                alert('Please fill all fields!');
+                return;
+            }
+            
+            const result = await db.addMenuItem({
+                name: name,
+                price: parseInt(price),
+                is_available: true,
+                stock_quantity: 10
+            });
+            
+            if (result.success) {
+                showResult('menuResult', `✅ Menu item "${name}" added successfully!`, true);
+                getMenuItems(); // Refresh list
+            } else {
+                showResult('menuResult', `❌ Error: ${result.error}`, false);
+            }
+        }
+        
+        // Load saved config on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            
+            if (savedUrl && savedKey) {
+                document.getElementById('supabaseUrl').value = savedUrl;
+                document.getElementById('supabaseKey').value = savedKey;
+                
+                // Auto-test connection after 2 seconds
+                setTimeout(() => {
+                    if (window.supabaseClient) {
+                        testConnection();
+                    }
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Connection - SIMPLE</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            cursor: pointer; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .card { 
+            background: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        code { 
+            background: #f8f9fa; 
+            padding: 2px 6px; 
+            border-radius: 3px; 
+            font-family: monospace; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Supabase Connection - MAN CAFE</h1>
+    
+    <div class="card">
+        <h3>Step 1: Configure Supabase</h3>
+        <p>Edit the configuration below with your Supabase URL and Anon Key:</p>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+            <div style="margin: 10px 0;">
+                <label><strong>SUPABASE_URL:</strong></label><br>
+                <input type="text" id="supabaseUrl" style="width: 100%; padding: 8px; margin: 5px 0;" 
+                       placeholder="https://your-project-id.supabase.co">
+            </div>
+            <div style="margin: 10px 0;">
+                <label><strong>SUPABASE_ANON_KEY:</strong></label><br>
+                <textarea id="supabaseKey" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;" 
+                          placeholder="eyJhbGc..."></textarea>
+            </div>
+            <button onclick="saveConfig()">Save Configuration</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>Step 2: Test Connection</h3>
+        <div id="connectionStatus" class="status info">Ready to test...</div>
+        <button onclick="testConnection()" id="testBtn">Test Connection</button>
+        <button onclick="checkTables()" id="tablesBtn" disabled>Check Tables</button>
+        <button onclick="createTestOrder()" id="orderBtn" disabled>Create Test Order</button>
+    </div>
+    
+    <div class="card">
+        <h3>Step 3: Results</h3>
+        <div id="results"></div>
+        <div id="debug" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; display: none;">
+            <h4>Debug Info:</h4>
+            <pre id="debugInfo"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let supabaseClient = null;
+        
+        // Load saved config
+        function loadConfig() {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            
+            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+            
+            console.log('Config loaded from localStorage');
+        }
+        
+        // Save config
+        function saveConfig() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            if (!url || !key) {
+                alert('Please enter both URL and Key');
+                return;
+            }
+            
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            
+            showMessage('✅ Configuration saved!', 'success');
+            console.log('Config saved:', { url: url.substring(0, 20) + '...', key: key.substring(0, 20) + '...' });
+        }
+        
+        // Initialize Supabase
+        function initSupabase() {
+            const url = localStorage.getItem('supabase_url');
+            const key = localStorage.getItem('supabase_key');
+            
+            if (!url || !key) {
+                showMessage('❌ Please configure Supabase first', 'error');
+                return false;
+            }
+            
+            try {
+                supabaseClient = supabase.createClient(url, key, {
+                    auth: { persistSession: false }
+                });
+                
+                console.log('Supabase client initialized');
+                showMessage('✅ Supabase client initialized', 'success');
+                
+                // Enable buttons
+                document.getElementById('testBtn').disabled = false;
+                document.getElementById('tablesBtn').disabled = false;
+                document.getElementById('orderBtn').disabled = false;
+                
+                return true;
+            } catch (error) {
+                showMessage(`❌ Error initializing Supabase: ${error.message}`, 'error');
+                console.error('Init error:', error);
+                return false;
+            }
+        }
+        
+        // Test connection
+        async function testConnection() {
+            showMessage('🔄 Testing connection...', 'info');
+            clearResults();
+            
+            if (!initSupabase()) return;
+            
+            try {
+                // Simple query to test connection
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    if (error.message.includes('does not exist')) {
+                        showMessage('⚠️ Connection OK but tables not found. Run setup script first.', 'info');
+                        addDebugInfo('Tables not created yet. This is normal if you just setup Supabase.');
+                    } else {
+                        showMessage(`❌ Connection failed: ${error.message}`, 'error');
+                        addDebugInfo(`Error details: ${JSON.stringify(error, null, 2)}`);
+                    }
+                } else {
+                    showMessage('✅ Connected to Supabase successfully!', 'success');
+                    addDebugInfo('Connection test passed. Supabase is ready.');
+                }
+                
+            } catch (error) {
+                showMessage(`❌ Unexpected error: ${error.message}`, 'error');
+                addDebugInfo(`Full error: ${error.toString()}`);
+                console.error('Test error:', error);
+            }
+        }
+        
+        // Check tables
+        async function checkTables() {
+            showMessage('📋 Checking database tables...', 'info');
+            
+            const tables = [
+                'orders',
+                'menu_items', 
+                'customers',
+                'reservations',
+                'tables'
+            ];
+            
+            let resultsHTML = '<h4>Table Status:</h4><ul>';
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(table)
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        resultsHTML += `<li><span style="color: #dc3545;">❌ ${table}:</span> ${error.message}</li>`;
+                    } else {
+                        resultsHTML += `<li><span style="color: #28a745;">✅ ${table}:</span> ${data} rows</li>`;
+                    }
+                } catch (error) {
+                    resultsHTML += `<li><span style="color: #dc3545;">❌ ${table}:</span> ${error.message}</li>`;
+                }
+            }
+            
+            resultsHTML += '</ul>';
+            document.getElementById('results').innerHTML = resultsHTML;
+            showMessage('✅ Table check completed', 'success');
+        }
+        
+        // Create test order
+        async function createTestOrder() {
+            showMessage('🧪 Creating test order...', 'info');
+            
+            const testOrder = {
+                customer_name: 'Test Customer',
+                customer_phone: '0812' + Math.floor(Math.random() * 10000000),
+                total_amount: Math.floor(Math.random() * 100000) + 10000,
+                status: 'pending',
+                payment_method: 'transfer'
+            };
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .insert([testOrder])
+                    .select();
+                
+                if (error) {
+                    showMessage(`❌ Failed to create order: ${error.message}`, 'error');
+                    addDebugInfo(`Insert error: ${JSON.stringify(error, null, 2)}`);
+                    
+                    // Jika tabel tidak ada, tampilkan SQL untuk create
+                    if (error.message.includes('does not exist')) {
+                        document.getElementById('results').innerHTML = `
+                            <div class="status info">
+                                <h4>Table 'orders' doesn't exist</h4>
+                                <p>Run this SQL in Supabase SQL Editor:</p>
+                                <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto;">
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    order_number VARCHAR(50),
+    customer_name VARCHAR(200) NOT NULL,
+    customer_phone VARCHAR(20) NOT NULL,
+    total_amount DECIMAL(15,2) DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'pending',
+    payment_method VARCHAR(50) DEFAULT 'transfer',
+    created_at TIMESTAMP DEFAULT NOW()
+);</pre>
+                            </div>
+                        `;
+                    }
+                } else {
+                    showMessage(`✅ Order created successfully!`, 'success');
+                    
+                    document.getElementById('results').innerHTML = `
+                        <div class="status success">
+                            <h4>✅ Test Order Created!</h4>
+                            <p><strong>Order ID:</strong> ${data[0].id}</p>
+                            <p><strong>Customer:</strong> ${data[0].customer_name}</p>
+                            <p><strong>Amount:</strong> Rp ${data[0].total_amount.toLocaleString()}</p>
+                            <p><strong>Phone:</strong> ${data[0].customer_phone}</p>
+                            <p><strong>Status:</strong> ${data[0].status}</p>
+                            <p><em>Check this order in Supabase Dashboard → Table Editor → orders</em></p>
+                        </div>
+                    `;
+                    
+                    addDebugInfo(`Order data: ${JSON.stringify(data[0], null, 2)}`);
+                }
+                
+            } catch (error) {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+                addDebugInfo(`Catch error: ${error.toString()}`);
+            }
+        }
+        
+        // Helper functions
+        function showMessage(message, type) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('debugInfo').innerHTML = '';
+            document.getElementById('debug').style.display = 'none';
+        }
+        
+        function addDebugInfo(info) {
+            document.getElementById('debug').style.display = 'block';
+            document.getElementById('debugInfo').textContent += info + '\n\n';
+        }
+        
+        // Auto load config on page load
+        window.onload = function() {
+            loadConfig();
+            console.log('Test page loaded');
+            
+            // Check if Supabase library is loaded
+            if (typeof supabase === 'undefined') {
+                showMessage('❌ Supabase JS library not loaded. Check internet connection.', 'error');
+            } else {
+                console.log('Supabase JS library loaded');
+            }
+        };
+    </script>
+</body>
+</html>

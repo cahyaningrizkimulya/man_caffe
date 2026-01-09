@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Kafe Bahagia</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js" defer></script>
+    <script src="../js/auth.js" defer></script>
+    <script src="../js/realtime.js" defer></script>
+    <style>
+        .checkout-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .checkout-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .checkout-steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #eee;
+            z-index: 1;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #eee;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .step.active .step-number {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .checkout-content {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .order-summary {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 2rem;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-top: 2px solid var(--primary-color);
+            margin-top: 1rem;
+        }
+        
+        .customer-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .form-full {
+            grid-column: 1 / -1;
+        }
+        
+        .payment-success {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .payment-success i {
+            font-size: 4rem;
+            color: var(--success-color);
+            margin-bottom: 1rem;
+        }
+        
+        .order-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="checkout-container">
+        <div class="checkout-steps">
+            <div class="step completed">
+                <div class="step-number">1</div>
+                <span>Keranjang</span>
+            </div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <span>Data Diri</span>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <span>Pembayaran</span>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <span>Selesai</span>
+            </div>
+        </div>
+        
+        <div class="checkout-content">
+            <h2>Checkout Pesanan</h2>
+            <p>Lengkapi data diri Anda untuk melanjutkan pesanan</p>
+            
+            <div class="order-summary">
+                <h3>Ringkasan Pesanan</h3>
+                <div id="orderItems">
+                    <!-- Items will be loaded from localStorage -->
+                </div>
+                <div class="order-total">
+                    <span>Total:</span>
+                    <span id="orderTotal">Rp 0</span>
+                </div>
+            </div>
+            
+            <form id="checkoutForm">
+                <div class="customer-form">
+                    <div class="form-group form-full">
+                        <label for="customerName">Nama Lengkap *</label>
+                        <input type="text" id="customerName" name="customerName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerEmail">Email *</label>
+                        <input type="email" id="customerEmail" name="customerEmail" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerPhone">No. WhatsApp *</label>
+                        <input type="tel" id="customerPhone" name="customerPhone" required>
+                    </div>
+                    
+                    <div class="form-group form-full">
+                        <label for="tableNumber">Nomor Meja (opsional)</label>
+                        <input type="text" id="tableNumber" name="tableNumber" placeholder="Contoh: A1, B3">
+                    </div>
+                    
+                    <div class="form-group form-full">
+                        <label for="orderNotes">Catatan Pesanan</label>
+                        <textarea id="orderNotes" name="orderNotes" rows="3" placeholder="Contoh: Kurangi gula, tambah es, dll."></textarea>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                    <a href="..index.html" class="btn-outline">
+                        <i class="fas fa-arrow-left"></i> Kembali
+                    </a>
+                    <button type="submit" class="btn-primary" id="submitOrderBtn">
+                        Lanjut ke Pembayaran <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+            
+            <div id="successMessage" class="payment-success" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <h2>Pesanan Berhasil!</h2>
+                <p>Pesanan Anda telah diterima dan sedang diproses</p>
+                <div class="order-number" id="successOrderNumber"></div>
+                <p>Pesanan akan muncul di dashboard admin dalam hitungan detik</p>
+                <div style="margin-top: 2rem;">
+                    <a href="dashboard_admin.html" class="btn-primary">
+                        <i class="fas fa-tachometer-alt"></i> Ke Dashboard
+                    </a>
+                    <a href="..index.html" class="btn-outline" style="margin-left: 1rem;">
+                        <i class="fas fa-home"></i> Beranda
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load cart from localStorage
+            const cart = JSON.parse(localStorage.getItem('cafeCart') || '[]');
+            const orderItemsContainer = document.getElementById('orderItems');
+            const orderTotalElement = document.getElementById('orderTotal');
+            
+            let total = 0;
+            
+            // Display order items
+            cart.forEach(item => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                
+                orderItemsContainer.innerHTML += `
+                    <div class="order-item">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <p style="font-size: 0.9rem; color: var(--text-light);">${item.quantity} x Rp ${item.price.toLocaleString()}</p>
+                        </div>
+                        <div>Rp ${subtotal.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            
+            orderTotalElement.textContent = `Rp ${total.toLocaleString()}`;
+            
+            // Auto-fill user data if logged in
+            const user = JSON.parse(localStorage.getItem('customerData') || '{}');
+            if (user.name) {
+                document.getElementById('customerName').value = user.name;
+                document.getElementById('customerEmail').value = user.email || '';
+                document.getElementById('customerPhone').value = user.phone || '';
+            }
+            
+            // Handle form submission
+            document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submitOrderBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+                
+                try {
+                    // Generate order number
+                    const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
+                    
+                    // Prepare order data
+                    const orderData = {
+                        order_number: orderNumber,
+                        customer_name: document.getElementById('customerName').value,
+                        customer_email: document.getElementById('customerEmail').value,
+                        customer_phone: document.getElementById('customerPhone').value,
+                        table_number: document.getElementById('tableNumber').value || null,
+                        total_amount: total,
+                        status: 'pending',
+                        payment_status: 'unpaid',
+                        notes: document.getElementById('orderNotes').value,
+                        order_items: cart.map(item => ({
+                            menu_item_name: item.name,
+                            quantity: item.quantity,
+                            price: item.price
+                        }))
+                    };
+                    
+                    // Save customer data
+                    localStorage.setItem('customerData', JSON.stringify({
+                        name: orderData.customer_name,
+                        email: orderData.customer_email,
+                        phone: orderData.customer_phone
+                    }));
+                    
+                    // Send order to server
+                    const { data: order, error } = await supabaseClient
+                        .from('orders')
+                        .insert([{
+                            order_number: orderData.order_number,
+                            customer_name: orderData.customer_name,
+                            customer_email: orderData.customer_email,
+                            total_amount: orderData.total_amount,
+                            status: orderData.status,
+                            payment_status: orderData.payment_status,
+                            notes: orderData.notes,
+                            table_number: orderData.table_number
+                        }])
+                        .select()
+                        .single();
+                        
+                    if (error) throw error;
+                    
+                    // Save order items
+                    for (const item of orderData.order_items) {
+                        const { error: itemError } = await supabaseClient
+                            .from('order_items')
+                            .insert([{
+                                order_id: order.id,
+                                menu_item_name: item.menu_item_name,
+                                quantity: item.quantity,
+                                price: item.price
+                            }]);
+                            
+                        if (itemError) throw itemError;
+                    }
+                    
+                    // Create notification for admin
+                    const { error: notifError } = await supabaseClient
+                        .from('admin_notifications')
+                        .insert([{
+                            type: 'new_order',
+                            title: 'Pesanan Baru!',
+                            message: `Pesanan baru #${orderNumber} dari ${orderData.customer_name}`,
+                            data: {
+                                order_id: order.id,
+                                order_number: orderNumber,
+                                total: total,
+                                customer_name: orderData.customer_name,
+                                url: `dashboard_admin.html#order-${order.id}`
+                            }
+                        }]);
+                        
+                    // Clear cart
+                    localStorage.removeItem('cafeCart');
+                    
+                    // Show success message
+                    document.getElementById('checkoutForm').style.display = 'none';
+                    document.getElementById('successOrderNumber').textContent = `#${orderNumber}`;
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    // Show success notification
+                    showToast('Pesanan berhasil dikirim! Admin akan segera memproses.', 'success');
+                    
+                    // Redirect to payment page after 5 seconds
+                    setTimeout(() => {
+                        window.location.href = `payment.html?order=${order.id}`;
+                    }, 5000);
+                    
+                } catch (error) {
+                    console.error('Error submitting order:', error);
+                    showToast('Gagal mengirim pesanan. Silakan coba lagi.', 'error');
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Lanjut ke Pembayaran <i class="fas fa-arrow-right"></i>';
+                }
+            });
+        });
+        
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

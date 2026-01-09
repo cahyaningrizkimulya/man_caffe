@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - MAN CAFE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8B4513;
+            --primary-light: #A0522D;
+            --primary-dark: #5D2906;
+            --dark-color: #2C3E50;
+            --light-color: #F8F9FA;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .admin-login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .admin-header {
+            background: var(--dark-color);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .admin-header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            border: 3px solid var(--primary-color);
+        }
+
+        .admin-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-header p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .login-form {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-login:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .demo-credentials {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .demo-credentials strong {
+            color: #333;
+        }
+
+        .back-to-home {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        .back-to-home a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-to-home a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-login-container">
+        <div class="admin-header">
+            <div style="width: 80px; height: 80px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: white; font-size: 2rem;">
+                <i class="fas fa-coffee"></i>
+            </div>
+            <h1>MAN CAFE</h1>
+            <p>Admin Dashboard</p>
+        </div>
+        
+        <div class="login-form">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Masukkan username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Masukkan password" required>
+                </div>
+                
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Login Admin
+                </button>
+                
+                <div class="demo-credentials">
+                    <p><strong>Demo Credentials:</strong></p>
+                    <p>Username: <strong>admin</strong></p>
+                    <p>Password: <strong>admin123</strong></p>
+                </div>
+                
+                <div class="back-to-home">
+                    <a href="index.html">
+                        <i class="fas fa-arrow-left"></i> Kembali ke Halaman Utama
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Simple validation
+            if (username === 'admin' && password === 'admin123') {
+                // Simpan token login
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminUsername', username);
+                
+                // Redirect ke dashboard admin
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                errorMessage.textContent = 'Username atau password salah!';
+                errorMessage.style.display = 'block';
+                
+                // Shake animation
+                this.classList.add('shake');
+                setTimeout(() => this.classList.remove('shake'), 500);
+            }
+        });
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            .shake {
+                animation: shake 0.5s ease-in-out;
+            }
+            
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Check if already logged in
+        if (localStorage.getItem('adminLoggedIn') === 'true') {
+            window.location.href = 'dashboard_admin.html';
+        }
+    </script>
+</body>
+</html>
