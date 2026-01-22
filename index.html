@@ -982,31 +982,63 @@
             font-size: 0.85rem;
         }
 
-        .bank-info {
+        /* ==================== QRIS STYLES ==================== */
+        .qris-info {
             background: #f8f9fa;
-            padding: 1rem;
+            padding: 1.2rem;
             border-radius: 8px;
             margin: 1rem 0;
-            border-left: 4px solid var(--success-color);
-        }
-
-        .bank-info h4 {
-            margin-top: 0;
-            color: var(--success-color);
-            font-size: 1rem;
-        }
-
-        .account-number {
-            font-family: monospace;
-            font-size: 1.1rem;
-            letter-spacing: 2px;
-            background: white;
-            padding: 0.7rem;
-            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
             text-align: center;
-            margin: 0.5rem 0;
+        }
+
+        .qris-info h4 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .qris-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 1rem;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border: 2px dashed #ddd;
-            color: var(--dark-color);
+        }
+
+        .qris-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .qris-details {
+            background: white;
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        .qris-details p {
+            margin: 0.3rem 0;
+            font-size: 0.85rem;
+        }
+
+        .qris-details .amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+            font-family: monospace;
+            letter-spacing: 1px;
         }
 
         /* ==================== TABLE RESERVATION STYLES ==================== */
@@ -1449,6 +1481,11 @@
             .floating-coffee {
                 display: none;
             }
+            
+            .qris-image {
+                width: 180px;
+                height: 180px;
+            }
         }
 
         @media (max-width: 576px) {
@@ -1512,6 +1549,11 @@
             .modal-content {
                 padding: 1rem;
             }
+            
+            .qris-image {
+                width: 160px;
+                height: 160px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1546,6 +1588,11 @@
             .btn-primary, .btn-secondary {
                 padding: 0.8rem 1.5rem;
             }
+            
+            .qris-image {
+                width: 150px;
+                height: 150px;
+            }
         }
 
         @media (max-width: 360px) {
@@ -1563,6 +1610,11 @@
             
             .logo span {
                 font-size: 1.1rem;
+            }
+            
+            .qris-image {
+                width: 140px;
+                height: 140px;
             }
         }
     </style>
@@ -1633,15 +1685,15 @@
         <div class="container">
             <div class="stats-grid">
                 <div class="stat-item">
-                    <h3>500+</h3>
+                    <h3>100+</h3>
                     <p>Pelanggan Setia</p>
                 </div>
                 <div class="stat-item">
-                    <h3>50+</h3>
+                    <h3>20+</h3>
                     <p>Menu Variatif</p>
                 </div>
                 <div class="stat-item">
-                    <h3>24</h3>
+                    <h3>10</h3>
                     <p>Meja Nyaman</p>
                 </div>
                 <div class="stat-item">
@@ -1748,14 +1800,16 @@
             <div class="testimonial-slider">
                 <div class="testimonial-card">
                     <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Customer">
-                    <h3>Sarah Johnson</h3>
-                    <p>"Menu-menu di sini luar biasa! Suasana yang cozy dan musik yang pas membuat saya betah berlama-lama. juga ada studio foto yang bisa kita nikmati"</p>
+                    <h3>Agustina Sani Safridawati</h3>
+                    <p>"Menu-menu di sini luar biasa! Suasana yang nyaman yang membuat saya betah berlama-lama. juga ada studio foto yang bisa kita nikmati"</p>
+                    
                     <div class="rating">
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
+                        
                     </div>
                 </div>
             </div>
@@ -1778,16 +1832,16 @@
                 <div class="footer-section">
                     <h3>Jam Operasional</h3>
                     <ul class="footer-links">
-                        <li><strong>Senin - Jumat:</strong> 11:00 - 22:00</li>
-                        <li><strong>Sabtu:</strong> 11:00 - 00:00</li>
-                        <li><strong>Minggu:</strong> 11:00 - 23:00</li>
+                        <li><strong>Senin - Jumat:</strong> 16:00 - 22:00</li>
+                        <li><strong>Sabtu:</strong> 16:00 - 00:00</li>
+                        <li><strong>Minggu:</strong> 16:00 - 23:00</li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h3>Kontak</h3>
                     <ul class="footer-links">
-                        <li><i class="fas fa-map-marker-alt"></i> Jl. Bahagia No. 123, Kota Senang</li>
-                        <li><i class="fas fa-phone"></i> (021) 1234-5678</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Jl. Kayangan Gg. Flamboyan</li>
+                        <li><i class="fas fa-phone"></i> (+62) 83832184173</li>
                         <li><i class="fas fa-envelope"></i> info@mancafe.com</li>
                     </ul>
                 </div>
@@ -1839,17 +1893,30 @@
                 </div>
                 <div class="form-group">
                     <label for="paymentMethod">Metode Pembayaran</label>
-                    <div style="background: #e9ecef; padding: 0.8rem; border-radius: 6px; margin-top: 0.4rem; font-weight: bold; color: #28a745;">
-                        <i class="fas fa-university"></i> Transfer Bank (Satu-satunya Metode)
+                    <div style="background: #e9ecef; padding: 0.8rem; border-radius: 6px; margin-top: 0.4rem; font-weight: bold; color: var(--primary-color);">
+                        <i class="fas fa-qrcode"></i> QRIS (Satu-satunya Metode)
                     </div>
                 </div>
-                <div id="bankPaymentInfo">
-                    <div class="bank-info">
-                        <h4><i class="fas fa-university"></i> Transfer ke Rekening MAN CAFE</h4>
-                        <p><strong>Bank BCA:</strong></p>
-                        <div class="account-number" id="accountNumber">123 456 7890</div>
-                        <p>a.n. <strong>MAN CAFE</strong></p>
-                        <p><small>Lakukan transfer sesuai total pesanan Anda. <br>Upload bukti transfer ke WA kafe yang ada di dashboard awal.</small></p>
+                <div id="qrisPaymentInfo">
+                    <div class="qris-info">
+                        <h4><i class="fas fa-qrcode"></i> Bayar dengan QRIS</h4>
+                        <div class="qris-image">
+                            <!-- QRIS Code Placeholder - In production, generate dynamic QR -->
+                            <div style="text-align: center;">
+                                <i class="fas fa-qrcode" style="font-size: 4rem; color: #666; margin-bottom: 0.5rem;"></i>
+                                <p style="font-size: 0.8rem; color: #666;">QR Code akan muncul setelah konfirmasi</p>
+                            </div>
+                        </div>
+                        <div class="qris-details">
+                            <p><strong>MAN CAFE</strong></p>
+                            <p>Jl. Kayangan Gg. Flamboyan</p>
+                            <div class="amount" id="qris-amount">Rp 0</div>
+                            <p><small>Scan QRIS dengan aplikasi banking/e-wallet favorit Anda</small></p>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #666; margin-top: 0.8rem;">
+                            <i class="fas fa-info-circle"></i> 
+                            QRIS mendukung semua bank dan e-wallet (GoPay, OVO, Dana, LinkAja, dll)
+                        </p>
                     </div>
                 </div>
                 <div id="reservationInfo" style="display: none;">
@@ -1861,7 +1928,7 @@
                     </div>
                 </div>
                 <button type="submit" class="modal-submit-btn" id="submitOrderBtn">
-                    <i class="fas fa-university"></i> Konfirmasi Pesanan & Lihat Instruksi Transfer
+                    <i class="fas fa-qrcode"></i> Konfirmasi Pesanan & Lihat QRIS
                 </button>
             </form>
         </div>
@@ -1869,7 +1936,7 @@
 
     <!-- Transfer Success Modal -->
     <div id="transferSuccessModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 550px;">
             <span class="close-modal" onclick="closeModal('transferSuccessModal')">&times;</span>
             <div style="text-align: center;">
                 <div style="width: 80px; height: 80px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1.5rem;">
@@ -1878,12 +1945,31 @@
                 <h2>Pesanan Berhasil!</h2>
                 <p style="color: #666; margin-bottom: 1.5rem;">Pesanan Anda telah diterima dan menunggu konfirmasi admin.</p>
                 
-                <div class="bank-info" style="margin: 1.5rem 0;">
-                    <h4><i class="fas fa-university"></i> Instruksi Pembayaran</h4>
-                    <p><strong>Bank BCA:</strong></p>
-                    <div class="account-number">123 456 7890</div>
-                    <p>a.n. <strong>MAN CAFE</strong></p>
-                    <p><small>Lakukan transfer sesuai total pesanan dan konfirmasi ke admin.</small></p>
+                <div class="qris-info" style="margin: 1.5rem 0;">
+                    <h4><i class="fas fa-qrcode"></i> Pembayaran QRIS</h4>
+                    <div class="qris-image">
+                        <!-- In production, this would be a real QRIS code -->
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="background: #fff; border: 2px solid #000; width: 150px; height: 150px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 4rem; color: #333;">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <p style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;">QRIS MAN CAFE</p>
+                        </div>
+                    </div>
+                    <div class="qris-details">
+                        <p><strong>MAN CAFE</strong></p>
+                        <div class="amount" id="success-qris-amount">Rp 0</div>
+                        <p><small>Scan QRIS di atas untuk pembayaran</small></p>
+                    </div>
+                    <div style="background: #e7f4e4; padding: 0.8rem; border-radius: 6px; margin-top: 1rem; text-align: left;">
+                        <p style="margin: 0; font-size: 0.85rem; color: #155724;">
+                            <i class="fas fa-lightbulb"></i> <strong>Cara Bayar:</strong><br>
+                            1. Buka aplikasi bank/e-wallet<br>
+                            2. Pilih "Scan QRIS"<br>
+                            3. Arahkan kamera ke QR code<br>
+                            4. Konfirmasi pembayaran
+                        </p>
+                    </div>
                 </div>
                 
                 <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #3b82f6;">
@@ -2220,7 +2306,7 @@
                                 order_type: orderData.orderType,
                                 total_amount: orderData.total,
                                 status: 'pending',
-                                payment_method: 'transfer',
+                                payment_method: 'qris',
                                 payment_status: 'pending',
                                 admin_seen: false,
                                 created_at: new Date().toISOString()
@@ -2280,7 +2366,7 @@
                         items: orderData.items,
                         total: orderData.total,
                         status: 'pending',
-                        paymentMethod: 'transfer',
+                        paymentMethod: 'qris',
                         paymentStatus: 'pending',
                         createdAt: new Date().toISOString(),
                         supabase_id: supabaseOrderId,
@@ -2315,7 +2401,7 @@
                         items: orderData.items,
                         total: orderData.total,
                         status: 'pending',
-                        paymentMethod: 'transfer',
+                        paymentMethod: 'qris',
                         paymentStatus: 'pending',
                         createdAt: new Date().toISOString(),
                         supabase_id: null,
@@ -3225,6 +3311,9 @@
                                     ${order.paymentStatus === 'paid' ? 'Lunas' : 'Menunggu'}
                                 </span>
                             </div>
+                            <div class="detail-item">
+                                <strong>Metode:</strong> QRIS
+                            </div>
                         </div>
                         ${hasReservation ? `
                             <div class="order-details">
@@ -3328,6 +3417,7 @@
             
             const modal = document.getElementById('checkoutModal');
             const summary = document.getElementById('order-summary-compact');
+            const qrisAmount = document.getElementById('qris-amount');
             
             let summaryHTML = '<h4 style="margin-top: 0; margin-bottom: 0.5rem;">Pesanan Anda:</h4>';
             let total = 0;
@@ -3344,6 +3434,11 @@
                 Total <span style="float: right;">Rp ${total.toLocaleString()}</span>
             </div>`;
             summary.innerHTML = summaryHTML;
+            
+            // Update QRIS amount
+            if (qrisAmount) {
+                qrisAmount.textContent = `Rp ${total.toLocaleString()}`;
+            }
             
             document.getElementById('checkoutForm').reset();
             document.getElementById('reservationInfo').style.display = 'none';
@@ -3475,7 +3570,7 @@
                 // Close checkout modal
                 closeModal('checkoutModal');
                 
-                // Show success modal
+                // Show success modal with QRIS
                 showTransferSuccessModal(order);
                 
                 // Refresh orders display
@@ -3496,6 +3591,11 @@
 
         function showTransferSuccessModal(order) {
             const modal = document.getElementById('transferSuccessModal');
+            const successQrisAmount = document.getElementById('success-qris-amount');
+            
+            if (successQrisAmount) {
+                successQrisAmount.textContent = `Rp ${order.total.toLocaleString()}`;
+            }
             
             const reservationInfo = modal.querySelector('.f0f9ff');
             if (reservationInfo && order.orderType === 'dine_in') {

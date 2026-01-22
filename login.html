@@ -3,62 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - MAN CAFE</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js" defer></script>
-    <script src="js/auth.js" defer></script>
+    <title>Login Admin - MAN CAFE</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            text-align: center;
+            display: none;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-box">
-            <div class="login-header">
-                <img src="assets/logo.png" alt="Logo Kafe" style="width: 80px; height: 80px;">
-                <h2>Login ke Kafe Bahagia</h2>
+    <div class="login-box">
+        <h2 style="text-align: center; margin-bottom: 30px;">🔐 Login Admin</h2>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" placeholder="admin@email.com" required>
             </div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-
-
-                <button type="submit" class="btn-primary">Login</button>
-            </form>
-
-            <div class="login-footer">
-                <p><a href="index.html">Kembali ke halaman utama</a></p>
+            
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="password" placeholder="password" required>
             </div>
-        </div>
+            
+            <button type="submit" class="btn-primary" id="loginBtn">
+                Login Sekarang
+            </button>
+        </form>
+        
+        <div id="message" class="message"></div>
     </div>
 
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
+    // ========== SETUP SIMPLE ==========
+    const supabaseUrl = 'https://cuwtyfggfgykgjhrvdgi.supabase.co';
+    const supabaseKey = 'sb_publishable_4e-uWWuKR2r7_jNaWHh03A_2UVQbPAx';
+    
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            storage: localStorage
+        }
+    });
+
+    // ========== CEK SESSION PERTAMA KALI ==========
+    async function checkSession() {
+        console.log("🔍 Checking session...");
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error("Session error:", error);
+            return false;
+        }
+        
+        if (data.session) {
+            console.log("✅ Session found, redirecting...");
+            window.location.href = "dashboard_admin.html";
+            return true;
+        }
+        
+        console.log("❌ No session found");
+        return false;
+    }
+
+    // ========== LOGIN FUNCTION ==========
+    async function login(email, password) {
+        const messageEl = document.getElementById('message');
+        const btn = document.getElementById('loginBtn');
+        
+        try {
+            // Tampilkan loading
+            messageEl.textContent = "🔄 Logging in...";
+            messageEl.className = "message";
+            messageEl.style.display = "block";
+            btn.disabled = true;
+            btn.textContent = "Loading...";
+            
+            console.log("🚀 Attempting login...");
+            
+            // Login ke Supabase
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email.trim(),
+                password: password
+            });
+
+            if (error) {
+                console.error("❌ Login error:", error);
+                throw error;
+            }
+
+            console.log("✅ Login success:", data.user);
+            
+            // Simpan data ke localStorage manual
+            localStorage.setItem('man_cafe_user', JSON.stringify({
+                id: data.user.id,
+                email: data.user.email,
+                loggedIn: true,
+                timestamp: Date.now()
+            }));
+            
+            // Tampilkan success
+            messageEl.textContent = "✅ Login berhasil! Redirect...";
+            messageEl.style.background = "#d4edda";
+            messageEl.style.color = "#155724";
+            
+            // FORCE REDIRECT - JANGAN TUNGGU
+            setTimeout(() => {
+                window.location.href = "dashboard_admin.html";
+            }, 500);
+            
+        } catch (error) {
+            console.error("🔥 Login failed:", error);
+            
+            let errorMsg = "Login gagal";
+            if (error.message.includes("Invalid login credentials")) {
+                errorMsg = "Email atau password salah!";
+            }
+            
+            messageEl.textContent = "❌ " + errorMsg;
+            messageEl.className = "message error";
+            btn.disabled = false;
+            btn.textContent = "Login Sekarang";
+        }
+    }
+
+    // ========== INIT ==========
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log("📱 Page loaded");
+        
+        // Cek session dulu
+        await checkSession();
+        
+        // Setup form
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const userType = document.getElementById('userType').value;
             
-            // Simulasi login (nanti akan diganti dengan Supabase Auth)
-            if (email && password) {
-                if (userType === 'admin') {
-                    // Redirect ke dashboard admin
-                    window.location.href = 'admin/dashboard.html';
-                } else {
-                    // Redirect ke dashboard pelanggan
-                    window.location.href = 'customer/dashboard.html';
-                }
-            } else {
-                alert('Harap isi email dan password!');
+            if (!email || !password) {
+                document.getElementById('message').textContent = "❌ Isi email dan password!";
+                document.getElementById('message').className = "message error";
+                document.getElementById('message').style.display = "block";
+                return;
             }
+            
+            await login(email, password);
         });
+        
+        // Test credentials untuk debugging
+        console.log("Test dengan: admin@example.com / password123");
+    });
+
+    // ========== DEBUG COMMANDS ==========
+    window.debugLogin = async function(testEmail, testPass) {
+        console.log("🧪 Debug login...");
+        if (testEmail && testPass) {
+            await login(testEmail, testPass);
+        } else {
+            await login("admin@example.com", "password123");
+        }
+    };
+    
+    window.clearAll = function() {
+        localStorage.clear();
+        location.reload();
+    };
     </script>
 </body>
 </html>
