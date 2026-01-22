@@ -53,30 +53,46 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .login-logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+        /* ==================== LOGIN LOGO STYLES ==================== */
+.login-logo {
+    text-align: center;
+    margin-bottom: 2rem;
+}
 
-        .login-logo i {
-            font-size: 48px;
-            color: #8B4513;
-            margin-bottom: 15px;
-        }
+.custom-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 15px;
+    background: white;
+    padding: 10px;
+    box-shadow: 0 5px 20px rgba(139, 69, 19, 0.2);
+    border: 3px solid var(--primary-color);
+}
 
-        .login-logo h1 {
-            color: #333;
-            margin: 0;
-            font-size: 28px;
-        }
+.custom-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
 
-        .login-logo span {
-            color: #666;
-            font-size: 14px;
-            display: block;
-            margin-top: 5px;
-        }
+.login-logo h1 {
+    font-size: 2.2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
 
+.login-logo span {
+    color: var(--dark-color);
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
         .form-group {
             margin-bottom: 20px;
         }
@@ -801,38 +817,6 @@
             border-left: 4px solid var(--danger-color);
         }
 
-        .proof-badge {
-            cursor: pointer;
-            color: #007bff;
-            text-decoration: underline;
-            font-size: 0.85rem;
-        }
-
-        .payment-proof-modal .modal-content {
-            max-width: 600px;
-        }
-
-        .payment-proof-image {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 8px;
-            margin: 1rem 0;
-            border: 1px solid #ddd;
-            background: #f9f9f9;
-        }
-
-        .no-payment-proof {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-        }
-
-        .no-payment-proof i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #ddd;
-        }
-
         .dashboard-section {
             display: block;
         }
@@ -989,6 +973,162 @@
             color: var(--dark-color);
         }
 
+        /* Profile Section Styles */
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 3rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .profile-info h2 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .profile-info p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+        }
+
+        .profile-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .profile-card h3 {
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .info-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: var(--dark-color);
+            font-weight: 500;
+        }
+
+        .stats-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .stat-item .label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-content p {
+            margin: 0;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .password-form {
+            margin-top: 1.5rem;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .login-box {
@@ -1014,6 +1154,16 @@
             .sidebar-menu a span:not(.notification-count) {
                 display: none;
             }
+            
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 576px) {
@@ -1024,6 +1174,16 @@
             .sidebar-menu {
                 padding: 0;
             }
+            
+            .profile-header {
+                padding: 1.5rem;
+            }
+            
+            .profile-avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
@@ -1031,41 +1191,39 @@
     <!-- ========== LOGIN SCREEN ========== -->
     <div class="login-container" id="loginContainer">
         <div class="login-box">
-            <div class="login-logo">
-                <i class="fas fa-coffee"></i>
-                <h1>MAN CAFE</h1>
-                <span>Admin Dashboard Login</span>
-            </div>
+           <div class="login-logo">
+    <!-- Ganti icon dengan gambar logo Anda -->
+    <div class="custom-logo">
+        <img src="gambar/logo.jpeg" alt="MAN CAFE Logo">
+        <!-- Atau jika ingin gunakan URL online -->
+        <!-- <img src="https://yourdomain.com/logo-man-cafe.png" alt="MAN CAFE Logo"> -->
+    </div>
+    <h1>MAN CAFE</h1>
+    <span>Admin Dashboard Login</span>
+</div>
             
             <div class="login-error" id="loginError">
                 <i class="fas fa-exclamation-circle"></i>
                 <span id="errorText"></span>
             </div>
             
-            <form id="loginForm">
+            <form id="loginForm" autocomplete="off">
                 <div class="form-group">
                     <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="admin@mancafe.com" required>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="Masukkan email" required autocomplete="off">
                 </div>
                 
                 <div class="form-group">
                     <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Masukkan password" required autocomplete="off">
                 </div>
                 
                 <button type="submit" class="btn-login" id="loginButton">
-                    <span id="loginButtonText">Login to Dashboard</span>
+                    <span id="loginButtonText">Login ke Dashboard</span>
                 </button>
             </form>
             
-            <div class="demo-credentials">
-                <h4>Demo Credentials:</h4>
-                <p><strong>Email:</strong> <code>admin@mancafe.com</code></p>
-                <p><strong>Password:</strong> <code>admin123</code></p>
-                <p style="margin-top: 10px; font-size: 12px; color: #888;">
-                    <i class="fas fa-info-circle"></i> Login langsung untuk demo
-                </p>
-            </div>
+            
         </div>
     </div>
 
@@ -1073,13 +1231,18 @@
     <div class="admin-container" id="adminContainer">
         <!-- Header -->
         <header class="admin-header">
-            <a href="#" class="logo">
-                <i class="fas fa-coffee"></i>
-                <div class="logo-text">
-                    <h1>MAN CAFE</h1>
-                    <span>Admin Dashboard</span>
-                </div>
-            </a>
+           <a href="#" class="logo" onclick="showSection('dashboard')">
+    <!-- Ganti dengan logo Anda -->
+    <div class="logo-icon">
+        <img src="gambar/logo.jpeg" 
+             alt="MAN CAFE Admin Logo"
+             style="width: 45px; height: 45px; object-fit: contain; border-radius: 50%;">
+    </div>
+    <div class="logo-text">
+        <h1>MAN CAFE</h1>
+        <span>Admin Dashboard</span>
+    </div>
+</a>
             
             <div class="admin-controls">
                 <div class="notification-bell" onclick="showNotifications()">
@@ -1088,18 +1251,15 @@
                 </div>
                 
                 <div class="admin-user" onclick="toggleUserMenu()">
-                    <div style="width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                    <div class="user-avatar" style="width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
                         <i class="fas fa-user"></i>
                     </div>
                     <span id="userName">Admin</span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.9rem;"></i>
                     <div class="user-menu" id="userMenu">
-                        <div class="user-menu-item">
+                        <div class="user-menu-item" onclick="showSection('profile')">
                             <i class="fas fa-user"></i>
-                            <span>Profile</span>
-                        </div>
-                        <div class="user-menu-item">
-                            <i class="fas fa-cog"></i>
-                            <span>Settings</span>
+                            <span>Profil Admin</span>
                         </div>
                         <div class="user-menu-item logout" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i>
@@ -1160,7 +1320,7 @@
                                 <h3>Pesanan Hari Ini</h3>
                                 <p class="stat-number" id="todayOrders">0</p>
                                 <p class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> 12% dari kemarin
+                                    <i class="fas fa-arrow-up"></i> 
                                 </p>
                             </div>
                         </div>
@@ -1173,7 +1333,7 @@
                                 <h3>Pelanggan Baru</h3>
                                 <p class="stat-number" id="newCustomers">0</p>
                                 <p class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> 5% dari kemarin
+                                    <i class="fas fa-arrow-up"></i> 
                                 </p>
                             </div>
                         </div>
@@ -1186,7 +1346,7 @@
                                 <h3>Pendapatan Hari Ini</h3>
                                 <p class="stat-number" id="todayRevenue">Rp 0</p>
                                 <p class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> 15% dari kemarin
+                                    <i class="fas fa-arrow-up"></i> 
                                 </p>
                             </div>
                         </div>
@@ -1251,13 +1411,12 @@
                                     <th>Total</th>
                                     <th>Waktu Pesan</th>
                                     <th>Status</th>
-                                    <th>Bukti Transfer</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="newOrdersTable">
                                 <tr>
-                                    <td colspan="7" style="text-align: center; padding: 2rem;">
+                                    <td colspan="6" style="text-align: center; padding: 2rem;">
                                         <div class="loading"></div> Memuat pesanan...
                                     </td>
                                 </tr>
@@ -1606,6 +1765,132 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Profile Section -->
+                <section id="profile-section" class="dashboard-section" style="display: none;">
+                    <div class="profile-container">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="profileName">Administrator</h2>
+                                <p id="profileEmail">admin@mancafe.com</p>
+                                <span class="profile-badge">Super Admin</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-grid">
+                            <div class="profile-card">
+                                <h3><i class="fas fa-info-circle"></i> Informasi Profil</h3>
+                                <div class="info-group">
+                                    <span class="info-label">Nama Lengkap</span>
+                                    <div class="info-value" id="profileFullName">Administrator Man Cafe</div>
+                                </div>
+                                <div class="info-group">
+                                    <span class="info-label">Email</span>
+                                    <div class="info-value" id="profileEmailDetail">admin@mancafe.com</div>
+                                </div>
+                                <div class="info-group">
+                                    <span class="info-label">Role</span>
+                                    <div class="info-value">Super Administrator</div>
+                                </div>
+                                <div class="info-group">
+                                    <span class="info-label">Bergabung Sejak</span>
+                                    <div class="info-value" id="profileJoinDate">1 Januari 2024</div>
+                                </div>
+                                <div class="info-group">
+                                    <span class="info-label">Status Akun</span>
+                                    <div class="info-value">
+                                        <span style="color: #28a745; font-weight: bold;">
+                                            <i class="fas fa-check-circle"></i> Aktif
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card">
+                                <h3><i class="fas fa-chart-line"></i> Statistik Admin</h3>
+                                <div class="stats-group">
+                                    <div class="stat-item">
+                                        <span class="value" id="profileTotalOrders">0</span>
+                                        <span class="label">Total Pesanan Dikelola</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="value" id="profileTotalRevenue">Rp 0</span>
+                                        <span class="label">Total Pendapatan</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="value" id="profileActiveMenus">0</span>
+                                        <span class="label">Menu Aktif</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="value" id="profileTablesCount">0</span>
+                                        <span class="label">Meja Tersedia</span>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+                                    <h4><i class="fas fa-cogs"></i> Sistem</h4>
+                                    <div class="info-group" style="margin-bottom: 0.8rem;">
+                                        <span class="info-label">Versi Dashboard</span>
+                                        <div class="info-value">v2.1.0</div>
+                                    </div>
+                                    <div class="info-group">
+                                        <span class="info-label">Mode Koneksi</span>
+                                        <div class="info-value" id="profileConnectionMode">
+                                            <span style="color: #28a745;">
+                                                <i class="fas fa-wifi"></i> Online
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card" style="grid-column: 1 / -1;">
+                                <h3><i class="fas fa-history"></i> Aktivitas Terakhir</h3>
+                                <div id="profileActivities">
+                                    <div class="activity-item">
+                                        <div class="activity-icon">
+                                            <i class="fas fa-sign-in-alt"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>Login berhasil</strong></p>
+                                            <p class="activity-time">Hari ini, 10:30 WIB</p>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon">
+                                            <i class="fas fa-shopping-cart"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>Mengkonfirmasi pesanan #ORD-00123</strong></p>
+                                            <p class="activity-time">Kemarin, 14:45 WIB</p>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon">
+                                            <i class="fas fa-utensils"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>Menambahkan menu baru: "Cappuccino Special"</strong></p>
+                                            <p class="activity-time">2 hari yang lalu, 09:15 WIB</p>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>Membuat laporan penjualan bulanan</strong></p>
+                                            <p class="activity-time">3 hari yang lalu, 16:30 WIB</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
 
@@ -1620,21 +1905,6 @@
                     <div style="text-align: center; padding: 2rem;">
                         <div class="loading"></div>
                         <p style="margin-top: 1rem;">Memuat detail pesanan...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="paymentProofModal" class="modal payment-proof-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Bukti Transfer</h2>
-                    <button class="close-modal" onclick="closeModal('paymentProofModal')">&times;</button>
-                </div>
-                <div id="paymentProofContent">
-                    <div style="text-align: center; padding: 2rem;">
-                        <div class="loading"></div>
-                        <p style="margin-top: 1rem;">Memuat bukti transfer...</p>
                     </div>
                 </div>
             </div>
@@ -1810,6 +2080,10 @@
         async function initLogin() {
             console.log('🔐 Initializing login system...');
             
+            // Clear login form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            
             // Check if user is already logged in
             const storedUser = localStorage.getItem('man_cafe_admin_user');
             if (storedUser) {
@@ -1865,7 +2139,9 @@
                             email: email,
                             name: 'Admin Demo',
                             role: 'admin',
-                            isDemo: true
+                            isDemo: true,
+                            joinDate: '1 Januari 2024',
+                            fullName: 'Administrator Man Cafe'
                         };
                         
                         localStorage.setItem('man_cafe_admin_user', JSON.stringify(currentUser));
@@ -1882,8 +2158,14 @@
                     id: data.user.id,
                     email: data.user.email,
                     name: data.user.user_metadata?.name || 'Admin',
+                    fullName: data.user.user_metadata?.full_name || 'Administrator',
                     role: 'admin',
-                    isDemo: false
+                    isDemo: false,
+                    joinDate: new Date(data.user.created_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    })
                 };
                 
                 localStorage.setItem('man_cafe_admin_user', JSON.stringify(currentUser));
@@ -1911,12 +2193,6 @@
                 // Reset button
                 loginButton.disabled = false;
                 loginButtonText.textContent = 'Login to Dashboard';
-                
-                // Auto-fill demo credentials for easy testing
-                if (email === '' && password === '') {
-                    document.getElementById('loginEmail').value = 'admin@mancafe.com';
-                    document.getElementById('loginPassword').value = 'admin123';
-                }
             }
         }
 
@@ -1924,11 +2200,9 @@
             document.getElementById('loginContainer').style.display = 'flex';
             document.getElementById('adminContainer').style.display = 'none';
             
-            // Auto-fill demo credentials for testing
-            setTimeout(() => {
-                document.getElementById('loginEmail').value = 'admin@mancafe.com';
-                document.getElementById('loginPassword').value = 'admin123';
-            }, 100);
+            // Clear form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
         }
 
         function showDashboard() {
@@ -1938,6 +2212,11 @@
             // Update user info
             if (currentUser) {
                 document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('profileName').textContent = currentUser.name;
+                document.getElementById('profileEmail').textContent = currentUser.email;
+                document.getElementById('profileEmailDetail').textContent = currentUser.email;
+                document.getElementById('profileFullName').textContent = currentUser.fullName || currentUser.name;
+                document.getElementById('profileJoinDate').textContent = currentUser.joinDate || '1 Januari 2024';
             }
             
             // Initialize admin system
@@ -1992,6 +2271,14 @@
                 adminSystem.isOnline = await checkSupabaseConnection();
                 console.log(adminSystem.isOnline ? '✅ Online mode' : '⚠️ Offline mode');
                 
+                // Update profile connection mode
+                const connectionMode = document.getElementById('profileConnectionMode');
+                if (connectionMode) {
+                    connectionMode.innerHTML = adminSystem.isOnline ? 
+                        '<span style="color: #28a745;"><i class="fas fa-wifi"></i> Online</span>' :
+                        '<span style="color: #ffc107;"><i class="fas fa-unlink"></i> Offline</span>';
+                }
+                
                 // Load data
                 if (!adminSystem.isOnline) {
                     loadLocalData();
@@ -2006,6 +2293,7 @@
                 // Update UI
                 updateStats();
                 updateNotifications();
+                updateProfileStats();
                 
                 // Start auto refresh
                 startAutoRefresh();
@@ -2023,6 +2311,7 @@
                 // Fallback to local data
                 loadLocalData();
                 loadDashboardSection();
+                updateProfileStats();
             }
         }
 
@@ -2379,6 +2668,34 @@
             }
         }
 
+        function updateProfileStats() {
+            try {
+                if (!adminSystem) return;
+                
+                // Total orders managed
+                const totalOrders = adminSystem.allOrders.length;
+                document.getElementById('profileTotalOrders').textContent = totalOrders;
+                
+                // Total revenue
+                const totalRevenue = adminSystem.allOrders
+                    .filter(order => order.status === 'completed' || order.status === 'confirmed')
+                    .reduce((sum, order) => sum + (order.total || 0), 0);
+                document.getElementById('profileTotalRevenue').textContent = 'Rp ' + totalRevenue.toLocaleString();
+                
+                // Active menus
+                const activeMenus = adminSystem.menus.filter(menu => menu.isActive !== false).length;
+                document.getElementById('profileActiveMenus').textContent = activeMenus;
+                
+                // Available tables
+                const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+                const availableTables = tables.filter(table => table.status === 'available').length;
+                document.getElementById('profileTablesCount').textContent = availableTables;
+                
+            } catch (error) {
+                console.error('Error updating profile stats:', error);
+            }
+        }
+
         function getTodayOrders() {
             const today = new Date().toISOString().split('T')[0];
             return adminSystem.allOrders.filter(order => {
@@ -2471,6 +2788,7 @@
                     if (currentSection) {
                         loadSectionData(currentSection);
                     }
+                    updateProfileStats();
                 }
             }, 30000);
         }
@@ -2512,6 +2830,11 @@
                     setTimeout(() => {
                         runAprioriAnalysis();
                     }, 500);
+                }
+                
+                // Update profile stats if profile section
+                if (sectionId === 'profile') {
+                    updateProfileStats();
                 }
                 
             } catch (error) {
@@ -2556,6 +2879,10 @@
                         setTimeout(() => {
                             runAprioriAnalysis();
                         }, 1000);
+                        break;
+                    case 'profile':
+                        // Profile section already loaded from HTML
+                        updateProfileStats();
                         break;
                 }
             } catch (error) {
@@ -2669,7 +2996,7 @@
                 if (newOrders.length === 0) {
                     table.innerHTML = `
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
                                 Tidak ada pesanan baru
                             </td>
                         </tr>
@@ -2695,14 +3022,6 @@
                                 </span>
                             </td>
                             <td>
-                                ${order.paymentProof ? 
-                                    `<span class="proof-badge" onclick="viewPaymentProof('${order.id}')">
-                                        <i class="fas fa-receipt"></i> Lihat Bukti
-                                    </span>` : 
-                                    '<span style="color: #666; font-size: 0.85rem;">Belum ada</span>'
-                                }
-                            </td>
-                            <td>
                                 <div class="action-buttons">
                                     <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')">
                                         <i class="fas fa-check"></i> Konfirmasi
@@ -2721,7 +3040,7 @@
                 console.error('Error loading new orders:', error);
                 document.getElementById('newOrdersTable').innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
                             Gagal memuat pesanan
                         </td>
                     </tr>
@@ -4030,6 +4349,7 @@
                         
                         addActivity(`Pesanan #${adminSystem.allOrders[orderIndex].orderNumber} dikonfirmasi`);
                         updateNotifications();
+                        updateProfileStats();
                         
                         showToast('Pesanan berhasil dikonfirmasi', 'success');
                         loadNewOrders();
@@ -4078,6 +4398,7 @@
                         
                         addActivity(`Pesanan #${adminSystem.allOrders[orderIndex].orderNumber} diselesaikan`);
                         updateNotifications();
+                        updateProfileStats();
                         
                         showToast('Pesanan berhasil diselesaikan', 'success');
                         loadAllOrders();
@@ -4127,6 +4448,7 @@
                         
                         addActivity(`Reservasi #${reservationId} dikonfirmasi`);
                         updateNotifications();
+                        updateProfileStats();
                         
                         showToast('Reservasi berhasil dikonfirmasi', 'success');
                         loadReservations();
@@ -4249,6 +4571,7 @@
                         
                         localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
                         addActivity(`Menu "${menuName}" dihapus`);
+                        updateProfileStats();
                         
                         showToast('Menu berhasil dihapus', 'success');
                         loadMenuManagement();
@@ -4314,6 +4637,7 @@
                 
                 saveLocalData();
                 localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+                updateProfileStats();
                 
                 showToast(`Menu "${menu.name}" berhasil direstock +${quantity}`, 'success');
                 loadMenuManagement();
@@ -4357,6 +4681,7 @@
                     
                     saveLocalData();
                     localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+                    updateProfileStats();
                     
                     showToast(`Semua menu berhasil direstock +${qty}`, 'success');
                     loadMenuManagement();
@@ -4406,6 +4731,7 @@
                     const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
                     const updatedTables = tables.filter(t => t.id != tableId);
                     localStorage.setItem('cafe_tables', JSON.stringify(updatedTables));
+                    updateProfileStats();
                     showToast('Meja berhasil dihapus', 'success');
                     loadTablesManagement();
                 } catch (error) {
@@ -4474,6 +4800,7 @@
             try {
                 await syncFromSupabase();
                 loadSectionData(currentSection);
+                updateProfileStats();
                 showToast('Data berhasil direfresh', 'success');
             } catch (error) {
                 console.error('Error refreshing data:', error);
@@ -4487,6 +4814,7 @@
             try {
                 await syncOrdersFromSupabase();
                 loadNewOrders();
+                updateProfileStats();
                 showToast('Pesanan berhasil direfresh', 'success');
             } catch (error) {
                 console.error('Error refreshing orders:', error);
@@ -4500,6 +4828,7 @@
             try {
                 await syncReservationsFromSupabase();
                 loadReservations();
+                updateProfileStats();
                 showToast('Reservasi berhasil direfresh', 'success');
             } catch (error) {
                 console.error('Error refreshing reservations:', error);
@@ -4513,6 +4842,7 @@
             try {
                 await syncOrdersFromSupabase();
                 loadAllOrders();
+                updateProfileStats();
                 showToast('Semua pesanan berhasil direfresh', 'success');
             } catch (error) {
                 console.error('Error refreshing all orders:', error);
@@ -4526,6 +4856,7 @@
             try {
                 await syncReservationsFromSupabase();
                 loadAllReservations();
+                updateProfileStats();
                 showToast('Semua reservasi berhasil direfresh', 'success');
             } catch (error) {
                 console.error('Error refreshing all reservations:', error);
@@ -4667,47 +4998,6 @@
             } catch (error) {
                 console.error('Error viewing order detail:', error);
                 showToast('Gagal memuat detail pesanan', 'error');
-            }
-        }
-
-        function viewPaymentProof(orderId) {
-            if (!adminSystem) return;
-            
-            try {
-                const order = adminSystem.allOrders.find(o => o.id == orderId);
-                if (!order) return;
-                
-                const content = document.getElementById('paymentProofContent');
-                
-                if (order.paymentProof) {
-                    content.innerHTML = `
-                        <div style="padding: 1rem 0;">
-                            <h3 style="margin-bottom: 1rem;">Bukti Transfer</h3>
-                            <div style="margin-bottom: 1rem;">
-                                <strong>No. Order:</strong> ${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}<br>
-                                <strong>Pelanggan:</strong> ${order.customer?.name || 'Tidak diketahui'}<br>
-                                <strong>Total:</strong> Rp ${order.total?.toLocaleString() || '0'}<br>
-                                <strong>Waktu Transfer:</strong> ${new Date(order.createdAt).toLocaleString('id-ID')}
-                            </div>
-                            <div style="text-align: center;">
-                                <img src="${order.paymentProof}" alt="Bukti Transfer" class="payment-proof-image">
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    content.innerHTML = `
-                        <div class="no-payment-proof">
-                            <i class="fas fa-receipt"></i>
-                            <h3>Tidak ada bukti transfer</h3>
-                            <p>Pelanggan belum mengunggah bukti transfer</p>
-                        </div>
-                    `;
-                }
-                
-                openModal('paymentProofModal');
-            } catch (error) {
-                console.error('Error viewing payment proof:', error);
-                showToast('Gagal memuat bukti transfer', 'error');
             }
         }
 
@@ -4908,6 +5198,7 @@
                         
                         localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
                         addActivity(`Menu "${menuData.name}" diperbarui`);
+                        updateProfileStats();
                         
                         showToast('Menu berhasil diperbarui', 'success');
                     }
@@ -4956,6 +5247,7 @@
                     adminSystem.menus.push(menu);
                     saveLocalData();
                     localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+                    updateProfileStats();
                     
                     addActivity(`Menu "${menuData.name}" ditambahkan (Stok: ${menuData.stock})`);
                     showToast('Menu berhasil ditambahkan', 'success');
@@ -5000,6 +5292,7 @@
                 }
                 
                 localStorage.setItem('cafe_tables', JSON.stringify(tables));
+                updateProfileStats();
                 
                 showToast(tableId ? 'Meja berhasil diperbarui' : 'Meja baru berhasil ditambahkan', 'success');
                 closeModal('tableModal');
@@ -5189,7 +5482,6 @@
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     closeModal('orderDetailModal');
-                    closeModal('paymentProofModal');
                     closeModal('reservationDetailModal');
                     closeModal('menuModal');
                     closeModal('tableModal');
