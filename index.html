@@ -114,43 +114,41 @@
         }
 
         /* ==================== LOGO STYLES ==================== */
-.logo-icon {
-    width: 45px;
-    height: 45px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.2rem;
-    overflow: hidden; /* Tambahkan ini */
-    border: 2px solid var(--primary-color); /* Opsional: border */
-}
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            overflow: hidden;
+            border: 2px solid var(--primary-color);
+        }
 
-/* Style untuk logo image di dalam logo-icon */
-.logo-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* atau 'contain' tergantung logo */
-    border-radius: 50%;
-}
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
 
-/* Alternatif: jika ingin logo tanpa background circle */
-.logo-icon-alt {
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
+        .logo-icon-alt {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-.logo-icon-alt img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
+        .logo-icon-alt img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
 
         .nav-links {
             display: flex;
@@ -1175,6 +1173,51 @@
             color: #155724;
         }
 
+        /* ==================== WHATSAPP PROOF STYLES ==================== */
+        .whatsapp-proof-info {
+            background: #e8f5e9;
+            padding: 1.2rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #25D366;
+            text-align: center;
+        }
+
+        .whatsapp-proof-info h4 {
+            margin-top: 0;
+            color: #25D366;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .whatsapp-instructions {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 0.8rem 0;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .whatsapp-instructions ol {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+
+        .whatsapp-instructions li {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .whatsapp-proof-note {
+            background: #fff3cd;
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            border-left: 4px solid #ffc107;
+            text-align: left;
+        }
+
         /* ==================== UTILITY CLASSES ==================== */
         .text-center {
             text-align: center;
@@ -1650,7 +1693,7 @@
 </head>
 <body>
     <!-- Admin Login Button -->
-    <a href="dashboard_admin.html" class="admin-login-btn">
+    <a href="#admin-login" class="admin-login-btn">
         <i class="fas fa-user-cog"></i> Admin
     </a>
 
@@ -1659,16 +1702,11 @@
         <div class="container">
             <nav class="navbar">
                 <a href="#" class="logo">
-    <!-- Ganti icon dengan gambar logo Anda -->
-    <div class="logo-icon">
-        <img src="gambar/logo.jpeg" alt="MAN CAFE Logo" 
-             style="width: 100%; height: 100%; object-fit: contain;">
-        <!-- Atau jika ingin gunakan URL online -->
-        <!-- <img src="https://yourdomain.com/logo-man-cafe.png" alt="MAN CAFE Logo"> -->
-    </div>
-    <span>MAN CAFE</span>
-</a>
-                    
+                    <div class="logo-icon">
+                        <img src="gambar/logo.jpeg" alt="MAN CAFE Logo" 
+                             style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    <span>MAN CAFE</span>
                 </a>
                 <ul class="nav-links" id="navLinks">
                     <li><a href="#home" class="active">Beranda</a></li>
@@ -2004,6 +2042,37 @@
                     </div>
                 </div>
                 
+                <!-- Bagian WhatsApp untuk upload bukti transfer -->
+                <div class="whatsapp-proof-info">
+                    <h4><i class="fab fa-whatsapp"></i> Upload Bukti Transfer via WhatsApp</h4>
+                    
+                    <div class="whatsapp-instructions">
+                        <ol>
+                            <li>Lakukan transfer sesuai jumlah di atas</li>
+                            <li>Ambil screenshot bukti transfer</li>
+                            <li>Kirim screenshot ke WhatsApp kami:</li>
+                        </ol>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <a href="https://wa.me/6283832184173?text=Halo%20MAN%20CAFE%2C%20saya%20sudah%20transfer%20untuk%20pesanan%20" 
+                               id="whatsapp-link"
+                               target="_blank" 
+                               class="btn-primary" 
+                               style="background: #25D366; color: white; padding: 0.8rem 1.5rem;">
+                                <i class="fab fa-whatsapp"></i> Kirim Bukti via WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="whatsapp-proof-note">
+                        <p style="margin: 0; font-size: 0.85rem;">
+                            <i class="fas fa-info-circle"></i> <strong>Catatan:</strong><br>
+                            1. Sebutkan nama dan nomor pesanan saat mengirim bukti<br>
+                            2. Admin akan memverifikasi bukti transfer Anda<br>
+                            3. Status pembayaran akan diperbarui setelah diverifikasi
+                        </p>
+                    </div>
+                </div>
+                
                 <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #3b82f6;">
                     <h4 style="margin-top: 0; color: #1e40af;"><i class="fas fa-calendar-alt"></i> Info Reservasi Meja</h4>
                     <p style="margin: 0.5rem 0; font-size: 0.9rem;">
@@ -2054,29 +2123,22 @@
                 console.log('🚀 Initializing Customer System...');
                 
                 try {
-                    // Cek koneksi Supabase
                     this.isOnline = await this.checkSupabaseConnection();
                     console.log(this.isOnline ? '✅ Connected to Supabase' : '⚠️ Running in offline mode');
                     
-                    // Load menus
                     await this.loadMenus();
-                    
-                    // Load orders untuk user ini
                     await this.loadCustomerOrders();
                     
-                    // Setup realtime updates jika online
                     if (this.isOnline) {
                         this.setupRealtimeUpdates();
                     }
                     
-                    // Setup auto refresh
                     this.startAutoRefresh();
                     
                     console.log('✅ Customer System initialized');
                     
                 } catch (error) {
                     console.error('❌ Error in init:', error);
-                    // Tetap lanjutkan dengan mode offline
                     await this.loadMenus();
                     await this.loadCustomerOrders();
                 }
@@ -2103,7 +2165,6 @@
             // ==================== REALTIME UPDATES ====================
             setupRealtimeUpdates() {
                 try {
-                    // Subscribe to orders updates
                     this.realtimeSubscription = supabaseClient
                         .channel('customer-orders')
                         .on('postgres_changes', 
@@ -2116,15 +2177,10 @@
                             }, 
                             async (payload) => {
                                 console.log('🔄 Realtime update received:', payload);
-                                
-                                // Refresh orders
                                 await this.loadCustomerOrders();
-                                
-                                // Update UI
                                 updateOrdersDisplay();
                                 updateOrdersCount();
                                 
-                                // Show notification for new updates
                                 if (payload.eventType === 'UPDATE') {
                                     const order = window.customerOrders?.find(o => 
                                         o.id === payload.new.id || 
@@ -2149,37 +2205,16 @@
                             { 
                                 event: '*', 
                                 schema: 'public', 
-                                table: 'reservations'
+                                table: 'payment_proofs'
                             }, 
                             async (payload) => {
-                                console.log('🔄 Realtime reservation update:', payload);
-                                // Refresh reservation data jika modal reservasi terbuka
-                                if (document.getElementById('reservationModal').style.display === 'flex') {
-                                    const date = document.getElementById('reservationDate')?.value;
-                                    if (date) {
-                                        await loadTablesForDate(date);
-                                    }
-                                }
-                                // Refresh orders display
+                                console.log('🔄 Realtime payment_proofs update:', payload);
                                 await this.loadCustomerOrders();
                                 updateOrdersDisplay();
-                            }
-                        )
-                        .on('postgres_changes', 
-                            { 
-                                event: '*', 
-                                schema: 'public', 
-                                table: 'menu_items'
-                            }, 
-                            async (payload) => {
-                                console.log('🔄 Realtime menu update:', payload);
-                                // Refresh menu data jika ada perubahan stok
-                                if (payload.eventType === 'UPDATE') {
-                                    // Update stok lokal
-                                    await this.loadMenus();
-                                    // Update tampilan menu
-                                    renderMenus(window.currentMenus);
-                                    showToast('Stok menu diperbarui', 'info');
+                                updateOrdersCount();
+                                
+                                if (payload.eventType === 'INSERT') {
+                                    showToast('Status pembayaran diperbarui!', 'info');
                                 }
                             }
                         )
@@ -2200,7 +2235,6 @@
                     let menus = [];
                     
                     if (this.isOnline) {
-                        // Load dari Supabase
                         const { data, error } = await supabaseClient
                             .from('menu_items')
                             .select('*')
@@ -2218,18 +2252,15 @@
                             menus = this.getDefaultMenus();
                         }
                     } else {
-                        // Load dari localStorage
                         menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
                         if (menus.length === 0) {
                             menus = this.getDefaultMenus();
                         }
                     }
                     
-                    // Simpan ke localStorage untuk offline use
                     localStorage.setItem('cafe_menus', JSON.stringify(menus));
                     window.currentMenus = menus;
                     
-                    // Render menus
                     renderMenus(menus);
                     
                     return menus;
@@ -2327,7 +2358,6 @@
                     const orderNumber = 'ORD-' + Date.now().toString().slice(-8);
                     
                     if (this.isOnline) {
-                        // Simpan ke Supabase
                         const { data, error } = await supabaseClient
                             .from('orders')
                             .insert([{
@@ -2339,7 +2369,7 @@
                                 total_amount: orderData.total,
                                 status: 'pending',
                                 payment_method: 'qris',
-                                payment_status: 'pending',
+                                payment_status: 'waiting_payment',
                                 admin_seen: false,
                                 created_at: new Date().toISOString()
                             }])
@@ -2350,7 +2380,6 @@
                         
                         supabaseOrderId = data.id;
                         
-                        // Simpan order items
                         const orderItems = orderData.items.map(item => ({
                             order_id: data.id,
                             menu_item_id: item.id,
@@ -2364,11 +2393,9 @@
                             .from('order_items')
                             .insert(orderItems);
                         
-                        // ==================== PERBAIKAN: UPDATE STOK SETELAH CHECKOUT ====================
                         console.log('🔄 Updating stock for order items...');
                         await this.updateStockAfterCheckout(orderData.items);
                         
-                        // Buat notifikasi untuk admin
                         await supabaseClient
                             .from('admin_notifications')
                             .insert([{
@@ -2389,7 +2416,6 @@
                         console.log('✅ Order saved to Supabase');
                     }
                     
-                    // Simpan ke localStorage juga
                     const order = {
                         id: supabaseOrderId || Date.now(),
                         orderNumber: orderNumber,
@@ -2399,22 +2425,20 @@
                         total: orderData.total,
                         status: 'pending',
                         paymentMethod: 'qris',
-                        paymentStatus: 'pending',
+                        paymentStatus: 'waiting_payment',
                         createdAt: new Date().toISOString(),
                         supabase_id: supabaseOrderId,
-                        reservation: null
+                        reservation: null,
+                        paymentProof: null
                     };
                     
-                    // Simpan phone untuk sync
                     this.customerPhone = orderData.customer.phone;
                     localStorage.setItem('customer_phone', this.customerPhone);
                     
-                    // Simpan order ke localStorage
                     const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
                     customerOrders.unshift(order);
                     localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
                     
-                    // Update customer orders global
                     window.customerOrders = customerOrders;
                     
                     console.log('✅ Order created:', orderNumber);
@@ -2423,7 +2447,6 @@
                 } catch (error) {
                     console.error('❌ Error creating order:', error);
                     
-                    // Fallback: save locally only
                     const orderNumber = 'ORD-OFFLINE-' + Date.now().toString().slice(-8);
                     const order = {
                         id: Date.now(),
@@ -2434,21 +2457,19 @@
                         total: orderData.total,
                         status: 'pending',
                         paymentMethod: 'qris',
-                        paymentStatus: 'pending',
+                        paymentStatus: 'waiting_payment',
                         createdAt: new Date().toISOString(),
                         supabase_id: null,
-                        reservation: null
+                        reservation: null,
+                        paymentProof: null
                     };
                     
-                    // Update stok lokal untuk mode offline
                     this.updateLocalStock(orderData.items);
                     
-                    // Simpan ke localStorage
                     const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
                     customerOrders.unshift(order);
                     localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
                     
-                    // Update customer orders global
                     window.customerOrders = customerOrders;
                     
                     console.log('✅ Order saved locally (offline):', orderNumber);
@@ -2456,13 +2477,11 @@
                 }
             }
 
-            // ==================== PERBAIKAN: FUNGSI UPDATE STOK SETELAH CHECKOUT ====================
             async updateStockAfterCheckout(items) {
                 try {
                     console.log('📦 Updating stock for items:', items);
                     
                     for (const item of items) {
-                        // Cari menu di database
                         const { data: menu, error: menuError } = await supabaseClient
                             .from('menu_items')
                             .select('*')
@@ -2476,11 +2495,9 @@
                         
                         let newStock = menu.stock - item.quantity;
                         
-                        // Jika ada daily stock, update juga
                         if (menu.is_daily_stock && menu.current_daily_stock !== null) {
                             const newDailyStock = Math.max(0, menu.current_daily_stock - item.quantity);
                             
-                            // Update kedua stok
                             const { error: updateError } = await supabaseClient
                                 .from('menu_items')
                                 .update({ 
@@ -2497,7 +2514,6 @@
                                     daily stock from ${menu.current_daily_stock} to ${newDailyStock}`);
                             }
                         } else {
-                            // Update hanya stok reguler
                             const { error: updateError } = await supabaseClient
                                 .from('menu_items')
                                 .update({ stock: newStock })
@@ -2510,11 +2526,9 @@
                             }
                         }
                         
-                        // Update juga di localStorage
                         this.updateLocalMenuStock(item.id, item.quantity);
                     }
                     
-                    // Refresh menus untuk update UI
                     await this.loadMenus();
                     
                 } catch (error) {
@@ -2533,7 +2547,6 @@
                         let newStock = menus[menuIndex].stock - item.quantity;
                         if (newStock < 0) newStock = 0;
                         
-                        // Update daily stock jika ada
                         if (menus[menuIndex].isDailyStock && menus[menuIndex].currentDailyStock !== null) {
                             let newDailyStock = menus[menuIndex].currentDailyStock - item.quantity;
                             if (newDailyStock < 0) newDailyStock = 0;
@@ -2567,41 +2580,11 @@
                 }
             }
 
-            async updateDailyStock(menuId, quantity) {
-                try {
-                    const { data: menu, error: menuError } = await supabaseClient
-                        .from('menu_items')
-                        .select('current_daily_stock')
-                        .eq('id', menuId)
-                        .single();
-                    
-                    if (menuError) throw menuError;
-                    
-                    const newStock = Math.max(0, (menu.current_daily_stock || 0) - quantity);
-                    
-                    const { error } = await supabaseClient
-                        .from('menu_items')
-                        .update({ current_daily_stock: newStock })
-                        .eq('id', menuId);
-                    
-                    if (error) throw error;
-                    
-                    console.log(`✅ Updated daily stock for menu ${menuId}: ${newStock}`);
-                    
-                    // Update local storage juga
-                    this.updateLocalMenuStock(menuId, quantity);
-                    
-                } catch (error) {
-                    console.error('❌ Error updating daily stock:', error);
-                }
-            }
-
             async loadCustomerOrders() {
                 try {
                     console.log('📥 Loading customer orders...');
                     
                     if (!this.customerPhone) {
-                        // Load dari localStorage saja
                         const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
                         window.customerOrders = orders;
                         console.log(`📦 Loaded ${orders.length} orders from localStorage`);
@@ -2614,7 +2597,6 @@
                         return orders;
                     }
                     
-                    // Load dari Supabase berdasarkan phone
                     const { data: orders, error: ordersError } = await supabaseClient
                         .from('orders')
                         .select('*')
@@ -2629,35 +2611,47 @@
                     }
                     
                     if (orders && orders.length > 0) {
-                        // Load order items untuk setiap order
-                        const ordersWithItems = await Promise.all(
+                        const ordersWithDetails = await Promise.all(
                             orders.map(async (order) => {
-                                const { data: items, error: itemsError } = await supabaseClient
-                                    .from('order_items')
-                                    .select('*')
-                                    .eq('order_id', order.id);
-                                
-                                if (itemsError) {
-                                    console.error(`Error loading items for order ${order.id}:`, itemsError);
-                                    return this.formatOrderFromSupabase(order, []);
+                                try {
+                                    const { data: items, error: itemsError } = await supabaseClient
+                                        .from('order_items')
+                                        .select('*')
+                                        .eq('order_id', order.id);
+                                    
+                                    const { data: reservation, error: reservationError } = await supabaseClient
+                                        .from('reservations')
+                                        .select('*')
+                                        .eq('order_id', order.id)
+                                        .single();
+                                    
+                                    const { data: paymentProof, error: proofError } = await supabaseClient
+                                        .from('payment_proofs')
+                                        .select('*')
+                                        .eq('order_id', order.id)
+                                        .order('created_at', { ascending: false })
+                                        .limit(1)
+                                        .maybeSingle();
+                                    
+                                    const formattedOrder = await this.formatOrderFromSupabase(
+                                        order, 
+                                        items || [], 
+                                        reservation,
+                                        paymentProof
+                                    );
+                                    
+                                    return formattedOrder;
+                                } catch (error) {
+                                    console.error(`Error loading details for order ${order.id}:`, error);
+                                    return this.formatOrderFromSupabase(order, [], null, null);
                                 }
-                                
-                                // Load reservation jika ada
-                                const { data: reservation, error: reservationError } = await supabaseClient
-                                    .from('reservations')
-                                    .select('*')
-                                    .eq('order_id', order.id)
-                                    .single();
-                                
-                                const formattedOrder = this.formatOrderFromSupabase(order, items || [], reservation);
-                                return formattedOrder;
                             })
                         );
                         
-                        localStorage.setItem('customer_orders', JSON.stringify(ordersWithItems));
-                        window.customerOrders = ordersWithItems;
-                        console.log(`✅ Loaded ${ordersWithItems.length} orders from Supabase`);
-                        return ordersWithItems;
+                        localStorage.setItem('customer_orders', JSON.stringify(ordersWithDetails));
+                        window.customerOrders = ordersWithDetails;
+                        console.log(`✅ Loaded ${ordersWithDetails.length} orders with details`);
+                        return ordersWithDetails;
                     } else {
                         const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
                         window.customerOrders = orders;
@@ -2672,36 +2666,72 @@
                 }
             }
 
-            formatOrderFromSupabase(order, items = [], reservation = null) {
-                return {
-                    id: order.id,
-                    orderNumber: order.order_number,
-                    customer: {
-                        name: order.customer_name,
-                        phone: order.customer_phone,
-                        address: order.customer_address
-                    },
-                    orderType: order.order_type,
-                    items: items.map(item => ({
-                        id: item.menu_item_id,
-                        name: item.menu_item_name,
-                        price: item.price,
-                        quantity: item.quantity
-                    })),
-                    total: order.total_amount,
-                    status: order.status,
-                    paymentMethod: order.payment_method,
-                    paymentStatus: order.payment_status,
-                    createdAt: order.created_at,
-                    supabase_id: order.id,
-                    reservation: reservation ? {
-                        id: reservation.id,
-                        tableNumber: reservation.table_number,
-                        date: reservation.reservation_date,
-                        time: reservation.reservation_time,
-                        status: reservation.status
-                    } : null
-                };
+            async formatOrderFromSupabase(order, items = [], reservation = null, paymentProof = null) {
+                try {
+                    return {
+                        id: order.id,
+                        orderNumber: order.order_number,
+                        customer: {
+                            name: order.customer_name,
+                            phone: order.customer_phone,
+                            address: order.customer_address
+                        },
+                        orderType: order.order_type,
+                        items: items.map(item => ({
+                            id: item.menu_item_id,
+                            name: item.menu_item_name,
+                            price: item.price,
+                            quantity: item.quantity
+                        })),
+                        total: order.total_amount,
+                        status: order.status,
+                        paymentMethod: order.payment_method || 'qris',
+                        paymentStatus: paymentProof ? paymentProof.status : order.payment_status,
+                        createdAt: order.created_at,
+                        supabase_id: order.id,
+                        reservation: reservation ? {
+                            id: reservation.id,
+                            tableNumber: reservation.table_number,
+                            date: reservation.reservation_date,
+                            time: reservation.reservation_time,
+                            status: reservation.status
+                        } : null,
+                        paymentProof: paymentProof ? {
+                            id: paymentProof.id,
+                            whatsapp_message: paymentProof.whatsapp_message,
+                            whatsapp_image_url: paymentProof.whatsapp_image_url,
+                            status: paymentProof.status,
+                            verified_at: paymentProof.verified_at,
+                            created_at: paymentProof.created_at
+                        } : null
+                    };
+                } catch (error) {
+                    console.error('Error formatting order:', error);
+                    return {
+                        id: order.id,
+                        orderNumber: order.order_number,
+                        customer: {
+                            name: order.customer_name,
+                            phone: order.customer_phone,
+                            address: order.customer_address
+                        },
+                        orderType: order.order_type,
+                        items: items.map(item => ({
+                            id: item.menu_item_id,
+                            name: item.menu_item_name,
+                            price: item.price,
+                            quantity: item.quantity
+                        })),
+                        total: order.total_amount,
+                        status: order.status,
+                        paymentMethod: order.payment_method || 'qris',
+                        paymentStatus: order.payment_status || 'waiting_payment',
+                        createdAt: order.created_at,
+                        supabase_id: order.id,
+                        reservation: reservation,
+                        paymentProof: null
+                    };
+                }
             }
 
             // ==================== TABLE RESERVATION FUNCTIONS ====================
@@ -2893,13 +2923,11 @@
                 const menu = window.currentMenus.find(item => item.id == menuId);
                 if (!menu) return false;
                 
-                // Cek apakah menu aktif
                 if (!menu.isActive) {
                     showToast('Menu tidak tersedia', 'error');
                     return false;
                 }
                 
-                // Cek stok - PERBAIKAN: validasi stok
                 let availableStock = menu.stock;
                 if (menu.isDailyStock) {
                     availableStock = menu.currentDailyStock || 0;
@@ -2910,10 +2938,8 @@
                     return false;
                 }
                 
-                // Cek apakah item sudah ada di keranjang
                 const existingItem = this.cart.find(item => item.id == menuId);
                 
-                // Cek stok untuk item yang sudah ada di keranjang
                 if (existingItem) {
                     const newQuantity = existingItem.quantity + 1;
                     if (newQuantity > availableStock) {
@@ -2922,7 +2948,6 @@
                     }
                     existingItem.quantity = newQuantity;
                 } else {
-                    // Cek stok untuk item baru
                     if (1 > availableStock) {
                         showToast(`Stok tersedia: ${availableStock}`, 'error');
                         return false;
@@ -2951,7 +2976,6 @@
                     return;
                 }
                 
-                // Cek stok sebelum update
                 const menu = window.currentMenus.find(item => item.id == itemId);
                 if (menu) {
                     let availableStock = menu.stock;
@@ -3035,20 +3059,17 @@
         function renderMenus(menus) {
             currentMenus = menus;
             
-            // Render featured menu
             const featuredGrid = document.getElementById('featured-menu');
             if (featuredGrid) {
                 const regularMenus = menus.filter(menu => !menu.isPromo);
                 featuredGrid.innerHTML = regularMenus.slice(0, 4).map(menu => createMenuCard(menu)).join('');
             }
             
-            // Render all menu
             const allMenuGrid = document.getElementById('all-menu-items');
             if (allMenuGrid) {
                 allMenuGrid.innerHTML = menus.map(menu => createMenuCard(menu, true)).join('');
             }
             
-            // Render promo menu
             const promoGrid = document.getElementById('promo-menu');
             if (promoGrid) {
                 const promoMenus = menus.filter(menu => menu.isPromo);
@@ -3102,13 +3123,11 @@
                 isActive: item.isActive !== false
             };
 
-            // Hitung stok yang tersedia
             let availableStock = safeItem.stock;
             if (safeItem.isDailyStock) {
                 availableStock = safeItem.currentDailyStock || 0;
             }
 
-            // Tentukan status stok
             const isOutOfStock = availableStock <= 0 || !safeItem.isActive;
 
             return `
@@ -3116,7 +3135,6 @@
                     ${safeItem.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
                     ${showCategory ? `<span class="category-badge">${getCategoryText(safeItem.category)}</span>` : ''}
                     
-                    <!-- BADGE STOK -->
                     <div class="stock-badge ${isOutOfStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
                         <i class="fas fa-box${availableStock <= 0 ? '-open' : ''}"></i>
                         ${safeItem.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
@@ -3315,6 +3333,14 @@
                     'cancelled': 'Dibatalkan'
                 };
                 
+                const paymentStatusText = {
+                    'waiting_payment': 'Menunggu Pembayaran',
+                    'waiting_verification': 'Menunggu Verifikasi',
+                    'verified': 'Terverifikasi',
+                    'paid': 'Lunas',
+                    'failed': 'Gagal'
+                };
+                
                 const statusClass = {
                     'pending': 'status-pending',
                     'confirmed': 'status-confirmed',
@@ -3327,6 +3353,11 @@
                                  !order.reservation;
                 
                 const hasReservation = order.reservation !== null;
+                
+                const canUploadProof = order.paymentStatus === 'waiting_payment' && 
+                                      order.status === 'pending';
+                
+                const hasPaymentProof = order.paymentProof !== null;
                 
                 return `
                     <div class="order-card">
@@ -3357,15 +3388,45 @@
                             </div>
                             <div class="detail-item">
                                 <strong>Status Pembayaran:</strong> 
-                                <span class="${order.paymentStatus === 'paid' ? 'status-confirmed' : 'status-pending'}" 
+                                <span class="${order.paymentStatus === 'verified' || order.paymentStatus === 'paid' ? 'status-confirmed' : 
+                                              order.paymentStatus === 'waiting_verification' ? 'status-pending' : 
+                                              'status-pending'}" 
                                       style="padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
-                                    ${order.paymentStatus === 'paid' ? 'Lunas' : 'Menunggu'}
+                                    ${paymentStatusText[order.paymentStatus] || 'Menunggu'}
                                 </span>
                             </div>
                             <div class="detail-item">
                                 <strong>Metode:</strong> QRIS
                             </div>
                         </div>
+                        ${hasPaymentProof ? `
+                            <div style="background: ${order.paymentProof.status === 'verified' ? '#e7f4e4' : 
+                                                      order.paymentProof.status === 'waiting_verification' ? '#fff3cd' : 
+                                                      '#f8d7da'}; 
+                                         padding: 0.8rem; border-radius: 6px; margin: 0.8rem 0; 
+                                         border-left: 4px solid ${order.paymentProof.status === 'verified' ? '#28a745' : 
+                                                                 order.paymentProof.status === 'waiting_verification' ? '#ffc107' : 
+                                                                 '#dc3545'};">
+                                <p style="margin: 0; font-size: 0.9rem; 
+                                          color: ${order.paymentProof.status === 'verified' ? '#155724' : 
+                                                  order.paymentProof.status === 'waiting_verification' ? '#856404' : 
+                                                  '#721c24'};">
+                                    <i class="fas ${order.paymentProof.status === 'verified' ? 'fa-check-circle' : 
+                                                     order.paymentProof.status === 'waiting_verification' ? 'fa-clock' : 
+                                                     'fa-exclamation-circle'}"></i> 
+                                    <strong>Bukti transfer dikirim via WhatsApp</strong><br>
+                                    <small>
+                                        Status: ${order.paymentProof.status === 'verified' ? 'Terverifikasi' : 
+                                                 order.paymentProof.status === 'waiting_verification' ? 'Menunggu verifikasi admin' : 
+                                                 'Ditolak'} <br>
+                                        ${order.paymentProof.verified_at ? 
+                                            `Diverifikasi: ${new Date(order.paymentProof.verified_at).toLocaleDateString('id-ID')}` : 
+                                            order.paymentProof.status === 'waiting_verification' ? 
+                                            'Admin akan memverifikasi bukti transfer Anda' : ''}
+                                    </small>
+                                </p>
+                            </div>
+                        ` : ''}
                         ${hasReservation ? `
                             <div class="order-details">
                                 <div class="detail-item">
@@ -3398,15 +3459,22 @@
                                 Total: Rp ${order.total.toLocaleString()}
                             </div>
                         </div>
-                        ${canReserve ? `
-                            <div style="margin-top: 1rem; text-align: right;">
+                        <div style="display: flex; gap: 0.8rem; margin-top: 1rem; flex-wrap: wrap;">
+                            ${!hasPaymentProof && canUploadProof ? `
+                                <button class="btn-primary" onclick="openWhatsAppForPayment('${order.orderNumber}', ${order.total})" style="padding: 0.6rem 1.2rem; background: #25D366;">
+                                    <i class="fab fa-whatsapp"></i> Kirim Bukti via WhatsApp
+                                </button>
+                            ` : ''}
+                            ${canReserve ? `
                                 <button class="btn-primary" onclick="openReservationModal('${order.orderNumber}')" style="padding: 0.6rem 1.2rem;">
                                     <i class="fas fa-calendar-plus"></i> Reservasi Meja
                                 </button>
-                                <p style="font-size: 0.8rem; color: #666; margin-top: 0.5rem; text-align: left;">
-                                    <i class="fas fa-info-circle"></i> Reservasi meja hanya untuk pesanan "Makan di Tempat" yang sudah dikonfirmasi
-                                </p>
-                            </div>
+                            ` : ''}
+                        </div>
+                        ${!hasPaymentProof && canUploadProof ? `
+                            <p style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;">
+                                <i class="fas fa-info-circle"></i> Kirim bukti transfer QRIS via WhatsApp untuk mempercepat proses verifikasi pesanan Anda.
+                            </p>
                         ` : ''}
                     </div>
                 `;
@@ -3459,7 +3527,6 @@
                 return;
             }
             
-            // PERBAIKAN: Validasi stok sebelum checkout
             const hasEnoughStock = validateStockBeforeCheckout();
             if (!hasEnoughStock) {
                 showToast('Stok tidak mencukupi untuk beberapa item. Silakan perbarui keranjang.', 'error');
@@ -3486,7 +3553,6 @@
             </div>`;
             summary.innerHTML = summaryHTML;
             
-            // Update QRIS amount
             if (qrisAmount) {
                 qrisAmount.textContent = `Rp ${total.toLocaleString()}`;
             }
@@ -3499,7 +3565,6 @@
             modal.style.display = 'flex';
         }
 
-        // PERBAIKAN: Fungsi validasi stok sebelum checkout
         function validateStockBeforeCheckout() {
             if (!customerSystem || !window.currentMenus) return false;
             
@@ -3515,20 +3580,17 @@
                     continue;
                 }
                 
-                // Cek apakah menu aktif
                 if (!menuItem.isActive) {
                     errorMessages.push(`Menu "${menuItem.name}" tidak tersedia`);
                     validationPassed = false;
                     continue;
                 }
                 
-                // Hitung stok yang tersedia
                 let availableStock = menuItem.stock;
                 if (menuItem.isDailyStock && menuItem.currentDailyStock !== null) {
                     availableStock = menuItem.currentDailyStock || 0;
                 }
                 
-                // Cek stok
                 if (availableStock <= 0) {
                     errorMessages.push(`Menu "${menuItem.name}" stok habis`);
                     validationPassed = false;
@@ -3585,7 +3647,6 @@
                     return;
                 }
                 
-                // Validasi stok lagi sebelum checkout
                 const hasEnoughStock = validateStockBeforeCheckout();
                 if (!hasEnoughStock) {
                     showToast('Stok tidak mencukupi untuk beberapa item. Silakan perbarui keranjang.', 'error');
@@ -3610,21 +3671,16 @@
                     total: customerSystem.getCartTotal()
                 };
                 
-                // Create order
                 const order = await customerSystem.createOrder(orderData);
                 
-                // Clear cart
                 customerSystem.clearCart();
                 updateCartDisplay();
                 updateCartCount();
                 
-                // Close checkout modal
                 closeModal('checkoutModal');
                 
-                // Show success modal with QRIS
                 showTransferSuccessModal(order);
                 
-                // Refresh orders display
                 await customerSystem.loadCustomerOrders();
                 updateOrdersDisplay();
                 updateOrdersCount();
@@ -3643,15 +3699,20 @@
         function showTransferSuccessModal(order) {
             const modal = document.getElementById('transferSuccessModal');
             const successQrisAmount = document.getElementById('success-qris-amount');
+            const whatsappLink = document.getElementById('whatsapp-link');
             
             if (successQrisAmount) {
                 successQrisAmount.textContent = `Rp ${order.total.toLocaleString()}`;
             }
             
-            // Refresh gambar QRIS
+            if (whatsappLink) {
+                const whatsappMessage = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${order.orderNumber} sebesar Rp ${order.total.toLocaleString()}. Nama: ${order.customer.name}, No. HP: ${order.customer.phone}`;
+                whatsappLink.href = `https://wa.me/6283832184173?text=${encodeURIComponent(whatsappMessage)}`;
+            }
+            
             const qrisImage = modal.querySelector('.qris-image img');
             if (qrisImage) {
-                qrisImage.src = qrisImage.src; // Force reload
+                qrisImage.src = qrisImage.src;
             }
             
             const reservationInfo = modal.querySelector('.f0f9ff');
@@ -3662,6 +3723,50 @@
             }
             
             modal.style.display = 'flex';
+        }
+
+        // ==================== FUNGSI WHATSAPP UNTUK BUKTI TRANSFER ====================
+        function openWhatsAppForPayment(orderNumber, totalAmount) {
+            const whatsappMessage = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${orderNumber} sebesar Rp ${totalAmount.toLocaleString()}. Berikut bukti transfer saya:`;
+            const whatsappUrl = `https://wa.me/6283832184173?text=${encodeURIComponent(whatsappMessage)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            showToast('Buka WhatsApp dan kirim bukti transfer', 'info');
+            
+            // Update status payment proof di database jika online
+            if (customerSystem && customerSystem.isOnline) {
+                setTimeout(async () => {
+                    try {
+                        const { data: order } = await supabaseClient
+                            .from('orders')
+                            .select('id')
+                            .eq('order_number', orderNumber)
+                            .single();
+                        
+                        if (order) {
+                            await supabaseClient
+                                .from('payment_proofs')
+                                .insert([{
+                                    order_id: order.id,
+                                    whatsapp_message: whatsappMessage,
+                                    status: 'waiting_verification',
+                                    created_at: new Date().toISOString()
+                                }]);
+                            
+                            await supabaseClient
+                                .from('orders')
+                                .update({ payment_status: 'waiting_verification' })
+                                .eq('id', order.id);
+                            
+                            await customerSystem.loadCustomerOrders();
+                            updateOrdersDisplay();
+                            showToast('Status pembayaran diperbarui. Admin akan memverifikasi bukti transfer Anda.', 'success');
+                        }
+                    } catch (error) {
+                        console.error('Error updating payment proof status:', error);
+                    }
+                }, 1000);
+            }
         }
 
         // ==================== RESERVATION FUNCTIONS ====================
@@ -3861,7 +3966,7 @@
                 
             } catch (error) {
                 console.error('Error in selectTable:', error);
-                showToast('Gagal memilih meja', 'error');
+                showToast('Gag memilih meja', 'error');
             }
         }
 
@@ -4226,6 +4331,16 @@
                         showToast(`Anda memiliki ${pendingOrders.length} pesanan menunggu konfirmasi`, 'info');
                     }
                     
+                    const waitingPaymentOrders = window.customerOrders?.filter(order => 
+                        order.paymentStatus === 'waiting_payment'
+                    ) || [];
+                    
+                    if (waitingPaymentOrders.length > 0) {
+                        setTimeout(() => {
+                            showToast(`Anda memiliki ${waitingPaymentOrders.length} pesanan menunggu pembayaran. Kirim bukti transfer via WhatsApp.`, 'info');
+                        }, 2000);
+                    }
+                    
                     const confirmedDineInOrders = window.customerOrders?.filter(order => 
                         order.status === 'confirmed' && 
                         order.orderType === 'dine_in' &&
@@ -4235,7 +4350,7 @@
                     if (confirmedDineInOrders.length > 0) {
                         setTimeout(() => {
                             showToast(`Anda dapat reservasi meja untuk ${confirmedDineInOrders.length} pesanan`, 'info');
-                        }, 2000);
+                        }, 4000);
                     }
                 }, 2000);
                 

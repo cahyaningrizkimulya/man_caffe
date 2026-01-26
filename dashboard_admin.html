@@ -47,6 +47,27 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             animation: fadeIn 0.5s ease;
         }
+        /* Tambahkan di bagian CSS */
+.whatsapp-modal {
+    z-index: 10002 !important;
+}
+
+#whatsappMessageModal {
+    z-index: 10003 !important;
+}
+
+#reservationDetailModal {
+    z-index: 10001 !important;
+}
+
+#orderDetailModal {
+    z-index: 10001 !important;
+}
+
+/* Pastikan modal-backdrop juga memiliki z-index yang benar */
+.modal {
+    z-index: 10000;
+}
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -54,45 +75,46 @@
         }
 
         /* ==================== LOGIN LOGO STYLES ==================== */
-.login-logo {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
 
-.custom-logo {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border-radius: 15px;
-    background: white;
-    padding: 10px;
-    box-shadow: 0 5px 20px rgba(139, 69, 19, 0.2);
-    border: 3px solid var(--primary-color);
-}
+        .custom-logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 15px;
+            background: white;
+            padding: 10px;
+            box-shadow: 0 5px 20px rgba(139, 69, 19, 0.2);
+            border: 3px solid var(--primary-color);
+        }
 
-.custom-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
+        .custom-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
-.login-logo h1 {
-    font-size: 2.2rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-}
+        .login-logo h1 {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
 
-.login-logo span {
-    color: var(--dark-color);
-    font-size: 0.9rem;
-    opacity: 0.8;
-}
+        .login-logo span {
+            color: var(--dark-color);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -1129,6 +1151,71 @@
             margin-top: 1.5rem;
         }
 
+        /* WhatsApp Integration Styles */
+        .whatsapp-badge {
+            display: inline-block;
+            background: #25D366;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .whatsapp-info {
+            background: #e8f4f8;
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            border-left: 3px solid #25D366;
+        }
+
+        .whatsapp-info p {
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+
+        .whatsapp-button {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .whatsapp-button:hover {
+            background: #128C7E;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            color: #212529;
+        }
+
+        .status-rejected {
+            background: #f5c6cb;
+            color: #721c24;
+        }
+
+        .status-waiting_payment {
+            background: #ffeaa7;
+            color: #856404;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .login-box {
@@ -1185,6 +1272,222 @@
                 font-size: 2.5rem;
             }
         }
+
+        /* WhatsApp Modal Styles */
+        .whatsapp-modal .modal-content {
+            max-width: 600px;
+        }
+
+        .whatsapp-proof-container {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .whatsapp-proof-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 1rem;
+        }
+
+        .proof-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .proof-status {
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .proof-status.received {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .proof-status.waiting {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .proof-status.verified {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .customer-info-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .customer-info-box h4 {
+            margin-top: 0;
+            color: var(--dark-color);
+            font-size: 1rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #666;
+        }
+        /* ========== TOOLTIP STYLES ========== */
+/* Tooltip untuk tombol WhatsApp */
+.btn-warning[title] {
+    position: relative;
+    cursor: pointer;
+}
+
+.btn-warning[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease;
+}
+
+/* Tooltip untuk semua tombol dengan title */
+.btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease;
+}
+
+/* Untuk tombol di dalam action-buttons */
+.action-buttons .btn {
+    position: relative;
+}
+
+/* Tambahkan juga untuk tombol lainnya jika perlu */
+.btn-primary[title]:hover::after,
+.btn-success[title]:hover::after,
+.btn-danger[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease;
+}
+
+        .info-value {
+            text-align: right;
+            color: var(--dark-color);
+        }
+
+        .whatsapp-contact {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            border: 1px solid #ddd;
+        }
+
+        .whatsapp-contact a {
+            color: #25D366;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .whatsapp-contact a:hover {
+            text-decoration: underline;
+        }
+        .whatsapp-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.whatsapp-status-badge.verified {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.whatsapp-status-badge.received {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.whatsapp-status-badge.waiting {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Perbarui struktur tabel */
+.data-table th:nth-child(6) {
+    width: 120px;
+}
+
+.data-table th:nth-child(7) {
+    width: 200px;
+}
     </style>
 </head>
 <body>
@@ -1192,15 +1495,12 @@
     <div class="login-container" id="loginContainer">
         <div class="login-box">
            <div class="login-logo">
-    <!-- Ganti icon dengan gambar logo Anda -->
-    <div class="custom-logo">
-        <img src="gambar/logo.jpeg" alt="MAN CAFE Logo">
-        <!-- Atau jika ingin gunakan URL online -->
-        <!-- <img src="https://yourdomain.com/logo-man-cafe.png" alt="MAN CAFE Logo"> -->
-    </div>
-    <h1>MAN CAFE</h1>
-    <span>Admin Dashboard Login</span>
-</div>
+                <div class="custom-logo">
+                    <img src="gambar/logo.jpeg" alt="MAN CAFE Logo">
+                </div>
+                <h1>MAN CAFE</h1>
+                <span>Admin Dashboard Login</span>
+            </div>
             
             <div class="login-error" id="loginError">
                 <i class="fas fa-exclamation-circle"></i>
@@ -1232,17 +1532,16 @@
         <!-- Header -->
         <header class="admin-header">
            <a href="#" class="logo" onclick="showSection('dashboard')">
-    <!-- Ganti dengan logo Anda -->
-    <div class="logo-icon">
-        <img src="gambar/logo.jpeg" 
-             alt="MAN CAFE Admin Logo"
-             style="width: 45px; height: 45px; object-fit: contain; border-radius: 50%;">
-    </div>
-    <div class="logo-text">
-        <h1>MAN CAFE</h1>
-        <span>Admin Dashboard</span>
-    </div>
-</a>
+                <div class="logo-icon">
+                    <img src="gambar/logo.jpeg" 
+                         alt="MAN CAFE Admin Logo"
+                         style="width: 45px; height: 45px; object-fit: contain; border-radius: 50%;">
+                </div>
+                <div class="logo-text">
+                    <h1>MAN CAFE</h1>
+                    <span>Admin Dashboard</span>
+                </div>
+            </a>
             
             <div class="admin-controls">
                 <div class="notification-bell" onclick="showNotifications()">
@@ -1404,16 +1703,18 @@
                             </div>
                         </div>
                         <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>No. Order</th>
-                                    <th>Pelanggan</th>
-                                    <th>Total</th>
-                                    <th>Waktu Pesan</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
+                            // Di bagian header tabel pesanan baru, ubah menjadi:
+<thead>
+    <tr>
+        <th>No. Order</th>
+        <th>Pelanggan</th>
+        <th>Total</th>
+        <th>Waktu Pesan</th>
+        <th>Status Pesanan</th>
+        <th>Status WhatsApp</th>
+        <th>Aksi</th>
+    </tr>
+</thead>
                             <tbody id="newOrdersTable">
                                 <tr>
                                     <td colspan="6" style="text-align: center; padding: 2rem;">
@@ -1466,6 +1767,7 @@
                                 <select class="form-control" style="width: 150px;" onchange="filterAllOrders(this.value)">
                                     <option value="all">Semua Status</option>
                                     <option value="pending">Menunggu</option>
+                                    <option value="waiting_payment">Menunggu Pembayaran</option>
                                     <option value="confirmed">Dikonfirmasi</option>
                                     <option value="completed">Selesai</option>
                                     <option value="cancelled">Dibatalkan</option>
@@ -1910,6 +2212,80 @@
             </div>
         </div>
 
+        <!-- WhatsApp Transfer Proof Modal -->
+        <div id="whatsappProofModal" class="modal whatsapp-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fab fa-whatsapp" style="color: #25D366;"></i> Bukti Transfer via WhatsApp</h2>
+                    <button class="close-modal" onclick="closeModal('whatsappProofModal')">&times;</button>
+                </div>
+                <div id="whatsappProofContent">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="loading"></div>
+                        <p style="margin-top: 1rem;">Memuat informasi WhatsApp...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Message Modal -->
+        <div id="whatsappMessageModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <div class="modal-header">
+                    <h2><i class="fab fa-whatsapp" style="color: #25D366;"></i> Kirim Pesan WhatsApp</h2>
+                    <button class="close-modal" onclick="closeModal('whatsappMessageModal')">&times;</button>
+                </div>
+                <div id="whatsappMessageContent">
+                    <div class="form-group">
+                        <label for="whatsappPhone">Nomor WhatsApp Pelanggan</label>
+                        <input type="text" id="whatsappPhone" class="form-control" placeholder="Contoh: 6281234567890" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsappMessage">Pesan</label>
+                        <textarea id="whatsappMessage" class="form-control" rows="5" placeholder="Tulis pesan untuk pelanggan..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="sendWhatsAppMessage()" style="width: 100%;">
+                        <i class="fab fa-whatsapp"></i> Kirim ke WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm WhatsApp Modal -->
+        <div id="confirmWhatsAppModal" class="modal">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2><i class="fab fa-whatsapp" style="color: #25D366;"></i> Konfirmasi Bukti Transfer</h2>
+                    <button class="close-modal" onclick="closeModal('confirmWhatsAppModal')">&times;</button>
+                </div>
+                <div id="confirmWhatsAppContent">
+                    <div style="padding: 1rem;">
+                        <p>Apakah pelanggan sudah mengirimkan bukti transfer melalui WhatsApp?</p>
+                        <div style="margin: 1.5rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                            <p><strong>Petunjuk:</strong></p>
+                            <ol style="padding-left: 1.5rem; margin: 0.5rem 0;">
+                                <li>Periksa WhatsApp Admin</li>
+                                <li>Cari pesan dari nomor pelanggan</li>
+                                <li>Pastikan bukti transfer sudah diterima</li>
+                                <li>Verifikasi jumlah dan detail transfer</li>
+                            </ol>
+                        </div>
+                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                            <button class="btn btn-success" onclick="markProofReceived()" style="flex: 1;">
+                                <i class="fas fa-check"></i> Sudah Dikirim
+                            </button>
+                            <button class="btn btn-warning" onclick="remindCustomer()" style="flex: 1;">
+                                <i class="fas fa-bell"></i> Ingatkan Pelanggan
+                            </button>
+                            <button class="btn btn-danger" onclick="closeModal('confirmWhatsAppModal')" style="flex: 1;">
+                                <i class="fas fa-times"></i> Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="reservationDetailModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -2073,6 +2449,7 @@
         let currentImageBase64 = null;
         let currentReportData = [];
         let currentUser = null;
+        let currentOrderForWhatsApp = null;
 
         // ============================
         // LOGIN SYSTEM
@@ -2512,11 +2889,17 @@
                         customer: {
                             name: order.customer_name || 'Pelanggan',
                             phone: order.customer_phone || '',
-                            address: order.customer_address || ''
+                            address: order.customer_address || '',
+                            whatsapp: order.customer_whatsapp || order.customer_phone || ''
                         },
                         total: order.total_amount || 0,
                         status: order.status || 'pending',
                         paymentProof: order.payment_proof_url || '',
+                        paymentMethod: order.payment_method || 'whatsapp',
+                        paymentStatus: order.payment_status || 'pending',
+                        whatsappProofReceived: order.whatsapp_proof_received || false,
+                        whatsappProofVerified: order.whatsapp_proof_verified || false,
+                        whatsappProofNotes: order.whatsapp_proof_notes || '',
                         createdAt: order.created_at || new Date().toISOString(),
                         adminSeen: order.admin_seen || false,
                         items: order.items || [],
@@ -2559,6 +2942,7 @@
                         id: res.id,
                         name: res.customer_name || '',
                         phone: res.customer_phone || '',
+                        whatsapp: res.customer_whatsapp || res.customer_phone || '',
                         date: res.reservation_date || '',
                         time: res.reservation_time || '',
                         tableNumber: res.table_number || '',
@@ -2987,67 +3371,130 @@
         }
 
         function loadNewOrders() {
-            if (!adminSystem) return;
-            
-            try {
-                const newOrders = adminSystem.orders;
-                const table = document.getElementById('newOrdersTable');
-                
-                if (newOrders.length === 0) {
-                    table.innerHTML = `
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
-                                Tidak ada pesanan baru
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    table.innerHTML = newOrders.map(order => {
-                        const orderTime = new Date(order.createdAt);
-                        const formattedTime = orderTime.toLocaleTimeString('id-ID', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: false 
-                        });
-                        
-                        return `
-                        <tr>
-                            <td>${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}</td>
-                            <td>${order.customer?.name || 'Pelanggan'}</td>
-                            <td>Rp ${order.total?.toLocaleString() || '0'}</td>
-                            <td>${formattedTime}</td>
-                            <td>
-                                <span class="status-badge ${order.status === 'waiting_payment' ? 'status-pending' : 'status-pending'}">
-                                    ${order.status === 'waiting_payment' ? 'Menunggu Pembayaran' : 'Menunggu'}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')">
-                                        <i class="fas fa-check"></i> Konfirmasi
-                                    </button>
-                                    <button class="btn btn-primary btn-sm" onclick="viewOrderDetail('${order.id}')">
-                                        <i class="fas fa-eye"></i> Detail
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `}).join('');
+    if (!adminSystem) return;
+    
+    try {
+        const newOrders = adminSystem.orders;
+        const table = document.getElementById('newOrdersTable');
+        
+        if (newOrders.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                        Tidak ada pesanan baru
+                    </td>
+                </tr>
+            `;
+        } else {
+            table.innerHTML = newOrders.map(order => {
+                // Konversi waktu ke WIB (UTC+7)
+                let formattedTime;
+                try {
+                    const orderTime = new Date(order.createdAt);
+                    
+                    // Konversi ke WIB (UTC+7)
+                    const timeInWIB = new Date(orderTime.getTime() + (7 * 60 * 60 * 1000));
+                    
+                    // Format waktu menjadi HH:MM dengan 24 jam format
+                    formattedTime = timeInWIB.toLocaleTimeString('id-ID', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: false,
+                        timeZone: 'Asia/Jakarta'
+                    });
+                    
+                    // Fallback jika formatting gagal
+                    if (formattedTime === 'Invalid Date') {
+                        formattedTime = orderTime.getHours().toString().padStart(2, '0') + ':' + 
+                                       orderTime.getMinutes().toString().padStart(2, '0');
+                    }
+                } catch (error) {
+                    console.warn('Error formatting time:', error);
+                    formattedTime = '--:--';
                 }
                 
-                updateNotifications();
-            } catch (error) {
-                console.error('Error loading new orders:', error);
-                document.getElementById('newOrdersTable').innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
-                            Gagal memuat pesanan
-                        </td>
-                    </tr>
-                `;
-            }
+                // Tentukan status WhatsApp
+                let whatsappStatus = '';
+                let whatsappBadge = '';
+                let whatsappIcon = '';
+                
+                if (order.paymentMethod === 'whatsapp') {
+                    if (order.whatsappProofVerified) {
+                        whatsappStatus = 'Terverifikasi';
+                        whatsappBadge = 'verified';
+                        whatsappIcon = '✓';
+                    } else if (order.whatsappProofReceived) {
+                        whatsappStatus = 'Dikirim';
+                        whatsappBadge = 'received';
+                        whatsappIcon = '✓';
+                    } else {
+                        whatsappStatus = 'Menunggu';
+                        whatsappBadge = 'waiting';
+                        whatsappIcon = '⏳';
+                    }
+                }
+                
+                return `
+                <tr>
+                    <td>${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}</td>
+                    <td>${order.customer?.name || 'Pelanggan'}</td>
+                    <td>Rp ${order.total?.toLocaleString() || '0'}</td>
+                    <td>${formattedTime}</td>
+                    <td>
+                        <span class="status-badge ${order.status === 'waiting_payment' ? 'status-waiting_payment' : 'status-pending'}">
+                            ${order.status === 'waiting_payment' ? 'Menunggu Pembayaran' : 'Menunggu'}
+                        </span>
+                    </td>
+                    <td>
+                        ${order.paymentMethod === 'whatsapp' ? `
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <span class="whatsapp-status-badge ${whatsappBadge}">
+                                <i class="fab fa-whatsapp"></i> ${whatsappIcon} ${whatsappStatus}
+                            </span>
+                            ${!order.whatsappProofReceived ? `
+                            <small style="color: #ff9800; font-size: 0.8rem;">
+                                <i class="fas fa-clock"></i> Belum ada bukti
+                            </small>` : ''}
+                        </div>` : `
+                        <span style="color: #666; font-size: 0.9rem;">
+                            Transfer Bank
+                        </span>`}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-sm" onclick="viewOrderDetail('${order.id}')">
+                                <i class="fas fa-eye"></i> Detail
+                            </button>
+                           ${order.paymentMethod === 'whatsapp' ? `
+<button class="btn btn-warning btn-sm" 
+        onclick="quickCheckWhatsAppStatus('${order.id}')"
+        title="Buka WhatsApp pelanggan untuk cek bukti transfer">
+    <i class="fab fa-whatsapp"></i> Cek Bukti
+</button>` : ''}
+                            <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')">
+                                <i class="fas fa-check"></i> Konfirmasi
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">
+                                <i class="fas fa-times"></i> Tolak
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
         }
-
+        
+        updateNotifications();
+    } catch (error) {
+        console.error('Error loading new orders:', error);
+        document.getElementById('newOrdersTable').innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                    Gagal memuat pesanan
+                </td>
+            </tr>
+        `;
+    }
+}
         function loadReservations() {
             if (!adminSystem) return;
             
@@ -3077,10 +3524,13 @@
                                 </span>
                             </td>
                             <td>
-                                <div class="action-buttons">
+                                 <div class="action-buttons">
                                     ${res.status === 'pending' ? `
                                     <button class="btn btn-success btn-sm" onclick="confirmReservation('${res.id}')">
                                         <i class="fas fa-check"></i> Konfirmasi
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectReservation('${res.id}')">
+                                        <i class="fas fa-times"></i> Tolak
                                     </button>` : ''}
                                     <button class="btn btn-primary btn-sm" onclick="viewReservationDetail('${res.id}')">
                                         <i class="fas fa-eye"></i> Detail
@@ -3127,10 +3577,19 @@
                             year: 'numeric'
                         });
                         
+                        // Cek status pembayaran WhatsApp
+                        const whatsappStatus = order.paymentMethod === 'whatsapp' ? 
+                            (order.whatsappProofReceived ? 
+                                (order.whatsappProofVerified ? 
+                                    '<span class="whatsapp-badge">✓ WhatsApp</span>' : 
+                                    '<span class="whatsapp-badge" style="background: #ffc107;">✓ Dikirim</span>') : 
+                                '') : 
+                            '';
+                        
                         return `
                         <tr>
                             <td>${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}</td>
-                            <td>${order.customer?.name || 'Pelanggan'}</td>
+                            <td>${order.customer?.name || 'Pelanggan'} ${whatsappStatus}</td>
                             <td>Rp ${order.total?.toLocaleString() || '0'}</td>
                             <td>${formattedDate}</td>
                             <td>
@@ -3146,6 +3605,10 @@
                                     ${order.status === 'confirmed' ? `
                                     <button class="btn btn-success btn-sm" onclick="completeOrder('${order.id}')">
                                         <i class="fas fa-check-double"></i> Selesai
+                                    </button>` : ''}
+                                    ${order.paymentMethod === 'whatsapp' && order.whatsappProofReceived && !order.whatsappProofVerified ? `
+                                    <button class="btn btn-warning btn-sm" onclick="verifyWhatsAppProof('${order.id}')">
+                                        <i class="fab fa-whatsapp"></i> Verifikasi
                                     </button>` : ''}
                                 </div>
                             </td>
@@ -3350,9 +3813,12 @@
             const statusMap = {
                 'pending': 'Menunggu',
                 'waiting_payment': 'Menunggu Pembayaran',
+                'waiting_verification': 'Menunggu Verifikasi',
                 'confirmed': 'Dikonfirmasi',
                 'completed': 'Selesai',
-                'cancelled': 'Dibatalkan'
+                'cancelled': 'Dibatalkan',
+                'rejected': 'Ditolak',
+                'verified': 'Terverifikasi'
             };
             return statusMap[status] || status;
         }
@@ -4310,10 +4776,506 @@
         }
 
         // ============================
+        // WHATSAPP INTEGRATION FUNCTIONS
+        // ============================
+        function checkWhatsAppProof(orderId) {
+    if (!adminSystem) return;
+    
+    try {
+        const order = adminSystem.allOrders.find(o => o.id == orderId) || 
+                      adminSystem.orders.find(o => o.id == orderId);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        currentOrderForWhatsApp = order;
+        
+        // Tampilkan modal dengan pilihan
+        const content = document.getElementById('confirmWhatsAppContent');
+        content.innerHTML = `
+            <div style="padding: 1rem;">
+                <h3><i class="fab fa-whatsapp" style="color: #25D366;"></i> Cek Bukti Transfer WhatsApp</h3>
+                
+                <div class="customer-info-box">
+                    <h4>Informasi Pesanan</h4>
+                    <div class="info-row">
+                        <span class="info-label">Order:</span>
+                        <span class="info-value">${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Pelanggan:</span>
+                        <span class="info-value">${order.customer?.name || 'Pelanggan'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total:</span>
+                        <span class="info-value">Rp ${order.total?.toLocaleString() || '0'}</span>
+                    </div>
+                </div>
+                
+                <div style="margin: 1.5rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <p><strong>Langkah-langkah:</strong></p>
+                    <ol style="padding-left: 1.5rem; margin: 0.5rem 0;">
+                        <li>Klik "Buka WhatsApp" untuk membuka chat dengan pelanggan</li>
+                        <li>Lihat bukti transfer yang dikirim pelanggan</li>
+                        <li>Verifikasi jumlah dan detail transfer</li>
+                        <li>Kembali ke dashboard dan pilih tindakan</li>
+                    </ol>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                    <button class="btn" style="background: #25D366; color: white; flex: 1; min-width: 150px;" 
+                            onclick="openCustomerWhatsApp('${order.id}')">
+                        <i class="fab fa-whatsapp"></i> Buka WhatsApp
+                    </button>
+                    
+                    ${!order.whatsappProofReceived ? `
+                    <button class="btn btn-success" onclick="markProofReceived()" style="flex: 1; min-width: 150px;">
+                        <i class="fas fa-check"></i> Sudah Dikirim
+                    </button>
+                    <button class="btn btn-warning" onclick="remindCustomer()" style="flex: 1; min-width: 150px;">
+                        <i class="fas fa-bell"></i> Ingatkan
+                    </button>` : ''}
+                    
+                    ${order.whatsappProofReceived && !order.whatsappProofVerified ? `
+                    <button class="btn btn-primary" onclick="verifyWhatsAppProof('${order.id}')" style="flex: 1; min-width: 150px;">
+                        <i class="fas fa-check-circle"></i> Verifikasi
+                    </button>` : ''}
+                    
+                    <button class="btn btn-secondary" onclick="closeModal('confirmWhatsAppModal')" style="flex: 1; min-width: 150px;">
+                        <i class="fas fa-times"></i> Tutup
+                    </button>
+                </div>
+                
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; font-size: 0.9rem; color: #666;">
+                    <p><strong>Catatan:</strong> Setelah melihat bukti di WhatsApp, kembali ke sini untuk menandai status.</p>
+                </div>
+            </div>
+        `;
+        
+        openModal('confirmWhatsAppModal');
+        
+    } catch (error) {
+        console.error('Error checking WhatsApp proof:', error);
+        showToast('Gagal memeriksa bukti WhatsApp', 'error');
+    }
+}
+        async function markProofReceived() {
+            if (!currentOrderForWhatsApp) return;
+            
+            try {
+                const orderId = currentOrderForWhatsApp.id;
+                
+                if (adminSystem.isOnline) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('orders')
+                            .update({
+                                whatsapp_proof_received: true,
+                                whatsapp_proof_verified: false,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', orderId);
+                        
+                        if (error) throw error;
+                    } catch (error) {
+                        console.warn('Error updating WhatsApp proof in Supabase:', error.message);
+                    }
+                }
+                
+                // Update data lokal
+                const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
+                if (orderIndex !== -1) {
+                    adminSystem.allOrders[orderIndex].whatsappProofReceived = true;
+                    adminSystem.allOrders[orderIndex].whatsappProofVerified = false;
+                    
+                    // Jika ada di pending orders, update juga
+                    const pendingIndex = adminSystem.orders.findIndex(o => o.id == orderId);
+                    if (pendingIndex !== -1) {
+                        adminSystem.orders[pendingIndex].whatsappProofReceived = true;
+                        adminSystem.orders[pendingIndex].whatsappProofVerified = false;
+                    }
+                    
+                    saveLocalData();
+                    localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
+                    
+                    addActivity(`Bukti WhatsApp diterima untuk pesanan #${currentOrderForWhatsApp.orderNumber}`);
+                    updateProfileStats();
+                    
+                    showToast('Bukti WhatsApp ditandai sudah diterima', 'success');
+                    
+                    // Tutup modal dan refresh
+                    closeModal('confirmWhatsAppModal');
+                    loadNewOrders();
+                    loadAllOrders();
+                    loadDashboardSection();
+                    
+                    // Tampilkan detail untuk verifikasi
+                    viewWhatsAppProofDetail(orderId);
+                }
+                
+            } catch (error) {
+                console.error('Error marking proof received:', error);
+                showToast('Gagal menandai bukti diterima', 'error');
+            }
+        }
+
+        function remindCustomer() {
+            if (!currentOrderForWhatsApp) return;
+            
+            try {
+                const customerPhone = currentOrderForWhatsApp.customer?.whatsapp || 
+                                     currentOrderForWhatsApp.customer?.phone;
+                
+                if (!customerPhone) {
+                    showToast('Nomor WhatsApp pelanggan tidak tersedia', 'error');
+                    return;
+                }
+                
+                // Format nomor untuk WhatsApp
+                let formattedPhone = customerPhone.replace(/\D/g, '');
+                if (formattedPhone.startsWith('0')) {
+                    formattedPhone = '62' + formattedPhone.substring(1);
+                }
+                
+                // Pesan default
+                const message = `Halo ${currentOrderForWhatsApp.customer?.name || 'Pelanggan'}!%0A%0A` +
+                               `Kami dari MAN CAFE ingin mengingatkan bahwa pesanan Anda dengan nomor ` +
+                               `${currentOrderForWhatsApp.orderNumber} masih menunggu pembayaran.%0A%0A` +
+                               `Total: Rp ${currentOrderForWhatsApp.total?.toLocaleString() || '0'}%0A` +
+                               `Silakan kirim bukti transfer ke WhatsApp ini.%0A%0A` +
+                               `Terima kasih!`;
+                
+                // Buka WhatsApp
+                const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+                window.open(whatsappUrl, '_blank');
+                
+                // Tandai sudah diingatkan
+                addActivity(`Mengingatkan pelanggan untuk bukti transfer via WhatsApp (Order: ${currentOrderForWhatsApp.orderNumber})`);
+                
+                showToast('Pesan pengingat dibuka di WhatsApp', 'success');
+                closeModal('confirmWhatsAppModal');
+                
+            } catch (error) {
+                console.error('Error sending reminder:', error);
+                showToast('Gagal membuka WhatsApp', 'error');
+            }
+        }
+
+        function viewWhatsAppProofDetail(orderId) {
+            if (!adminSystem) return;
+            
+            try {
+                const order = adminSystem.allOrders.find(o => o.id == orderId) || 
+                              adminSystem.orders.find(o => o.id == orderId);
+                
+                if (!order) {
+                    showToast('Pesanan tidak ditemukan', 'error');
+                    return;
+                }
+                
+                const content = document.getElementById('whatsappProofContent');
+                const customerPhone = order.customer?.whatsapp || order.customer?.phone || '';
+                let formattedPhone = customerPhone.replace(/\D/g, '');
+                if (formattedPhone.startsWith('0')) {
+                    formattedPhone = '62' + formattedPhone.substring(1);
+                }
+                
+                let proofStatus = '';
+                if (order.whatsappProofVerified) {
+                    proofStatus = '<div class="proof-status verified">✓ Bukti sudah diverifikasi</div>';
+                } else if (order.whatsappProofReceived) {
+                    proofStatus = '<div class="proof-status received">✓ Bukti sudah diterima, menunggu verifikasi</div>';
+                } else {
+                    proofStatus = '<div class="proof-status waiting">⚠ Menunggu bukti transfer</div>';
+                }
+                
+                content.innerHTML = `
+                    <div style="padding: 1rem;">
+                        <h3 style="color: #25D366; margin-bottom: 1rem;">
+                            <i class="fab fa-whatsapp"></i> Bukti Transfer via WhatsApp
+                        </h3>
+                        
+                        ${proofStatus}
+                        
+                        <div class="customer-info-box">
+                            <h4><i class="fas fa-user"></i> Info Pelanggan</h4>
+                            <div class="info-row">
+                                <span class="info-label">Nama:</span>
+                                <span class="info-value">${order.customer?.name || 'Pelanggan'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">No. Order:</span>
+                                <span class="info-value">${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Total:</span>
+                                <span class="info-value">Rp ${order.total?.toLocaleString() || '0'}</span>
+                            </div>
+                            ${customerPhone ? `
+                            <div class="info-row">
+                                <span class="info-label">WhatsApp:</span>
+                                <span class="info-value">
+                                    <a href="https://wa.me/${formattedPhone}" target="_blank" style="color: #25D366;">
+                                        <i class="fab fa-whatsapp"></i> ${customerPhone}
+                                    </a>
+                                </span>
+                            </div>` : ''}
+                        </div>
+                        // Di dalam viewWhatsAppProofDetail(), tambahkan petunjuk:
+<div style="margin: 1rem 0; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+    <h4><i class="fas fa-info-circle"></i> Cara Cek Bukti Transfer:</h4>
+    <ol style="padding-left: 1.5rem; margin: 0.5rem 0;">
+        <li><strong>Klik "Buka WhatsApp"</strong> di bawah</li>
+        <li>WhatsApp akan terbuka dengan chat pelanggan</li>
+        <li><strong>Scroll ke atas</strong> untuk melihat bukti transfer yang dikirim</li>
+        <li>Verifikasi jumlah, nama rekening, dan waktu transfer</li>
+        <li>Kembali ke halaman ini untuk update status</li>
+    </ol>
+    ${customerPhone ? `
+    <div style="margin-top: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px;">
+        <strong>Nomor Pelanggan:</strong> ${customerPhone}
+    </div>` : ''}
+</div>
+
+<div class="proof-actions">
+    <button class="btn" style="background: #25D366; color: white;" 
+            onclick="openCustomerWhatsApp('${order.id}')">
+        <i class="fab fa-whatsapp"></i> Buka WhatsApp Pelanggan
+    </button>
+    
+    <!-- Tombol lainnya tetap... -->
+</div>
+                        <div style="margin: 1.5rem 0;">
+                            <h4><i class="fas fa-tasks"></i> Langkah Verifikasi</h4>
+                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;">
+                                <ol style="padding-left: 1.5rem; margin: 0;">
+                                    <li style="margin-bottom: 0.5rem;">Buka WhatsApp Admin di ponsel</li>
+                                    <li style="margin-bottom: 0.5rem;">Cari chat dengan nomor ${customerPhone || 'pelanggan'}</li>
+                                    <li style="margin-bottom: 0.5rem;">Periksa bukti transfer yang dikirim</li>
+                                    <li>Verifikasi jumlah dan detail transfer</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        ${order.whatsappProofNotes ? `
+                        <div style="margin: 1rem 0; padding: 1rem; background: #e8f4f8; border-radius: 8px;">
+                            <h4><i class="fas fa-sticky-note"></i> Catatan Verifikasi</h4>
+                            <p>${order.whatsappProofNotes}</p>
+                        </div>` : ''}
+                        
+                        <div class="proof-actions">
+                            ${!order.whatsappProofReceived ? `
+                            <button class="btn btn-success" onclick="markProofReceived()">
+                                <i class="fas fa-check"></i> Sudah Dikirim
+                            </button>` : ''}
+                            
+                            ${order.whatsappProofReceived && !order.whatsappProofVerified ? `
+                            <button class="btn btn-primary" onclick="verifyWhatsAppProof('${order.id}')">
+                                <i class="fas fa-check-circle"></i> Verifikasi Bukti
+                            </button>
+                            <button class="btn btn-warning" onclick="addProofNotes('${order.id}')">
+                                <i class="fas fa-edit"></i> Tambah Catatan
+                            </button>` : ''}
+                            
+                            <button class="btn btn-secondary" onclick="closeModal('whatsappProofModal')">
+                                <i class="fas fa-times"></i> Tutup
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                openModal('whatsappProofModal');
+                
+            } catch (error) {
+                console.error('Error viewing WhatsApp proof:', error);
+                showToast('Gagal memuat detail WhatsApp', 'error');
+            }
+        }
+        function openCustomerWhatsApp(orderId) {
+    if (!adminSystem) return;
+    
+    try {
+        const order = adminSystem.allOrders.find(o => o.id == orderId) || 
+                      adminSystem.orders.find(o => o.id == orderId);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        const customerPhone = order.customer?.whatsapp || order.customer?.phone;
+        
+        if (!customerPhone) {
+            showToast('Nomor WhatsApp pelanggan tidak tersedia', 'error');
+            return;
+        }
+        
+        // Format nomor untuk WhatsApp
+        let formattedPhone = customerPhone.replace(/\D/g, '');
+        if (formattedPhone.startsWith('0')) {
+            formattedPhone = '62' + formattedPhone.substring(1);
+        }
+        
+        // Buka WhatsApp langsung ke chat dengan pelanggan
+        const whatsappUrl = `https://wa.me/${formattedPhone}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Tandai bahwa admin sudah cek WhatsApp
+        addActivity(`Membuka WhatsApp pelanggan untuk cek bukti transfer (Order: ${order.orderNumber})`);
+        
+        showToast('Membuka WhatsApp pelanggan...', 'info');
+        
+    } catch (error) {
+        console.error('Error opening WhatsApp:', error);
+        showToast('Gagal membuka WhatsApp', 'error');
+    }
+}
+
+        async function verifyWhatsAppProof(orderId) {
+            if (!adminSystem) return;
+            
+            const verificationNotes = prompt('Catatan verifikasi (opsional):', '');
+            
+            if (verificationNotes === null) return; // User cancelled
+            
+            try {
+                if (adminSystem.isOnline) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('orders')
+                            .update({
+                                whatsapp_proof_verified: true,
+                                whatsapp_proof_notes: verificationNotes || '',
+                                payment_status: 'verified',
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', orderId);
+                        
+                        if (error) throw error;
+                    } catch (error) {
+                        console.warn('Error verifying WhatsApp proof in Supabase:', error.message);
+                    }
+                }
+                
+                // Update data lokal
+                const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
+                if (orderIndex !== -1) {
+                    adminSystem.allOrders[orderIndex].whatsappProofVerified = true;
+                    adminSystem.allOrders[orderIndex].whatsappProofNotes = verificationNotes || '';
+                    adminSystem.allOrders[orderIndex].paymentStatus = 'verified';
+                    
+                    // Jika ada di pending orders, update juga
+                    const pendingIndex = adminSystem.orders.findIndex(o => o.id == orderId);
+                    if (pendingIndex !== -1) {
+                        adminSystem.orders[pendingIndex].whatsappProofVerified = true;
+                        adminSystem.orders[pendingIndex].whatsappProofNotes = verificationNotes || '';
+                        adminSystem.orders[pendingIndex].paymentStatus = 'verified';
+                    }
+                    
+                    saveLocalData();
+                    localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
+                    
+                    addActivity(`Bukti WhatsApp diverifikasi untuk pesanan #${adminSystem.allOrders[orderIndex].orderNumber}`);
+                    updateProfileStats();
+                    
+                    showToast('Bukti WhatsApp berhasil diverifikasi', 'success');
+                    
+                    // Tutup modal dan refresh
+                    closeModal('whatsappProofModal');
+                    loadNewOrders();
+                    loadAllOrders();
+                    loadDashboardSection();
+                }
+                
+            } catch (error) {
+                console.error('Error verifying WhatsApp proof:', error);
+                showToast('Gagal memverifikasi bukti WhatsApp', 'error');
+            }
+        }
+
+        function addProofNotes(orderId) {
+            if (!adminSystem) return;
+            
+            const notes = prompt('Tambahkan catatan verifikasi:', '');
+            
+            if (notes === null) return; // User cancelled
+            
+            try {
+                const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
+                if (orderIndex !== -1) {
+                    adminSystem.allOrders[orderIndex].whatsappProofNotes = notes;
+                    
+                    // Jika ada di pending orders, update juga
+                    const pendingIndex = adminSystem.orders.findIndex(o => o.id == orderId);
+                    if (pendingIndex !== -1) {
+                        adminSystem.orders[pendingIndex].whatsappProofNotes = notes;
+                    }
+                    
+                    saveLocalData();
+                    localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
+                    
+                    showToast('Catatan berhasil ditambahkan', 'success');
+                    
+                    // Refresh tampilan
+                    viewWhatsAppProofDetail(orderId);
+                }
+            } catch (error) {
+                console.error('Error adding proof notes:', error);
+                showToast('Gagal menambahkan catatan', 'error');
+            }
+        }
+
+        function sendWhatsAppMessage() {
+            const phone = document.getElementById('whatsappPhone').value;
+            const message = document.getElementById('whatsappMessage').value;
+            
+            if (!phone || !message) {
+                showToast('Harap isi nomor dan pesan', 'error');
+                return;
+            }
+            
+            // Format nomor
+            let formattedPhone = phone.replace(/\D/g, '');
+            if (formattedPhone.startsWith('0')) {
+                formattedPhone = '62' + formattedPhone.substring(1);
+            }
+            
+            // Encode message untuk URL
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Buka WhatsApp
+            const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+            
+            showToast('WhatsApp dibuka untuk mengirim pesan', 'success');
+            closeModal('whatsappMessageModal');
+        }
+
+        function openWhatsAppMessageModal(phone = '', message = '') {
+            document.getElementById('whatsappPhone').value = phone;
+            document.getElementById('whatsappMessage').value = message;
+            openModal('whatsappMessageModal');
+        }
+
+        // ============================
         // ACTION FUNCTIONS
         // ============================
         async function confirmOrder(orderId) {
             if (!adminSystem) return;
+            
+            // Cek apakah pesanan menggunakan WhatsApp dan belum ada bukti
+            const order = adminSystem.allOrders.find(o => o.id == orderId) || 
+                          adminSystem.orders.find(o => o.id == orderId);
+            
+            if (order && order.paymentMethod === 'whatsapp' && !order.whatsappProofReceived) {
+                if (!confirm('Pesanan ini menggunakan WhatsApp transfer. Apakah bukti transfer sudah diterima di WhatsApp?')) {
+                    // Arahkan ke cek WhatsApp proof
+                    checkWhatsAppProof(orderId);
+                    return;
+                }
+            }
             
             if (confirm('Konfirmasi pesanan ini?')) {
                 try {
@@ -4359,6 +5321,120 @@
                 } catch (error) {
                     console.error('Error confirming order:', error);
                     showToast('Gagal mengonfirmasi pesanan', 'error');
+                }
+            }
+        }
+
+        async function rejectOrder(orderId) {
+            if (!adminSystem) return;
+            
+            const reason = prompt('Alasan menolak pesanan:', '');
+            if (reason === null) return; // User cancelled
+            if (!reason || reason.trim() === '') {
+                showToast('Harap isi alasan penolakan', 'error');
+                return;
+            }
+            
+            if (confirm(`Yakin ingin menolak pesanan ini?\n\nAlasan: ${reason}`)) {
+                try {
+                    if (adminSystem.isOnline) {
+                        try {
+                            const { error } = await supabaseClient
+                                .from('orders')
+                                .update({
+                                    status: 'rejected',
+                                    admin_seen: true,
+                                    cancellation_reason: reason,
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', orderId);
+                            
+                            if (error) throw error;
+                        } catch (error) {
+                            console.warn('Error rejecting order in Supabase:', error.message);
+                        }
+                    }
+                    
+                    const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
+                    if (orderIndex !== -1) {
+                        adminSystem.allOrders[orderIndex].status = 'rejected';
+                        adminSystem.allOrders[orderIndex].adminSeen = true;
+                        adminSystem.allOrders[orderIndex].cancellationReason = reason;
+                        
+                        const pendingIndex = adminSystem.orders.findIndex(o => o.id == orderId);
+                        if (pendingIndex !== -1) {
+                            adminSystem.orders.splice(pendingIndex, 1);
+                        }
+                        
+                        saveLocalData();
+                        localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
+                        
+                        addActivity(`Pesanan #${adminSystem.allOrders[orderIndex].orderNumber} ditolak`);
+                        updateNotifications();
+                        updateProfileStats();
+                        
+                        showToast('Pesanan berhasil ditolak', 'success');
+                        loadNewOrders();
+                        loadAllOrders();
+                        loadDashboardSection();
+                    }
+                } catch (error) {
+                    console.error('Error rejecting order:', error);
+                    showToast('Gagal menolak pesanan', 'error');
+                }
+            }
+        }
+
+        async function reopenOrder(orderId) {
+            if (!adminSystem) return;
+            
+            if (confirm('Yakin ingin membuka kembali pesanan ini?')) {
+                try {
+                    if (adminSystem.isOnline) {
+                        try {
+                            const { error } = await supabaseClient
+                                .from('orders')
+                                .update({
+                                    status: 'pending',
+                                    admin_seen: false,
+                                    cancellation_reason: null,
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', orderId);
+                            
+                            if (error) throw error;
+                        } catch (error) {
+                            console.warn('Error reopening order in Supabase:', error.message);
+                        }
+                    }
+                    
+                    const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
+                    if (orderIndex !== -1) {
+                        adminSystem.allOrders[orderIndex].status = 'pending';
+                        adminSystem.allOrders[orderIndex].adminSeen = false;
+                        adminSystem.allOrders[orderIndex].cancellationReason = null;
+                        
+                        // Tambahkan ke pesanan baru jika belum ada
+                        const existsInOrders = adminSystem.orders.some(o => o.id == orderId);
+                        if (!existsInOrders) {
+                            adminSystem.orders.push(adminSystem.allOrders[orderIndex]);
+                        }
+                        
+                        saveLocalData();
+                        localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
+                        
+                        addActivity(`Pesanan #${adminSystem.allOrders[orderIndex].orderNumber} dibuka kembali`);
+                        updateNotifications();
+                        updateProfileStats();
+                        
+                        showToast('Pesanan berhasil dibuka kembali', 'success');
+                        loadNewOrders();
+                        loadAllOrders();
+                        loadDashboardSection();
+                    }
+                } catch (error) {
+                    console.error('Error reopening order:', error);
+                    showToast('Gagal membuka kembali pesanan', 'error');
                 }
             }
         }
@@ -4458,6 +5534,120 @@
                 } catch (error) {
                     console.error('Error confirming reservation:', error);
                     showToast(`Gagal mengonfirmasi reservasi`, 'error');
+                }
+            }
+        }
+
+        async function rejectReservation(reservationId) {
+            if (!adminSystem) return;
+            
+            const reason = prompt('Alasan menolak reservasi:', '');
+            if (reason === null) return; // User cancelled
+            if (!reason || reason.trim() === '') {
+                showToast('Harap isi alasan penolakan', 'error');
+                return;
+            }
+            
+            if (confirm(`Yakin ingin menolak reservasi ini?\n\nAlasan: ${reason}`)) {
+                try {
+                    if (adminSystem.isOnline) {
+                        try {
+                            const { error } = await supabaseClient
+                                .from('reservations')
+                                .update({
+                                    status: 'rejected',
+                                    admin_seen: true,
+                                    cancellation_reason: reason,
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', reservationId);
+                            
+                            if (error) throw error;
+                        } catch (error) {
+                            console.warn('Error rejecting reservation in Supabase:', error.message);
+                        }
+                    }
+                    
+                    const resIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
+                    if (resIndex !== -1) {
+                        adminSystem.allReservations[resIndex].status = 'rejected';
+                        adminSystem.allReservations[resIndex].adminSeen = true;
+                        adminSystem.allReservations[resIndex].cancellationReason = reason;
+                        
+                        const pendingIndex = adminSystem.reservations.findIndex(r => r.id == reservationId);
+                        if (pendingIndex !== -1) {
+                            adminSystem.reservations.splice(pendingIndex, 1);
+                        }
+                        
+                        saveLocalData();
+                        localStorage.setItem('customer_reservations', JSON.stringify(adminSystem.allReservations));
+                        
+                        addActivity(`Reservasi #${reservationId} ditolak`);
+                        updateNotifications();
+                        updateProfileStats();
+                        
+                        showToast('Reservasi berhasil ditolak', 'success');
+                        loadReservations();
+                        loadAllReservations();
+                        loadDashboardSection();
+                    }
+                } catch (error) {
+                    console.error('Error rejecting reservation:', error);
+                    showToast('Gagal menolak reservasi', 'error');
+                }
+            }
+        }
+
+        async function reopenReservation(reservationId) {
+            if (!adminSystem) return;
+            
+            if (confirm('Yakin ingin membuka kembali reservasi ini?')) {
+                try {
+                    if (adminSystem.isOnline) {
+                        try {
+                            const { error } = await supabaseClient
+                                .from('reservations')
+                                .update({
+                                    status: 'pending',
+                                    admin_seen: false,
+                                    cancellation_reason: null,
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', reservationId);
+                            
+                            if (error) throw error;
+                        } catch (error) {
+                            console.warn('Error reopening reservation in Supabase:', error.message);
+                        }
+                    }
+                    
+                    const resIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
+                    if (resIndex !== -1) {
+                        adminSystem.allReservations[resIndex].status = 'pending';
+                        adminSystem.allReservations[resIndex].adminSeen = false;
+                        adminSystem.allReservations[resIndex].cancellationReason = null;
+                        
+                        // Tambahkan ke reservasi baru jika belum ada
+                        const existsInReservations = adminSystem.reservations.some(r => r.id == reservationId);
+                        if (!existsInReservations) {
+                            adminSystem.reservations.push(adminSystem.allReservations[resIndex]);
+                        }
+                        
+                        saveLocalData();
+                        localStorage.setItem('customer_reservations', JSON.stringify(adminSystem.allReservations));
+                        
+                        addActivity(`Reservasi #${reservationId} dibuka kembali`);
+                        updateNotifications();
+                        updateProfileStats();
+                        
+                        showToast('Reservasi berhasil dibuka kembali', 'success');
+                        loadReservations();
+                        loadAllReservations();
+                        loadDashboardSection();
+                    }
+                } catch (error) {
+                    console.error('Error reopening reservation:', error);
+                    showToast('Gagal membuka kembali reservasi', 'error');
                 }
             }
         }
@@ -4934,72 +6124,244 @@
                 alert('📭 Tidak ada notifikasi baru');
             }
         }
-
-        function viewOrderDetail(orderId) {
-            if (!adminSystem) return;
+function viewOrderDetail(orderId) {
+    if (!adminSystem) return;
+    
+    try {
+        const order = adminSystem.allOrders.find(o => o.id == orderId) || 
+                      adminSystem.orders.find(o => o.id == orderId);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        const modal = document.getElementById('orderDetailModal');
+        const content = document.getElementById('orderDetailContent');
+        
+        // Format waktu
+        let formattedTime = 'Waktu tidak tersedia';
+        try {
+            if (order.createdAt) {
+                const orderDate = new Date(order.createdAt);
+                formattedTime = orderDate.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        } catch (e) {
+            console.warn('Error formatting time:', e);
+        }
+        
+        // Tentukan status WhatsApp
+        let whatsappStatusHTML = '';
+        if (order.paymentMethod === 'whatsapp') {
+            let statusText = '';
+            let statusClass = '';
+            let statusIcon = '';
             
-            try {
-                const order = adminSystem.allOrders.find(o => o.id == orderId) || 
-                             adminSystem.orders.find(o => o.id == orderId);
+            if (order.whatsappProofVerified) {
+                statusText = '✅ Bukti transfer sudah diverifikasi';
+                statusClass = 'verified';
+                statusIcon = 'fa-check-circle';
+            } else if (order.whatsappProofReceived) {
+                statusText = '📨 Bukti transfer sudah diterima, menunggu verifikasi';
+                statusClass = 'received';
+                statusIcon = 'fa-check';
+            } else {
+                statusText = '⏳ Menunggu bukti transfer dari pelanggan';
+                statusClass = 'waiting';
+                statusIcon = 'fa-clock';
+            }
+            
+            whatsappStatusHTML = `
+                <div class="whatsapp-info ${statusClass}" style="margin: 1rem 0;">
+                    <p><i class="fas ${statusIcon}"></i> <strong>Status WhatsApp:</strong> ${statusText}</p>
+                    ${order.whatsappProofNotes ? `
+                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                        <strong>Catatan:</strong> ${order.whatsappProofNotes}
+                    </div>` : ''}
+                </div>
+            `;
+        }
+        
+        let html = `
+            <div style="padding: 1rem;">
+                <h3 style="margin-bottom: 1rem; color: #8B4513;">Detail Pesanan</h3>
                 
-                if (!order) {
-                    showToast('Pesanan tidak ditemukan', 'error');
-                    return;
-                }
-                
-                const content = document.getElementById('orderDetailContent');
-                content.innerHTML = `
-                    <div style="padding: 1rem 0;">
-                        <h3 style="margin-bottom: 1rem;">Detail Pesanan</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <strong>No. Order:</strong><br>
-                                ${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}
-                            </div>
-                            <div>
-                                <strong>Tanggal:</strong><br>
-                                ${new Date(order.createdAt).toLocaleString('id-ID')}
-                            </div>
-                            <div>
-                                <strong>Pelanggan:</strong><br>
-                                ${order.customer?.name || 'Tidak diketahui'}
-                            </div>
-                            <div>
-                                <strong>Telepon:</strong><br>
-                                ${order.customer?.phone || 'Tidak diketahui'}
-                            </div>
-                            <div>
-                                <strong>Status:</strong><br>
-                                <span class="status-badge status-${order.status}">
-                                    ${getStatusText(order.status)}
-                                </span>
-                            </div>
-                            <div>
-                                <strong>Total:</strong><br>
-                                Rp ${order.total?.toLocaleString() || '0'}
-                            </div>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div>
+                            <strong>No. Order:</strong><br>
+                            ${order.orderNumber || 'ORD-' + (order.id || '').toString().slice(-6)}
                         </div>
-                        
-                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                            ${order.status === 'pending' || order.status === 'waiting_payment' ? `
-                            <button class="btn btn-success" onclick="confirmOrder('${order.id}'); closeModal('orderDetailModal')">
-                                <i class="fas fa-check"></i> Konfirmasi Pesanan
-                            </button>` : ''}
-                            
-                            ${order.status === 'confirmed' ? `
-                            <button class="btn btn-success" onclick="completeOrder('${order.id}'); closeModal('orderDetailModal')">
-                                <i class="fas fa-check-double"></i> Tandai Selesai
-                            </button>` : ''}
+                        <div>
+                            <strong>Tanggal:</strong><br>
+                            ${formattedTime}
+                        </div>
+                        <div>
+                            <strong>Pelanggan:</strong><br>
+                            ${order.customer?.name || 'Pelanggan'}
+                        </div>
+                        <div>
+                            <strong>Total:</strong><br>
+                            Rp ${(order.total || 0).toLocaleString()}
+                        </div>
+                        <div>
+                            <strong>Status Pesanan:</strong><br>
+                            <span class="status-badge status-${order.status || 'pending'}">
+                                ${getStatusText(order.status || 'pending')}
+                            </span>
+                        </div>
+                        <div>
+                            <strong>Metode Pembayaran:</strong><br>
+                            ${order.paymentMethod === 'whatsapp' ? 'Transfer via WhatsApp' : 'Transfer Bank'}
                         </div>
                     </div>
-                `;
+                </div>
                 
-                openModal('orderDetailModal');
-            } catch (error) {
-                console.error('Error viewing order detail:', error);
-                showToast('Gagal memuat detail pesanan', 'error');
-            }
+                ${whatsappStatusHTML}
+                
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="color: #495057; margin-bottom: 0.5rem;">
+                        <i class="fas fa-boxes"></i> Items Pesanan
+                    </h4>
+                    <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #ddd;">
+        `;
+        
+        if (order.items && order.items.length > 0) {
+            order.items.forEach(item => {
+                const itemName = item.name || item.menu_name || 'Item';
+                const quantity = item.quantity || 1;
+                const price = item.price || item.unit_price || 0;
+                const total = price * quantity;
+                
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #f0f0f0;">
+                        <span>${itemName} (${quantity}x)</span>
+                        <span>Rp ${total.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+        } else {
+            html += `<p style="text-align: center; color: #666;">Tidak ada detail items</p>`;
         }
+        
+        html += `
+                        <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; margin-top: 0.5rem; border-top: 2px solid #ddd; font-weight: bold;">
+                            <span>TOTAL</span>
+                            <span>Rp ${(order.total || 0).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+        `;
+        
+        // Tombol aksi berdasarkan status
+        if (order.status === 'pending' || order.status === 'waiting_payment') {
+            html += `
+    <button class="btn" style="background: #25D366; color: white;" 
+            onclick="openCustomerWhatsApp('${orderId}')"
+            title="Buka WhatsApp pelanggan untuk melihat bukti transfer">
+        <i class="fab fa-whatsapp"></i> Lihat WhatsApp
+    </button>
+`;
+        }
+        
+        // Tombol khusus WhatsApp
+        if (order.paymentMethod === 'whatsapp') {
+            html += `
+                <button class="btn btn-warning" onclick="viewWhatsAppProofDetail('${orderId}')">
+                    <i class="fab fa-whatsapp"></i> Detail Bukti WhatsApp
+                </button>
+            `;
+        }
+        
+        // Tombol WhatsApp jika pelanggan memiliki nomor
+        if (order.customer?.whatsapp || order.customer?.phone) {
+            const phone = order.customer.whatsapp || order.customer.phone;
+            html += `
+                <button class="btn" style="background: #25D366; color: white;" 
+                        onclick="openWhatsAppMessageModal('${phone}', 'Halo ${order.customer?.name || 'Pelanggan'}, mengenai pesanan ${order.orderNumber || ''} di MAN CAFE  akan segera kami konfirmasi... Terimakasih sudah memesan di MAN cafe, silahkan jika ingin melakukan reservasi meja setelah kami konfirmasi')">
+                    <i class="fab fa-whatsapp"></i> Chat Pelanggan
+                </button>
+            `;
+        }
+        
+        html += `
+                    <button class="btn btn-secondary" onclick="closeModal('orderDetailModal')" style="margin-left: auto;">
+                        <i class="fas fa-times"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        content.innerHTML = html;
+        modal.style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error viewing order detail:', error);
+        showToast('Gagal memuat detail pesanan', 'error');
+    }
+}
+
+function quickCheckWhatsAppStatus(orderId) {
+    if (!adminSystem) return;
+    
+    try {
+        const order = adminSystem.allOrders.find(o => o.id == orderId) || 
+                      adminSystem.orders.find(o => o.id == orderId);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        if (order.paymentMethod !== 'whatsapp') {
+            showToast('Pesanan ini tidak menggunakan WhatsApp transfer', 'info');
+            return;
+        }
+        
+        let message = `📱 Status WhatsApp Transfer\n\n`;
+        message += `Order: ${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}\n`;
+        message += `Pelanggan: ${order.customer?.name || 'Pelanggan'}\n`;
+        message += `Total: Rp ${order.total?.toLocaleString() || '0'}\n\n`;
+        message += `Status Bukti Transfer:\n`;
+        
+        if (order.whatsappProofVerified) {
+            message += `✅ Sudah diverifikasi\n`;
+            if (order.whatsappProofNotes) {
+                message += `Catatan: ${order.whatsappProofNotes}\n`;
+            }
+        } else if (order.whatsappProofReceived) {
+            message += `📨 Sudah dikirim, menunggu verifikasi\n`;
+            if (order.whatsappProofNotes) {
+                message += `Catatan: ${order.whatsappProofNotes}\n`;
+            }
+        } else {
+            message += `⏳ Belum ada bukti transfer\n`;
+            message += `\nLangkah:\n`;
+            message += `1. Buka WhatsApp Admin\n`;
+            message += `2. Cari pesan dari ${order.customer?.whatsapp || order.customer?.phone || 'pelanggan'}\n`;
+            message += `3. Periksa apakah bukti sudah dikirim\n`;
+        }
+        
+        // Tampilkan alert dengan opsi
+        const userChoice = confirm(message + '\n\nKlik OK untuk melihat detail lengkap, atau Cancel untuk tetap di sini.');
+        
+        if (userChoice) {
+            viewWhatsAppProofDetail(orderId);
+        }
+        
+    } catch (error) {
+        console.error('Error in quick check:', error);
+        showToast('Gagal memeriksa status WhatsApp', 'error');
+    }
+}
 
         function viewReservationDetail(reservationId) {
             if (!adminSystem) return;
@@ -5037,8 +6399,14 @@
                             <div>
                                 <strong>Meja:</strong><br>
                                 ${reservation.tableNumber || '-'}
-                            </td>
+                            </div>
                         </div>
+                        
+                        ${reservation.cancellationReason ? `
+                        <div style="margin: 1rem 0; padding: 0.8rem; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545;">
+                            <strong><i class="fas fa-exclamation-triangle"></i> Alasan Ditolak:</strong><br>
+                            ${reservation.cancellationReason}
+                        </div>` : ''}
                         
                         ${reservation.notes ? `
                         <div style="margin-bottom: 1rem;">
@@ -5048,17 +6416,34 @@
                         
                         <div style="margin-bottom: 1rem;">
                             <strong>Status:</strong><br>
-                            <span class="status-badge ${reservation.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
-                                ${reservation.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
+                            <span class="status-badge ${reservation.status === 'confirmed' ? 'status-confirmed' : 
+                                                     reservation.status === 'cancelled' ? 'status-cancelled' : 
+                                                     'status-pending'}">
+                                ${reservation.status === 'confirmed' ? 'Dikonfirmasi' : 
+                                 reservation.status === 'cancelled' ? 'Ditolak' : 
+                                 'Menunggu'}
                             </span>
                         </div>
                         
-                        ${reservation.status === 'pending' ? `
-                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                            <button class="btn btn-success" onclick="confirmReservation('${reservation.id}'); closeModal('reservationDetailModal')">
-                                <i class="fas fa-check"></i> Konfirmasi Reservasi
+                        <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+                            ${reservation.status === 'pending' ? `
+                            <button class="btn btn-success" onclick="confirmReservation('${reservation.id}')">
+                                <i class="fas fa-check"></i> Konfirmasi
                             </button>
-                        </div>` : ''}
+                            <button class="btn btn-danger" onclick="rejectReservation('${reservation.id}')">
+                                <i class="fas fa-times"></i> Tolak
+                            </button>` : ''}
+                            
+                            ${reservation.status === 'cancelled' ? `
+                            <button class="btn btn-warning" onclick="reopenReservation('${reservation.id}')" style="background: #ffc107; color: #212529;">
+                                <i class="fas fa-redo"></i> Buka Kembali
+                            </button>` : ''}
+                            
+                            ${reservation.whatsapp ? `
+                            <button class="btn" style="background: #25D366; color: white;" onclick="openWhatsAppMessageModal('${reservation.whatsapp}', 'Halo ${reservation.name}, mengenai reservasi Anda di MAN CAFE...')">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>` : ''}
+                        </div>
                     </div>
                 `;
                 
@@ -5485,6 +6870,9 @@
                     closeModal('reservationDetailModal');
                     closeModal('menuModal');
                     closeModal('tableModal');
+                    closeModal('whatsappProofModal');
+                    closeModal('whatsappMessageModal');
+                    closeModal('confirmWhatsAppModal');
                 }
             });
             
