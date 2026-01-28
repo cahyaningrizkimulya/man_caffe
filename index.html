@@ -1866,28 +1866,7 @@
         </div>
     </section>
 
-    <!-- Testimonials Section -->
-    <section class="testimonials" id="testimonials">
-        <div class="container">
-            <h2 class="section-title">Apa Kata Pelanggan</h2>
-            <div class="testimonial-slider">
-                <div class="testimonial-card">
-                    <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Customer">
-                    <h3>Agustina Sani Safridawati</h3>
-                    <p>"Menu-menu di sini luar biasa! Suasana yang nyaman yang membuat saya betah berlama-lama. juga ada studio foto yang bisa kita nikmati"</p>
-                    
-                    <div class="rating">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- Footer -->
     <footer class="footer">
@@ -1923,6 +1902,7 @@
                     <ul class="footer-links">
                         <li><a href="#home">Beranda</a></li>
                         <li><a href="#menu">Menu</a></li>
+                        <li><a href="#testimonials">Testimoni</a></li>
                         <li><a href="#my-orders">Pesanan Saya</a></li>
                         <li><a href="#cart">Keranjang</a></li>
                     </ul>
@@ -3718,7 +3698,7 @@
             const reservationInfo = modal.querySelector('.f0f9ff');
             if (reservationInfo && order.orderType === 'dine_in') {
                 reservationInfo.querySelector('p').innerHTML = `
-                    Jika Anda memilih "Makan di Tempat", setelah pesanan dikonfirmasi admin, Anda dapat melakukan reservasi meja di halaman <strong>"Pesanan Saya"</strong> pada tab <strong>"Dikonfirmasi"</strong>.
+                    Jika Anda memilih "Makan di Tempat", setelah pesanan dikonfirmasi admin, Anda dapat melakukan reservasi meja di halaman <strong>"Pesanan Saya"</strong>.
                 `;
             }
             
