@@ -1769,10 +1769,7 @@
                     <h3>10</h3>
                     <p>Meja Nyaman</p>
                 </div>
-                <div class="stat-item">
-                    <h3>5★</h3>
-                    <p>Rating Terbaik</p>
-                </div>
+
             </div>
         </div>
     </section>
@@ -1884,9 +1881,9 @@
                 <div class="footer-section">
                     <h3>Jam Operasional</h3>
                     <ul class="footer-links">
-                        <li><strong>Senin - Jumat:</strong> 16:00 - 22:00</li>
-                        <li><strong>Sabtu:</strong> 16:00 - 00:00</li>
-                        <li><strong>Minggu:</strong> 16:00 - 23:00</li>
+                        <li><strong>Senin - Jumat:</strong> 11:00 - 22:00</li>
+                        <li><strong>Sabtu:</strong> 11:00 - 00:00</li>
+                        <li><strong>Minggu:</strong> 11:00 - 23:00</li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -2208,53 +2205,63 @@
             }
 
             // ==================== MENU FUNCTIONS ====================
-            async loadMenus() {
-                try {
-                    console.log('📥 Loading menus...');
-                    
-                    let menus = [];
-                    
-                    if (this.isOnline) {
-                        const { data, error } = await supabaseClient
-                            .from('menu_items')
-                            .select('*')
-                            .eq('is_active', true)
-                            .order('category')
-                            .order('name');
-                        
-                        if (error) {
-                            console.error('❌ Error loading menus from Supabase:', error);
-                            menus = this.getDefaultMenus();
-                        } else if (data && data.length > 0) {
-                            menus = data.map(menu => this.formatMenuFromSupabase(menu));
-                            console.log(`✅ Loaded ${menus.length} menus from Supabase`);
-                        } else {
-                            menus = this.getDefaultMenus();
-                        }
-                    } else {
-                        menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-                        if (menus.length === 0) {
-                            menus = this.getDefaultMenus();
-                        }
-                    }
-                    
-                    localStorage.setItem('cafe_menus', JSON.stringify(menus));
-                    window.currentMenus = menus;
-                    
-                    renderMenus(menus);
-                    
-                    return menus;
-                    
-                } catch (error) {
-                    console.error('❌ Error loading menus:', error);
-                    const defaultMenus = this.getDefaultMenus();
-                    localStorage.setItem('cafe_menus', JSON.stringify(defaultMenus));
-                    window.currentMenus = defaultMenus;
-                    renderMenus(defaultMenus);
-                    return defaultMenus;
-                }
+           async loadMenus() {
+    try {
+        console.log('📥 Loading menus...');
+        
+        let menus = [];
+        
+        if (this.isOnline) {
+            // PERBAIKAN: Query yang lebih komprehensif
+            const { data, error } = await supabaseClient
+                .from('menu_items')
+                .select('*')
+                // Hapus filter is_active jika ingin semua menu
+                // .eq('is_active', true)  // HAPUS BARIS INI jika ingin semua menu
+                .order('category')
+                .order('name');
+            
+            if (error) {
+                console.error('❌ Error loading menus from Supabase:', error);
+                menus = this.getDefaultMenus();
+            } else if (data && data.length > 0) {
+                console.log(`📊 Total menu dari database: ${data.length}`);
+                console.log('📋 Daftar menu dari database:');
+                data.forEach(menu => console.log(`  - ${menu.name} (active: ${menu.is_active})`));
+                
+                // Filter hanya yang active dan ada stok
+                menus = data
+                    .filter(menu => menu.is_active !== false) // Tambahkan filter manual
+                    .map(menu => this.formatMenuFromSupabase(menu));
+                
+                console.log(`✅ Loaded ${menus.length} active menus from Supabase`);
+            } else {
+                console.log('⚠️ No data from Supabase, using default menus');
+                menus = this.getDefaultMenus();
             }
-
+        } else {
+            menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
+            if (menus.length === 0) {
+                menus = this.getDefaultMenus();
+            }
+        }
+        
+        localStorage.setItem('cafe_menus', JSON.stringify(menus));
+        window.currentMenus = menus;
+        
+        renderMenus(menus);
+        
+        return menus;
+        
+    } catch (error) {
+        console.error('❌ Error loading menus:', error);
+        const defaultMenus = this.getDefaultMenus();
+        localStorage.setItem('cafe_menus', JSON.stringify(defaultMenus));
+        window.currentMenus = defaultMenus;
+        renderMenus(defaultMenus);
+        return defaultMenus;
+    }
+}
             formatMenuFromSupabase(menu) {
                 return {
                     id: menu.id,
@@ -2274,61 +2281,140 @@
                 };
             }
 
-            getDefaultMenus() {
-                return [
-                    { 
-                        id: 1, 
-                        name: "Espresso Premium", 
-                        description: "Kopi espresso dengan cita rasa kuat dan aroma harum",
-                        price: 35000, 
-                        image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "minuman",
-                        isPromo: false,
-                        stock: 10,
-                        isDailyStock: false,
-                        isActive: true
-                    },
-                    { 
-                        id: 2, 
-                        name: "Cappuccino Special", 
-                        description: "Espresso dengan susu steamed dan busa susu lembut",
-                        price: 42000, 
-                        image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "minuman",
-                        isPromo: false,
-                        stock: 15,
-                        isDailyStock: false,
-                        isActive: true
-                    },
-                    { 
-                        id: 3, 
-                        name: "Latte Art", 
-                        description: "Kopi latte dengan seni gambar di atasnya",
-                        price: 45000, 
-                        image: "https://images.unsplash.com/photo-1570196911496-66bd58a5b7b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "minuman",
-                        isPromo: true,
-                        originalPrice: 50000,
-                        stock: 8,
-                        isDailyStock: false,
-                        isActive: true
-                    },
-                    { 
-                        id: 4, 
-                        name: "Croissant", 
-                        description: "Roti croissant renyah dengan isian coklat",
-                        price: 28000, 
-                        image: "https://images.unsplash.com/photo-1555507036-ab794f27d2e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "makanan",
-                        isPromo: false,
-                        stock: 20,
-                        isDailyStock: true,
-                        currentDailyStock: 15,
-                        isActive: true
-                    }
-                ];
-            }
-
+           getDefaultMenus() {
+    return [
+        // Menu dari screenshot pelanggan
+        { 
+            id: 1, 
+            name: "Espresso Premium", 
+            description: "Kopi espresso dengan cita rasa kuat dan aroma harum",
+            price: 35000, 
+            image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "minuman",
+            isPromo: false,
+            stock: 10,
+            isDailyStock: false,
+            isActive: true
+        },
+        { 
+            id: 2, 
+            name: "Cappuccino Special", 
+            description: "Espresso dengan susu steamed dan busa susu lembut",
+            price: 42000, 
+            image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "minuman",
+            isPromo: false,
+            stock: 15,
+            isDailyStock: false,
+            isActive: true
+        },
+        { 
+            id: 3, 
+            name: "Latte Art", 
+            description: "Kopi latte dengan seni gambar di atasnya",
+            price: 45000, 
+            image: "https://images.unsplash.com/photo-1570196911496-66bd58a5b7b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "minuman",
+            isPromo: true,
+            originalPrice: 50000,
+            stock: 8,
+            isDailyStock: false,
+            isActive: true
+        },
+        { 
+            id: 4, 
+            name: "Croissant", 
+            description: "Roti croissant renyah dengan isian coklat",
+            price: 28000, 
+            image: "https://images.unsplash.com/photo-1555507036-ab794f27d2e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "makanan",
+            isPromo: false,
+            stock: 20,
+            isDailyStock: true,
+            currentDailyStock: 15,
+            isActive: true
+        },
+        // Menu dari admin yang harusnya tampil
+        { 
+            id: 5, 
+            name: "Butterscotch", 
+            description: "Kopi creamy dengan perpaduan rasa manis karamel butterscotch yang lembut",
+            price: 25000, 
+            image: "https://images.unsplash.com/photo-1570598912132-0ba1dc952b7d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "minuman",
+            isPromo: false,
+            stock: 10,
+            isDailyStock: false,
+            isActive: true
+        },
+        { 
+            id: 6, 
+            name: "Caramel Machiatto", 
+            description: "Espresso berpadu susu dan sirup karamel dengan rasa manis seimbang",
+            price: 38000, 
+            image: "https://images.unsplash.com/photo-1510707577719-ae7c9b7886a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "minuman",
+            isPromo: false,
+            stock: 10,
+            isDailyStock: true,
+            currentDailyStock: 10,
+            isActive: true
+        },
+        { 
+            id: 7, 
+            name: "Kentang Crispy", 
+            description: "Kentang goreng crispy dengan tekstur renyah luar lembut dalam",
+            price: 18000, 
+            image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "snack",
+            isPromo: false,
+            stock: 20,
+            isDailyStock: true,
+            currentDailyStock: 15,
+            isActive: true
+        },
+        // Menu lainnya dari percakapan sebelumnya
+        { 
+            id: 8, 
+            name: "Pisang Coklat", 
+            description: "Pisang dengan lapisan coklat leleh",
+            price: 18000, 
+            image: "https://images.unsplash.com/photo-1571408302535-4d4b3b5c6c0e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "snack",
+            isPromo: false,
+            stock: 20,
+            isDailyStock: true,
+            currentDailyStock: 10,
+            isActive: true
+        },
+        { 
+            id: 9, 
+            name: "Popcorn Coffee", 
+            description: "Kopi unik dengan aroma dan rasa manis gurih khas popcorn",
+            price: 23000, 
+            image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "minuman",
+            isPromo: false,
+            stock: 15,
+            isDailyStock: true,
+            currentDailyStock: 9,
+            isActive: true
+        },
+        { 
+            id: 10, 
+            name: "Tahu Bakso", 
+            description: "Tahu isi atau tahu goreng dengan bumbu khas",
+            price: 15000, 
+            image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+            category: "snack",
+            isPromo: false,
+            stock: 20,
+            isDailyStock: true,
+            currentDailyStock: 10,
+            isActive: true
+        }
+    ];
+}
             // ==================== ORDER FUNCTIONS ====================
             async createOrder(orderData) {
                 try {
@@ -3037,55 +3123,77 @@
         // UI FUNCTIONS
         // ============================
         function renderMenus(menus) {
-            currentMenus = menus;
-            
-            const featuredGrid = document.getElementById('featured-menu');
-            if (featuredGrid) {
-                const regularMenus = menus.filter(menu => !menu.isPromo);
-                featuredGrid.innerHTML = regularMenus.slice(0, 4).map(menu => createMenuCard(menu)).join('');
-            }
-            
-            const allMenuGrid = document.getElementById('all-menu-items');
-            if (allMenuGrid) {
-                allMenuGrid.innerHTML = menus.map(menu => createMenuCard(menu, true)).join('');
-            }
-            
-            const promoGrid = document.getElementById('promo-menu');
-            if (promoGrid) {
-                const promoMenus = menus.filter(menu => menu.isPromo);
-                if (promoMenus.length > 0) {
-                    promoGrid.innerHTML = promoMenus.map(menu => `
-                        <div class="promo-card">
-                            <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
-                            <img src="${menu.image_url || menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
-                                 alt="${menu.name}"
-                                 onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'}">
-                            <div class="promo-info">
-                                <h3>${menu.name}</h3>
-                                <p class="description">${menu.description || 'Tidak ada deskripsi'}</p>
-                                <p class="price">
-                                    ${menu.originalPrice ? 
-                                        `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
-                                        ''
-                                    }
-                                    <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
-                                </p>
-                                <button class="btn-order" onclick="addToCartFromMenu(${menu.id})">
-                                    <i class="fas fa-bolt"></i> Tambah ke Keranjang
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    promoGrid.innerHTML = `
-                        <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
-                            <i class="fas fa-tag" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <p>Tidak ada promo saat ini</p>
-                        </div>
-                    `;
-                }
-            }
+    currentMenus = menus;
+    
+    console.log(`🎨 Rendering ${menus.length} menus to UI`);
+    
+    // Tampilkan semua menu di bagian "Semua Menu"
+    const allMenuGrid = document.getElementById('all-menu-items');
+    if (allMenuGrid) {
+        allMenuGrid.innerHTML = menus.map(menu => createMenuCard(menu, true)).join('');
+        console.log(`✅ Rendered ${menus.length} menus to all-menu section`);
+    }
+    
+    // Untuk Featured Menu, ambil 4 menu pertama saja (atau bisa custom)
+    const featuredGrid = document.getElementById('featured-menu');
+    if (featuredGrid) {
+        const featuredMenus = menus.slice(0, 4); // Ambil 4 menu pertama
+        featuredGrid.innerHTML = featuredMenus.map(menu => createMenuCard(menu, false)).join('');
+        console.log(`⭐ Rendered ${featuredMenus.length} featured menus`);
+    }
+    
+    // Untuk Promo Menu
+    const promoGrid = document.getElementById('promo-menu');
+    if (promoGrid) {
+        const promoMenus = menus.filter(menu => menu.isPromo);
+        if (promoMenus.length > 0) {
+            promoGrid.innerHTML = promoMenus.map(menu => `
+                <div class="promo-card">
+                    <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
+                    <img src="${menu.image_url || menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
+                         alt="${menu.name}"
+                         onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'}">
+                    <div class="promo-info">
+                        <h3>${menu.name}</h3>
+                        <p class="description">${menu.description || 'Tidak ada deskripsi'}</p>
+                        <p class="price">
+                            ${menu.originalPrice ? 
+                                `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
+                                ''
+                            }
+                            <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
+                        </p>
+                        <button class="btn-order" onclick="addToCartFromMenu(${menu.id})">
+                            <i class="fas fa-bolt"></i> Tambah ke Keranjang
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            console.log(`🎯 Rendered ${promoMenus.length} promo menus`);
+        } else {
+            promoGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-tag" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p>Tidak ada promo saat ini</p>
+                </div>
+            `;
         }
+    }
+}
+// Test connection di console browser
+async function testMenuQuery() {
+    const { data, error } = await supabaseClient
+        .from('menu_items')
+        .select('*');
+    
+    console.log('Test Query Result:', data);
+    console.log('Total Menu:', data?.length);
+    console.log('Menu Active:', data?.filter(m => m.is_active === true).length);
+    
+    return data;
+}
+
+// Jalankan di console: testMenuQuery()
 
         function createMenuCard(item, showCategory = false) {
             const safeItem = {

@@ -5732,48 +5732,91 @@
             }
         }
 
-        async function deleteMenu(menuId) {
-            if (!adminSystem) return;
-            
-            if (confirm('Yakin ingin menghapus menu ini?')) {
-                try {
-                    if (adminSystem.isOnline) {
-                        try {
-                            const { error } = await supabaseClient
-                                .from('menu_items')
-                                .update({
-                                    is_active: false,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', menuId);
-                            
-                            if (error) throw error;
-                        } catch (error) {
-                            console.warn('Error deleting menu from Supabase:', error.message);
-                        }
-                    }
-                    
-                    const menuIndex = adminSystem.menus.findIndex(m => m.id == menuId);
-                    if (menuIndex !== -1) {
-                        const menuName = adminSystem.menus[menuIndex].name;
-                        adminSystem.menus.splice(menuIndex, 1);
-                        saveLocalData();
-                        
-                        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-                        addActivity(`Menu "${menuName}" dihapus`);
-                        updateProfileStats();
-                        
-                        showToast('Menu berhasil dihapus', 'success');
-                        loadMenuManagement();
-                        loadDashboardSection();
-                    }
-                } catch (error) {
-                    console.error('Error deleting menu:', error);
-                    showToast('Gagal menghapus menu', 'error');
+      async function deleteMenu(menuId) {
+    if (!adminSystem) {
+        showToast('Sistem admin belum siap', 'error');
+        return;
+    }
+    
+    // Cari menu dulu untuk konfirmasi
+    const menu = adminSystem.menus.find(m => m.id == menuId);
+    if (!menu) {
+        showToast('Menu tidak ditemukan', 'error');
+        return;
+    }
+    
+    if (!confirm(`Yakin ingin menghapus menu "${menu.name}"?`)) {
+        return;
+    }
+    
+    try {
+        console.log('🚨 Mencoba menghapus menu ID:', menuId, 'Nama:', menu.name);
+        
+        // 1. Coba hapus dari Supabase jika online
+        if (adminSystem.isOnline) {
+            try {
+                console.log('📡 Menghapus dari Supabase...');
+                const { error } = await supabaseClient
+                    .from('menu_items')
+                    .delete()
+                    .eq('id', menuId);
+                
+                if (error) {
+                    console.warn('⚠️ Error dari Supabase:', error.message);
+                    // Tetap lanjut ke hapus lokal meskipun Supabase error
+                } else {
+                    console.log('✅ Berhasil hapus dari Supabase');
                 }
+            } catch (supabaseError) {
+                console.warn('⚠️ Supabase connection error:', supabaseError.message);
             }
         }
-
+        
+        // 2. Hapus dari data lokal (INI YANG PALING PENTING)
+        console.log('🗑️ Menghapus dari data lokal...');
+        
+        // Hapus dari adminSystem.menus
+        const menuIndex = adminSystem.menus.findIndex(m => m.id == menuId);
+        if (menuIndex !== -1) {
+            adminSystem.menus.splice(menuIndex, 1);
+            console.log('✅ Menu dihapus dari array menus');
+        }
+        
+        // 3. Simpan perubahan ke localStorage
+        saveLocalData();
+        
+        // 4. Juga update localStorage customer_menus
+        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+        console.log('💾 Data tersimpan ke localStorage');
+        
+        // 5. Tambah aktivitas dan notifikasi
+        addActivity(`Menu "${menu.name}" dihapus`);
+        updateProfileStats();
+        
+        // 6. Tampilkan pesan sukses
+        showToast(`Menu "${menu.name}" berhasil dihapus`, 'success');
+        
+        // 7. Refresh tampilan
+        loadMenuManagement();
+        loadDashboardSection();
+        
+    } catch (error) {
+        console.error('❌ ERROR dalam deleteMenu:', error);
+        showToast('Gagal menghapus menu: ' + error.message, 'error');
+        
+        // Fallback: Hapus langsung dari localStorage
+        try {
+            const localMenus = JSON.parse(localStorage.getItem('admin_menus') || '[]');
+            const updatedMenus = localMenus.filter(m => m.id != menuId);
+            localStorage.setItem('admin_menus', JSON.stringify(updatedMenus));
+            localStorage.setItem('cafe_menus', JSON.stringify(updatedMenus));
+            showToast('Menu dihapus dari penyimpanan lokal', 'warning');
+            loadMenuManagement();
+        } catch (fallbackError) {
+            console.error('❌ Fallback juga gagal:', fallbackError);
+        }
+    }
+}
         function openRestockModal(menuId) {
             const menu = adminSystem.menus.find(m => m.id == menuId);
             if (!menu) return;
