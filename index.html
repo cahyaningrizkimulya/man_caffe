@@ -2213,13 +2213,11 @@
         
         if (this.isOnline) {
             // PERBAIKAN: Query yang lebih komprehensif
-            const { data, error } = await supabaseClient
-                .from('menu_items')
-                .select('*')
-                // Hapus filter is_active jika ingin semua menu
-                // .eq('is_active', true)  // HAPUS BARIS INI jika ingin semua menu
-                .order('category')
-                .order('name');
+           const { data, error } = await supabaseClient
+    .from('menu_items')
+    .select('*')
+    .order('category')
+    .order('name');
             
             if (error) {
                 console.error('❌ Error loading menus from Supabase:', error);
