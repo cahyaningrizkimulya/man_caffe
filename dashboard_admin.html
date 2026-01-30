@@ -2486,6 +2486,32 @@
             showLogin();
         }
 
+        // ==================== AUTOMATIC SYNC ====================
+async function autoSyncData() {
+    if (!adminSystem || !adminSystem.isOnline) return;
+    
+    try {
+        console.log('🔄 Auto-syncing data...');
+        
+        // Sync semua data
+        await syncFromSupabase();
+        
+        // Update cache timestamp untuk pelanggan
+        localStorage.setItem('last_admin_sync', Date.now().toString());
+        
+        // Update tampilan yang aktif
+        if (currentSection) {
+            loadSectionData(currentSection);
+        }
+        
+    } catch (error) {
+        console.error('❌ Auto-sync error:', error);
+    }
+}
+
+// Jalankan setiap 10 detik
+setInterval(autoSyncData, 10000);
+
         async function handleLogin(event) {
             event.preventDefault();
             
@@ -2827,48 +2853,58 @@
             }
         }
 
-        async function syncMenusFromSupabase() {
-            try {
-                console.log('🔄 Syncing menus from Supabase...');
-                
-                let { data: menus, error } = await supabaseClient
-                    .from('menu_items')
-                    .select('*')
-                    .order('name');
-                
-                if (error) {
-                    console.warn('Error fetching menus, using local data:', error.message);
-                    return;
-                }
-                
-                if (menus && menus.length > 0) {
-                    adminSystem.menus = menus.map(menu => ({
-                        id: menu.id,
-                        name: menu.name || 'Unnamed Menu',
-                        price: menu.price || 0,
-                        stock: menu.stock || 0,
-                        dailyStock: menu.daily_stock || null,
-                        currentDailyStock: menu.current_daily_stock || null,
-                        isDailyStock: menu.is_daily_stock || false,
-                        category: menu.category || 'minuman',
-                        image: menu.image_url || menu.image || '',
-                        description: menu.description || '',
-                        isPromo: menu.is_promo || false,
-                        originalPrice: menu.original_price || null,
-                        isActive: menu.is_active !== false
-                    }));
-                    
-                    localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-                    localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-                    console.log(`✅ Synced ${menus.length} menus from Supabase`);
-                } else {
-                    console.log('⚠️ No menus found in Supabase');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error syncing menus:', error);
-            }
+       // ==================== SYNC MENUS WITH CONFLICT RESOLUTION ====================
+async function syncMenusFromSupabase() {
+    try {
+        console.log('🔄 Syncing menus from Supabase...');
+        
+        let { data: menus, error } = await supabaseClient
+            .from('menu_items')
+            .select('*')
+            .order('name');
+        
+        if (error) {
+            console.error('❌ Error fetching menus:', error);
+            return;
         }
+        
+        if (menus && menus.length > 0) {
+            // Format data dengan benar
+            adminSystem.menus = menus.map(menu => ({
+                id: menu.id,
+                name: menu.name || 'Unnamed Menu',
+                price: menu.price || 0,
+                stock: menu.stock || 0,
+                dailyStock: menu.daily_stock || null,
+                currentDailyStock: menu.current_daily_stock || null,
+                isDailyStock: menu.is_daily_stock || false,
+                category: menu.category || 'minuman',
+                image: menu.image_url || menu.image || '',
+                description: menu.description || '',
+                isPromo: menu.is_promo || false,
+                originalPrice: menu.original_price || null,
+                isActive: menu.is_active !== false,
+                last_updated: menu.updated_at || menu.created_at
+            }));
+            
+            // SIMPAN KE CACHE YANG SAMA DENGAN PELANGGAN
+            localStorage.setItem('cafe_menus_fresh', JSON.stringify(adminSystem.menus));
+            localStorage.setItem('admin_menus_fresh', JSON.stringify(adminSystem.menus));
+            localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+            
+            localStorage.setItem('admin_menus_last_sync', Date.now().toString());
+            localStorage.setItem('force_menu_refresh', Date.now().toString());
+            
+            console.log(`✅ Synced ${menus.length} menus and updated all caches`);
+            
+        } else {
+            console.log('⚠️ No menus found in Supabase');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error syncing menus:', error);
+    }
+}
 
         async function syncOrdersFromSupabase() {
             try {
@@ -2971,6 +3007,39 @@
                 console.error('❌ Error syncing reservations:', error);
             }
         }
+
+        // Di fungsi save menu di admin, tambahkan:
+async function syncMenuToCustomerCache(menuData) {
+    try {
+        // Ambil cache yang ada
+        let cachedMenus = JSON.parse(localStorage.getItem('cafe_menus_fresh') || '[]');
+        
+        // Cari apakah menu sudah ada
+        const existingIndex = cachedMenus.findIndex(m => m.id == menuData.id);
+        
+        if (existingIndex >= 0) {
+            // Update existing
+            cachedMenus[existingIndex] = menuData;
+        } else {
+            // Tambah baru
+            cachedMenus.push(menuData);
+        }
+        
+        // Simpan ke cache
+        localStorage.setItem('cafe_menus_fresh', JSON.stringify(cachedMenus));
+        localStorage.setItem('cafe_menus', JSON.stringify(cachedMenus));
+        
+        console.log('✅ Menu synced to customer cache');
+        
+        // Set flag untuk force refresh
+        localStorage.setItem('force_menu_refresh', Date.now().toString());
+        
+    } catch (error) {
+        console.error('❌ Error syncing to customer cache:', error);
+    }
+}
+
+// Panggil fungsi ini setiap kali admin menyimpan menu
 
         async function resetDailyStockIfNeeded() {
             try {
@@ -3369,6 +3438,86 @@
                 `;
             }
         }
+
+        // ==================== REALTIME UPDATES UNTUK ADMIN ====================
+async function setupAdminRealtimeUpdates() {
+    try {
+        // Subscribe ke perubahan di semua tabel
+        supabaseClient
+            .channel('admin-updates')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'menu_items' 
+                }, 
+                async (payload) => {
+                    console.log('🔄 Admin: Menu update received:', payload);
+                    
+                    // Refresh menu di admin
+                    await syncMenusFromSupabase();
+                    
+                    // Update tampilan jika sedang di section menu
+                    if (currentSection === 'menu') {
+                        loadMenuManagement();
+                    }
+                    
+                    // Update stats
+                    updateStats();
+                    updateProfileStats();
+                }
+            )
+            .on('postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'orders'
+                },
+                async (payload) => {
+                    console.log('🔄 Admin: Orders update received:', payload);
+                    
+                    await syncOrdersFromSupabase();
+                    
+                    // Update tampilan order
+                    if (currentSection === 'orders' || 
+                        currentSection === 'all-orders' ||
+                        currentSection === 'dashboard') {
+                        loadSectionData(currentSection);
+                    }
+                    
+                    updateNotifications();
+                    updateStats();
+                }
+            )
+            .on('postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'reservations'
+                },
+                async (payload) => {
+                    console.log('🔄 Admin: Reservations update received:', payload);
+                    
+                    await syncReservationsFromSupabase();
+                    
+                    if (currentSection === 'reservations' || 
+                        currentSection === 'all-reservations') {
+                        loadSectionData(currentSection);
+                    }
+                    
+                    updateNotifications();
+                }
+            )
+            .subscribe((status) => {
+                console.log('📡 Admin realtime subscription status:', status);
+            });
+            
+    } catch (error) {
+        console.error('❌ Error setting up admin realtime:', error);
+    }
+}
+
+
 
         function loadNewOrders() {
     if (!adminSystem) return;
@@ -5732,91 +5881,202 @@
             }
         }
 
-      async function deleteMenu(menuId) {
+        // ==================== AUTOMATIC SYNC ====================
+async function autoSyncData() {
+    if (!adminSystem || !adminSystem.isOnline) return;
+    
+    try {
+        console.log('🔄 Auto-syncing data...');
+        
+        // Sync semua data
+        await syncFromSupabase();
+        
+        // Update cache timestamp untuk pelanggan
+        localStorage.setItem('last_admin_sync', Date.now().toString());
+        
+        // Update tampilan yang aktif
+        if (currentSection) {
+            loadSectionData(currentSection);
+        }
+        
+    } catch (error) {
+        console.error('❌ Auto-sync error:', error);
+    }
+}
+
+// Jalankan setiap 10 detik
+setInterval(autoSyncData, 10000);
+
+        
+     async function deleteMenu(menuId) {
     if (!adminSystem) {
         showToast('Sistem admin belum siap', 'error');
         return;
     }
     
-    // Cari menu dulu untuk konfirmasi
     const menu = adminSystem.menus.find(m => m.id == menuId);
     if (!menu) {
         showToast('Menu tidak ditemukan', 'error');
         return;
     }
     
-    if (!confirm(`Yakin ingin menghapus menu "${menu.name}"?`)) {
+    if (!confirm(`Yakin ingin MENGHAPUS PERMANEN menu "${menu.name}"?\n\n⚠️ PERINGATAN: Aksi ini tidak dapat dibatalkan!`)) {
         return;
     }
     
     try {
-        console.log('🚨 Mencoba menghapus menu ID:', menuId, 'Nama:', menu.name);
+        console.log('🗑️ Deleting menu permanently:', menuId);
         
-        // 1. Coba hapus dari Supabase jika online
+        // 1. HAPUS DARI DATABASE (HARD DELETE)
         if (adminSystem.isOnline) {
             try {
-                console.log('📡 Menghapus dari Supabase...');
                 const { error } = await supabaseClient
                     .from('menu_items')
                     .delete()
                     .eq('id', menuId);
                 
                 if (error) {
-                    console.warn('⚠️ Error dari Supabase:', error.message);
-                    // Tetap lanjut ke hapus lokal meskipun Supabase error
-                } else {
-                    console.log('✅ Berhasil hapus dari Supabase');
+                    console.error('❌ Error deleting from Supabase:', error);
+                    showToast('Gagal menghapus dari database: ' + error.message, 'error');
+                    return;
                 }
+                
+                console.log('✅ Menu deleted from Supabase');
+                
+                // Kirim notifikasi realtime
+                await supabaseClient
+                    .from('menu_updates')
+                    .insert([{
+                        menu_id: menuId,
+                        action: 'delete',
+                        menu_name: menu.name,
+                        timestamp: new Date().toISOString()
+                    }]);
+                
             } catch (supabaseError) {
-                console.warn('⚠️ Supabase connection error:', supabaseError.message);
+                console.error('❌ Supabase delete error:', supabaseError);
+                showToast('Gagal menghapus dari database', 'error');
+                return;
             }
         }
         
-        // 2. Hapus dari data lokal (INI YANG PALING PENTING)
-        console.log('🗑️ Menghapus dari data lokal...');
+        // 2. HAPUS DARI DATA LOKAL
+        console.log('🗑️ Removing from local data...');
         
         // Hapus dari adminSystem.menus
-        const menuIndex = adminSystem.menus.findIndex(m => m.id == menuId);
-        if (menuIndex !== -1) {
-            adminSystem.menus.splice(menuIndex, 1);
-            console.log('✅ Menu dihapus dari array menus');
-        }
+        adminSystem.menus = adminSystem.menus.filter(m => m.id != menuId);
         
-        // 3. Simpan perubahan ke localStorage
-        saveLocalData();
+        // 3. HAPUS DARI SEMUA CACHE
+        // Hapus dari cache admin
+        localStorage.setItem('admin_menus_fresh', JSON.stringify(adminSystem.menus));
         
-        // 4. Juga update localStorage customer_menus
-        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-        console.log('💾 Data tersimpan ke localStorage');
+        // Hapus dari cache pelanggan
+        const customerCache = JSON.parse(localStorage.getItem('cafe_menus_fresh') || '[]');
+        const updatedCustomerCache = customerCache.filter(m => m.id != menuId);
+        localStorage.setItem('cafe_menus_fresh', JSON.stringify(updatedCustomerCache));
+        localStorage.setItem('cafe_menus', JSON.stringify(updatedCustomerCache));
         
-        // 5. Tambah aktivitas dan notifikasi
-        addActivity(`Menu "${menu.name}" dihapus`);
+        // Hapus cache lama
+        localStorage.removeItem('cafe_menus_cache');
+        
+        console.log('✅ Menu removed from all caches');
+        
+        // 4. LOG AKTIVITAS
+        addActivity(`Menu "${menu.name}" dihapus permanen`);
         updateProfileStats();
         
-        // 6. Tampilkan pesan sukses
-        showToast(`Menu "${menu.name}" berhasil dihapus`, 'success');
+        // 5. TAMPILKAN PESAN SUKSES
+        showToast(`Menu "${menu.name}" berhasil dihapus permanen`, 'success');
         
-        // 7. Refresh tampilan
+        // 6. REFRESH TAMPILAN
         loadMenuManagement();
         loadDashboardSection();
+        
+        // 7. FORCE REFRESH DI PELANGGAN
+        if (adminSystem.isOnline) {
+            localStorage.setItem('force_menu_delete', JSON.stringify({
+                menuId: menuId,
+                menuName: menu.name,
+                timestamp: Date.now()
+            }));
+        }
         
     } catch (error) {
         console.error('❌ ERROR dalam deleteMenu:', error);
         showToast('Gagal menghapus menu: ' + error.message, 'error');
-        
-        // Fallback: Hapus langsung dari localStorage
-        try {
-            const localMenus = JSON.parse(localStorage.getItem('admin_menus') || '[]');
-            const updatedMenus = localMenus.filter(m => m.id != menuId);
-            localStorage.setItem('admin_menus', JSON.stringify(updatedMenus));
-            localStorage.setItem('cafe_menus', JSON.stringify(updatedMenus));
-            showToast('Menu dihapus dari penyimpanan lokal', 'warning');
-            loadMenuManagement();
-        } catch (fallbackError) {
-            console.error('❌ Fallback juga gagal:', fallbackError);
-        }
     }
 }
+
+
+
+// FUNGSI UNTUK AKTIFKAN/NONAKTIFKAN MENU
+async function toggleMenuStatus(menuId) {
+    if (!adminSystem) return;
+    
+    const menu = adminSystem.menus.find(m => m.id == menuId);
+    if (!menu) return;
+    
+    const newStatus = !menu.isActive;
+    const action = newStatus ? 'mengaktifkan' : 'menonaktifkan';
+    
+    if (!confirm(`Yakin ingin ${action} menu "${menu.name}"?`)) {
+        return;
+    }
+    
+    try {
+        // Update di database
+        if (adminSystem.isOnline) {
+            try {
+                const { error } = await supabaseClient
+                    .from('menu_items')
+                    .update({
+                        is_active: newStatus,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', menuId);
+                
+                if (error) throw error;
+            } catch (error) {
+                console.warn('Error updating menu status in Supabase:', error.message);
+            }
+        }
+        
+        // Update lokal
+        const menuIndex = adminSystem.menus.findIndex(m => m.id == menuId);
+        if (menuIndex !== -1) {
+            adminSystem.menus[menuIndex].isActive = newStatus;
+            
+            // Update cache
+            localStorage.setItem('admin_menus_fresh', JSON.stringify(adminSystem.menus));
+            
+            // Update cache pelanggan
+            const customerCache = JSON.parse(localStorage.getItem('cafe_menus_fresh') || '[]');
+            const customerIndex = customerCache.findIndex(m => m.id == menuId);
+            if (customerIndex !== -1) {
+                customerCache[customerIndex].isActive = newStatus;
+                localStorage.setItem('cafe_menus_fresh', JSON.stringify(customerCache));
+                localStorage.setItem('cafe_menus', JSON.stringify(customerCache));
+            }
+        }
+        
+        addActivity(`Menu "${menu.name}" ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
+        showToast(`Menu "${menu.name}" berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
+        
+        // Refresh tampilan
+        loadMenuManagement();
+        loadDashboardSection();
+        
+        // Force refresh di pelanggan
+        localStorage.setItem('force_menu_refresh', Date.now().toString());
+        
+    } catch (error) {
+        console.error('Error toggling menu status:', error);
+        showToast('Gagal mengubah status menu', 'error');
+    }
+}
+
+
+
         function openRestockModal(menuId) {
             const menu = adminSystem.menus.find(m => m.id == menuId);
             if (!menu) return;
@@ -6897,6 +7157,8 @@ function quickCheckWhatsAppStatus(orderId) {
             }
         }
 
+        
+
         // ============================
         // INITIALIZATION
         // ============================
@@ -6951,6 +7213,7 @@ function quickCheckWhatsAppStatus(orderId) {
             
             console.log('✅ Admin Dashboard ready!');
         });
+        
     </script>
 </body>
 </html>

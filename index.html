@@ -2085,190 +2085,184 @@
         // SISTEM PELANGGAN DENGAN SUPABASE - DIPERBAIKI
         // ============================
         
-        class CustomerSystem {
-            constructor() {
-                this.cart = JSON.parse(localStorage.getItem('customer_cart')) || [];
-                this.customerPhone = localStorage.getItem('customer_phone') || '';
-                this.isOnline = true;
-                this.autoRefreshInterval = null;
-                this.realtimeSubscription = null;
-                this.currentFilter = 'all';
-                this.selectedOrderForReservation = null;
-            }
+       // ============================
+// SISTEM PELANGGAN - VERSI FIXED
+// ============================
+class CustomerSystem {
+    constructor() {
+        this.cart = JSON.parse(localStorage.getItem('customer_cart')) || [];
+        this.customerPhone = localStorage.getItem('customer_phone') || '';
+        this.isOnline = true;
+        this.autoRefreshInterval = null;
+        this.realtimeSubscription = null;
+        this.currentFilter = 'all';
+        this.selectedOrderForReservation = null;
+    }
 
-            async init() {
-                console.log('🚀 Initializing Customer System...');
-                
-                try {
-                    this.isOnline = await this.checkSupabaseConnection();
-                    console.log(this.isOnline ? '✅ Connected to Supabase' : '⚠️ Running in offline mode');
-                    
-                    await this.loadMenus();
-                    await this.loadCustomerOrders();
-                    
-                    if (this.isOnline) {
-                        this.setupRealtimeUpdates();
-                    }
-                    
-                    this.startAutoRefresh();
-                    
-                    console.log('✅ Customer System initialized');
-                    
-                } catch (error) {
-                    console.error('❌ Error in init:', error);
-                    await this.loadMenus();
-                    await this.loadCustomerOrders();
-                }
+    async init() {
+        console.log('🚀 Initializing Customer System...');
+        
+        try {
+            this.isOnline = await this.checkSupabaseConnection();
+            console.log(this.isOnline ? '✅ Connected to Supabase' : '⚠️ Running in offline mode');
+            
+            await this.loadMenus();
+            await this.loadCustomerOrders();
+            
+            if (this.isOnline) {
+                this.setupRealtimeUpdates();
             }
+            
+            this.startAutoRefresh();
+            
+            console.log('✅ Customer System initialized');
+            
+        } catch (error) {
+            console.error('❌ Error in init:', error);
+            await this.loadMenus();
+            await this.loadCustomerOrders();
+        }
+    }
 
-            async checkSupabaseConnection() {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('menu_items')
-                        .select('count', { count: 'exact', head: true })
-                        .limit(1);
-                    
-                    if (error) {
-                        console.log('Supabase connection error:', error);
-                        return false;
-                    }
-                    return true;
-                } catch (error) {
-                    console.log('Supabase connection error:', error);
-                    return false;
-                }
+    async checkSupabaseConnection() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('menu_items')
+                .select('count', { count: 'exact', head: true })
+                .limit(1);
+            
+            if (error) {
+                console.log('Supabase connection error:', error);
+                return false;
             }
+            return true;
+        } catch (error) {
+            console.log('Supabase connection error:', error);
+            return false;
+        }
+    }
 
-            // ==================== REALTIME UPDATES ====================
-            setupRealtimeUpdates() {
-                try {
-                    this.realtimeSubscription = supabaseClient
-                        .channel('customer-orders')
-                        .on('postgres_changes', 
-                            { 
-                                event: '*', 
-                                schema: 'public', 
-                                table: 'orders',
-                                filter: this.customerPhone ? 
-                                    `customer_phone=eq.${this.customerPhone}` : undefined
-                            }, 
-                            async (payload) => {
-                                console.log('🔄 Realtime update received:', payload);
-                                await this.loadCustomerOrders();
-                                updateOrdersDisplay();
-                                updateOrdersCount();
-                                
-                                if (payload.eventType === 'UPDATE') {
-                                    const order = window.customerOrders?.find(o => 
-                                        o.id === payload.new.id || 
-                                        o.orderNumber === payload.new.order_number
-                                    );
-                                    
-                                    if (order) {
-                                        if (order.status === 'confirmed') {
-                                            showToast(
-                                                `🎉 Pesanan #${order.orderNumber} telah dikonfirmasi!<br>
-                                                Sekarang Anda dapat reservasi meja di tab "Dikonfirmasi".`,
-                                                'success'
-                                            );
-                                        } else if (order.status === 'completed') {
-                                            showToast(`Pesanan #${order.orderNumber} telah selesai!`, 'success');
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                        .on('postgres_changes', 
-                            { 
-                                event: '*', 
-                                schema: 'public', 
-                                table: 'payment_proofs'
-                            }, 
-                            async (payload) => {
-                                console.log('🔄 Realtime payment_proofs update:', payload);
-                                await this.loadCustomerOrders();
-                                updateOrdersDisplay();
-                                updateOrdersCount();
-                                
-                                if (payload.eventType === 'INSERT') {
-                                    showToast('Status pembayaran diperbarui!', 'info');
-                                }
-                            }
-                        )
-                        .subscribe((status) => {
-                            console.log('📡 Realtime subscription status:', status);
-                        });
-                        
-                } catch (error) {
-                    console.error('❌ Error setting up realtime:', error);
-                }
-            }
-
-            // ==================== MENU FUNCTIONS ====================
-        async loadMenus() {
+    // ==================== REALTIME UPDATES ====================
+    setupRealtimeUpdates() {
     try {
-        console.log('🔄 Loading menus from database...');
+        console.log('📡 Setting up realtime updates for customer...');
         
-        // Clear cache lama
-        localStorage.removeItem('cafe_menus');
+        this.realtimeSubscription = supabaseClient
+            .channel('customer-realtime')
+            .on('postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'menu_items'
+                }, 
+                async (payload) => {
+                    console.log('🔄 Menu update received:', payload.eventType);
+                    
+                    if (payload.eventType === 'DELETE') {
+                        console.log('🗑️ Menu deleted:', payload.old);
+                        
+                        // Hapus dari cache lokal
+                        const cached = JSON.parse(localStorage.getItem('cafe_menus_fresh') || '[]');
+                        const updated = cached.filter(m => m.id != payload.old.id);
+                        localStorage.setItem('cafe_menus_fresh', JSON.stringify(updated));
+                        
+                        // Refresh tampilan
+                        await this.loadMenus();
+                        
+                        showToast(`Menu "${payload.old.name}" dihapus`, 'info');
+                        
+                    } else {
+                        // Untuk INSERT/UPDATE, refresh biasa
+                        await this.loadMenus();
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('📡 Customer realtime status:', status);
+            });
+            
+    } catch (error) {
+        console.error('❌ Error setting up realtime:', error);
+    }
+}
+    // ==================== MENU FUNCTIONS ====================
+    async loadMenus() {
+    try {
+        console.log('🔄 Loading menus...');
         
-        // Ambil data dari Supabase
-        const { data, error } = await supabaseClient
-            .from('menu_items')
-            .select('*')
-            .order('category', { ascending: true })
-            .order('name', { ascending: true });
+        let menus = [];
         
-        if (error) {
-            console.error('❌ Database error:', error);
-            throw error;
+        // 1. Coba dari cache dulu
+        const cached = localStorage.getItem('cafe_menus_fresh') || 
+                       localStorage.getItem('cafe_menus');
+        
+        if (cached) {
+            menus = JSON.parse(cached);
+            console.log(`📦 Loaded ${menus.length} menus from cache`);
         }
         
-        console.log(`✅ Loaded ${data.length} menu items from database`);
+        // 2. Jika cache kosong atau ingin sync dengan database
+        if ((menus.length === 0 || this.isOnline) && this.isOnline) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('menu_items')
+                    .select('*')
+                    .order('name');
+                
+                if (!error && data && data.length > 0) {
+                    menus = data.map(item => this.formatMenuFromSupabase(item));
+                    console.log(`✅ Fetched ${menus.length} menus from Supabase`);
+                    
+                    // Simpan ke cache (simpan semua, termasuk yang tidak aktif untuk admin)
+                    localStorage.setItem('cafe_menus_fresh', JSON.stringify(menus));
+                }
+            } catch (error) {
+                console.warn('⚠️ Error fetching from Supabase:', error);
+            }
+        }
         
-        // DEBUG: Tampilkan semua data
-        console.log('📋 Database Data:');
-        data.forEach(item => {
-            console.log(`  ${item.id}. ${item.name}`, {
-                active: item.is_active,
-                image: item.image_url ? '✅' : '❌',
-                stock: item.stock,
-                daily_stock: item.current_daily_stock,
-                price: item.price
-            });
-        });
+        // 3. Filter hanya menu aktif untuk ditampilkan di pelanggan
+        const activeMenus = menus.filter(menu => menu.isActive !== false);
+        console.log(`🎯 Active menus: ${activeMenus.length} of ${menus.length} total`);
         
-        // Format data untuk frontend
-        const formattedMenus = data.map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            originalPrice: item.original_price,
-            image: item.image_url,
-            image_url: item.image_url,
-            category: item.category,
-            isPromo: item.is_promo,
-            isActive: item.is_active, // langsung pakai dari database
-            stock: item.stock,
-            isDailyStock: item.is_daily_stock,
-            currentDailyStock: item.current_daily_stock
-        }));
+        // 4. Simpan dan render
+        window.currentMenus = activeMenus;
+        this.renderMenus(activeMenus);
         
-        // Simpan ke global variable dan localStorage
-        window.currentMenus = formattedMenus;
-        localStorage.setItem('cafe_menus', JSON.stringify(formattedMenus));
-        
-        // Render menus
-        this.renderMenus(formattedMenus);
-        
-        return formattedMenus;
+        return activeMenus;
         
     } catch (error) {
         console.error('❌ Error loading menus:', error);
         
-        // Fallback ke data default
-        const defaultMenus = [
+        // Fallback
+        const defaultMenus = this.getDefaultMenus();
+        window.currentMenus = defaultMenus.filter(m => m.isActive !== false);
+        this.renderMenus(window.currentMenus);
+        
+        return window.currentMenus;
+    }
+}
+    formatMenuFromSupabase(menu) {
+        return {
+            id: menu.id,
+            name: menu.name || 'Menu',
+            description: menu.description || '',
+            price: Number(menu.price) || 0,
+            originalPrice: Number(menu.original_price) || null,
+            image: menu.image_url || menu.image || '',
+            image_url: menu.image_url || menu.image || '',
+            category: menu.category || 'minuman',
+            isPromo: Boolean(menu.is_promo) || false,
+            isActive: menu.is_active !== false,
+            stock: Number(menu.stock) || 0,
+            isDailyStock: Boolean(menu.is_daily_stock) || false,
+            dailyStock: Number(menu.daily_stock) || 0,
+            currentDailyStock: Number(menu.current_daily_stock) || 0
+        };
+    }
+
+    getDefaultMenus() {
+        return [
             {
                 id: 1,
                 name: "Butterscotch",
@@ -2309,983 +2303,374 @@
                 currentDailyStock: 10
             }
         ];
-        
-        window.currentMenus = defaultMenus;
-        localStorage.setItem('cafe_menus', JSON.stringify(defaultMenus));
-        this.renderMenus(defaultMenus);
-        
-        return defaultMenus;
     }
-}
-// FUNGSI BARU: Render semua menu tanpa filter
-renderAllMenus(menus) {
-    console.log('🎨 Rendering ALL menus:', menus.length);
-    
-    currentMenus = menus;
-    
-    // 1. TAMPILKAN SEMUA di "Semua Menu"
-    const allMenuGrid = document.getElementById('all-menu-items');
-    if (allMenuGrid) {
-        if (menus.length > 0) {
-            allMenuGrid.innerHTML = menus.map(menu => this.createMenuCard(menu, true)).join('');
-            console.log(`✅ Rendered ${menus.length} items in "All Menu"`);
-        } else {
-            allMenuGrid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
-                    <i class="fas fa-utensils" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                    <h3>Belum ada menu</h3>
-                    <p>Admin sedang menyiapkan menu</p>
-                </div>
-            `;
+
+    renderMenus(menus) {
+        console.log('🎨 Rendering menus...', menus.length);
+        
+        // 1. Render All Menu
+        const allMenuGrid = document.getElementById('all-menu-items');
+        if (allMenuGrid) {
+            allMenuGrid.innerHTML = menus.length > 0 ? 
+                menus.map(menu => this.createMenuCard(menu, true)).join('') :
+                '<p class="text-center" style="padding: 2rem; color: #666;">Belum ada menu</p>';
+        }
+        
+        // 2. Render Featured Menu (max 4)
+        const featuredGrid = document.getElementById('featured-menu');
+        if (featuredGrid) {
+            const featured = menus.filter(menu => menu.isActive).slice(0, 4);
+            featuredGrid.innerHTML = featured.length > 0 ?
+                featured.map(menu => this.createMenuCard(menu)).join('') :
+                '<p class="text-center" style="padding: 2rem; color: #666;">Belum ada menu unggulan</p>';
+        }
+        
+        // 3. Render Promo Menu
+        const promoGrid = document.getElementById('promo-menu');
+        if (promoGrid) {
+            const promo = menus.filter(menu => menu.isPromo && menu.isActive);
+            promoGrid.innerHTML = promo.length > 0 ?
+                promo.map(menu => `
+                    <div class="promo-card">
+                        <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
+                        <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
+                             alt="${menu.name}"
+                             onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'">
+                        <div class="promo-info">
+                            <h3>${menu.name}</h3>
+                            <p class="description">${menu.description || ''}</p>
+                            <p class="price">
+                                ${menu.originalPrice ? 
+                                    `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
+                                    ''
+                                }
+                                <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
+                            </p>
+                            <button class="btn-order" onclick="addToCartFromMenu(${menu.id})">
+                                <i class="fas fa-bolt"></i> Tambah ke Keranjang
+                            </button>
+                        </div>
+                    </div>
+                `).join('') :
+                '<p class="text-center" style="padding: 2rem; color: #666;">Tidak ada promo saat ini</p>';
         }
     }
-    
-    // 2. TAMPILKAN FEATURED (hanya yang aktif dan ada stok)
-    const featuredGrid = document.getElementById('featured-menu');
-    if (featuredGrid) {
-        const featuredMenus = menus.filter(menu => {
-            if (!menu.isActive) return false;
+
+    createMenuCard(menu, showCategory = false) {
+        const availableStock = menu.isDailyStock ? menu.currentDailyStock : menu.stock;
+        const isActive = menu.isActive !== false;
+        const hasStock = availableStock > 0;
+        
+        return `
+            <div class="menu-card ${!hasStock ? 'out-of-stock' : ''}">
+                ${menu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
+                ${showCategory ? `<span class="category-badge">${this.getCategoryText(menu.category)}</span>` : ''}
+                
+                ${!isActive ? 
+                    '<span class="promo-badge" style="background: #6c757d; left: 1rem; right: auto;"><i class="fas fa-ban"></i> Tidak Aktif</span>' : 
+                    ''
+                }
+                
+                <div class="stock-badge ${!hasStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
+                    <i class="fas fa-box${!hasStock ? '-open' : ''}"></i>
+                    ${menu.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
+                    ${!hasStock ? 'HABIS' : availableStock}
+                </div>
+                
+                <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu'}" 
+                     alt="${menu.name}"
+                     onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(menu.name)}'"
+                     style="${!isActive ? 'filter: grayscale(0.7); opacity: 0.7;' : ''}">
+                
+                <div class="menu-info">
+                    <h3 style="${!isActive ? 'color: #999;' : ''}">${menu.name}</h3>
+                    <p class="description">${menu.description || ''}</p>
+                    ${menu.originalPrice ? 
+                        `<p class="price">
+                            <span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>
+                            <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
+                        </p>` :
+                        `<p class="price">Rp ${menu.price.toLocaleString()}</p>`
+                    }
+                    <button class="btn-order" onclick="addToCartFromMenu(${menu.id})" 
+                            ${!isActive || !hasStock ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
+                        <i class="fas fa-shopping-cart"></i> 
+                        ${!isActive ? 'Tidak Tersedia' : (!hasStock ? 'Stok Habis' : 'Tambah ke Keranjang')}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getCategoryText(category) {
+        const categoryMap = {
+            'minuman': 'Minuman',
+            'makanan': 'Makanan',
+            'snack': 'Snack',
+            'dessert': 'Dessert'
+        };
+        return categoryMap[category] || category;
+    }
+
+    // ==================== ORDER FUNCTIONS ====================
+    async createOrder(orderData) {
+        try {
+            console.log('📝 Creating order:', orderData);
             
+            let supabaseOrderId = null;
+            const orderNumber = 'ORD-' + Date.now().toString().slice(-8);
+            
+            if (this.isOnline) {
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .insert([{
+                        order_number: orderNumber,
+                        customer_name: orderData.customer.name,
+                        customer_phone: orderData.customer.phone,
+                        customer_address: '-',
+                        order_type: orderData.orderType,
+                        total_amount: orderData.total,
+                        status: 'pending',
+                        payment_method: 'qris',
+                        payment_status: 'waiting_payment',
+                        admin_seen: false,
+                        created_at: new Date().toISOString()
+                    }])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                supabaseOrderId = data.id;
+                
+                const orderItems = orderData.items.map(item => ({
+                    order_id: data.id,
+                    menu_item_id: item.id,
+                    menu_item_name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    total_price: item.price * item.quantity
+                }));
+                
+                await supabaseClient
+                    .from('order_items')
+                    .insert(orderItems);
+                
+                console.log('✅ Order saved to Supabase');
+            }
+            
+            const order = {
+                id: supabaseOrderId || Date.now(),
+                orderNumber: orderNumber,
+                customer: orderData.customer,
+                orderType: orderData.orderType,
+                items: orderData.items,
+                total: orderData.total,
+                status: 'pending',
+                paymentMethod: 'qris',
+                paymentStatus: 'waiting_payment',
+                createdAt: new Date().toISOString(),
+                supabase_id: supabaseOrderId
+            };
+            
+            this.customerPhone = orderData.customer.phone;
+            localStorage.setItem('customer_phone', this.customerPhone);
+            
+            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            customerOrders.unshift(order);
+            localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+            
+            window.customerOrders = customerOrders;
+            
+            console.log('✅ Order created:', orderNumber);
+            return order;
+            
+        } catch (error) {
+            console.error('❌ Error creating order:', error);
+            
+            const orderNumber = 'ORD-OFFLINE-' + Date.now().toString().slice(-8);
+            const order = {
+                id: Date.now(),
+                orderNumber: orderNumber,
+                customer: orderData.customer,
+                orderType: orderData.orderType,
+                items: orderData.items,
+                total: orderData.total,
+                status: 'pending',
+                paymentMethod: 'qris',
+                paymentStatus: 'waiting_payment',
+                createdAt: new Date().toISOString(),
+                supabase_id: null
+            };
+            
+            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            customerOrders.unshift(order);
+            localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+            
+            window.customerOrders = customerOrders;
+            
+            console.log('✅ Order saved locally (offline):', orderNumber);
+            return order;
+        }
+    }
+
+    async loadCustomerOrders() {
+        try {
+            console.log('📥 Loading customer orders...');
+            
+            if (!this.customerPhone) {
+                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+                window.customerOrders = orders;
+                console.log(`📦 Loaded ${orders.length} orders from localStorage`);
+                return orders;
+            }
+            
+            if (!this.isOnline) {
+                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+                window.customerOrders = orders;
+                return orders;
+            }
+            
+            const { data: orders, error: ordersError } = await supabaseClient
+                .from('orders')
+                .select('*')
+                .eq('customer_phone', this.customerPhone)
+                .order('created_at', { ascending: false });
+            
+            if (ordersError) {
+                console.error('Error loading orders:', ordersError);
+                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+                window.customerOrders = orders;
+                return orders;
+            }
+            
+            if (orders && orders.length > 0) {
+                localStorage.setItem('customer_orders', JSON.stringify(orders));
+                window.customerOrders = orders;
+                console.log(`✅ Loaded ${orders.length} orders from Supabase`);
+                return orders;
+            } else {
+                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+                window.customerOrders = orders;
+                return orders;
+            }
+            
+        } catch (error) {
+            console.error('Error loading customer orders:', error);
+            const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            window.customerOrders = orders;
+            return orders;
+        }
+    }
+
+    // ==================== CART FUNCTIONS ====================
+    addToCart(menuId) {
+        const menu = window.currentMenus.find(item => item.id == menuId);
+        if (!menu) return false;
+        
+        if (!menu.isActive) {
+            showToast('Menu tidak tersedia', 'error');
+            return false;
+        }
+        
+        let availableStock = menu.stock;
+        if (menu.isDailyStock) {
+            availableStock = menu.currentDailyStock || 0;
+        }
+        
+        if (availableStock <= 0) {
+            showToast('Stok menu habis', 'error');
+            return false;
+        }
+        
+        const existingItem = this.cart.find(item => item.id == menuId);
+        
+        if (existingItem) {
+            const newQuantity = existingItem.quantity + 1;
+            if (newQuantity > availableStock) {
+                showToast(`Stok tersedia: ${availableStock}`, 'error');
+                return false;
+            }
+            existingItem.quantity = newQuantity;
+        } else {
+            if (1 > availableStock) {
+                showToast(`Stok tersedia: ${availableStock}`, 'error');
+                return false;
+            }
+            this.cart.push({
+                id: menu.id,
+                name: menu.name,
+                price: menu.price,
+                quantity: 1,
+                image: menu.image || menu.image_url
+            });
+        }
+        
+        this.saveCart();
+        return true;
+    }
+
+    removeFromCart(itemId) {
+        this.cart = this.cart.filter(item => item.id != itemId);
+        this.saveCart();
+    }
+
+    updateCartQuantity(itemId, quantity) {
+        if (quantity < 1) {
+            this.removeFromCart(itemId);
+            return;
+        }
+        
+        const menu = window.currentMenus.find(item => item.id == itemId);
+        if (menu) {
             let availableStock = menu.stock;
             if (menu.isDailyStock) {
                 availableStock = menu.currentDailyStock || 0;
             }
             
-            return availableStock > 0;
-        }).slice(0, 4);
-        
-        console.log(`⭐ Featured menus: ${featuredMenus.length} (active with stock)`);
-        
-        if (featuredMenus.length > 0) {
-            featuredGrid.innerHTML = featuredMenus.map(menu => this.createMenuCard(menu)).join('');
-        } else {
-            // Fallback: tampilkan 4 menu pertama yang aktif
-            const fallbackMenus = menus.filter(menu => menu.isActive).slice(0, 4);
-            if (fallbackMenus.length > 0) {
-                featuredGrid.innerHTML = fallbackMenus.map(menu => this.createMenuCard(menu)).join('');
-            } else {
-                // Fallback terakhir: tampilkan 4 menu pertama
-                const firstMenus = menus.slice(0, 4);
-                if (firstMenus.length > 0) {
-                    featuredGrid.innerHTML = firstMenus.map(menu => this.createMenuCard(menu)).join('');
-                } else {
-                    featuredGrid.innerHTML = `
-                        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
-                            <i class="fas fa-coffee" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <h3>Tidak ada menu tersedia</h3>
-                        </div>
-                    `;
-                }
+            if (quantity > availableStock) {
+                showToast(`Stok tersedia: ${availableStock}`, 'error');
+                return;
             }
         }
-    }
-    
-    // 3. TAMPILKAN PROMO
-    const promoGrid = document.getElementById('promo-menu');
-    if (promoGrid) {
-        const promoMenus = menus.filter(menu => menu.isPromo && menu.isActive);
-        console.log(`🏷️  Promo menus: ${promoMenus.length}`);
         
-        if (promoMenus.length > 0) {
-            promoGrid.innerHTML = promoMenus.map(menu => `
-                <div class="promo-card">
-                    <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
-                    <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
-                         alt="${menu.name}"
-                         onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'">
-                    <div class="promo-info">
-                        <h3>${menu.name}</h3>
-                        <p class="description">${menu.description || 'Tidak ada deskripsi'}</p>
-                        <p class="price">
-                            ${menu.originalPrice ? 
-                                `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
-                                ''
-                            }
-                            <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
-                        </p>
-                        <button class="btn-order" onclick="addToCartFromMenu(${menu.id})" 
-                                ${(!menu.isActive || menu.stock <= 0) ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
-                            <i class="fas fa-bolt"></i> 
-                            ${!menu.isActive ? 'Tidak Aktif' : 
-                              (menu.stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang')}
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            promoGrid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
-                    <i class="fas fa-tag" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                    <p>Tidak ada promo saat ini</p>
-                </div>
-            `;
+        const item = this.cart.find(item => item.id == itemId);
+        if (item) {
+            item.quantity = quantity;
+            this.saveCart();
         }
+    }
+
+    clearCart() {
+        this.cart = [];
+        this.saveCart();
+    }
+
+    saveCart() {
+        localStorage.setItem('customer_cart', JSON.stringify(this.cart));
+    }
+
+    getCartTotal() {
+        return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    }
+
+    // ==================== UTILITY FUNCTIONS ====================
+    startAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+        
+        this.autoRefreshInterval = setInterval(async () => {
+            if (this.isOnline) {
+                console.log('🔄 Auto-refreshing data...');
+                await this.loadMenus();
+                await this.loadCustomerOrders();
+                updateOrdersDisplay();
+                updateOrdersCount();
+            }
+        }, 30000);
     }
 }
-// FUNGSI BARU: Normalize data dari berbagai format
-normalizeMenuData(item) {
-    console.log('Normalizing item:', item);
-    
-    // Cari field dengan berbagai kemungkinan nama
-    const normalized = {
-        // ID
-        id: item.id || item.ID || Date.now(),
-        
-        // Basic info dengan fallback ke berbagai kemungkinan nama field
-        name: item.name || item.nama || item.menu_name || 'Menu',
-        description: item.description || item.deskripsi || '',
-        
-        // Price dengan berbagai format
-        price: this.normalizePrice(item.price || item.harga || item.price_value || 0),
-        originalPrice: this.normalizePrice(item.original_price || item.harga_asli || item.originalPrice || null),
-        
-        // Images
-        image: item.image_url || item.image || item.gambar || item.image_url || '',
-        image_url: item.image_url || item.image || item.gambar || '',
-        
-        // Category
-        category: item.category || item.kategori || 'minuman',
-        
-        // Status flags - cek berbagai kemungkinan nama field
-        isPromo: this.normalizeBoolean(item.is_promo, item.promo, item.isPromo, false),
-        isActive: this.normalizeBoolean(item.is_active, item.active, item.isActive, item.status, true),
-        
-        // Stock - cek berbagai kemungkinan nama field
-        stock: this.normalizeNumber(item.stock, item.stok, item.quantity, 0),
-        isDailyStock: this.normalizeBoolean(item.is_daily_stock, item.daily_stock_flag, false),
-        dailyStock: this.normalizeNumber(item.daily_stock, item.stok_harian, 0),
-        currentDailyStock: this.normalizeNumber(item.current_daily_stock, item.stok_harian_sekarang, 0),
-        
-        // Simpan juga data asli untuk debugging
-        _raw: item
-    };
-    
-    console.log('Normalized result:', normalized.name, 'Active:', normalized.isActive);
-    return normalized;
-}
-
-// Helper functions untuk normalize
-normalizePrice(value) {
-    if (value === null || value === undefined) return null;
-    const num = Number(value);
-    return isNaN(num) ? 0 : num;
-}
-
-normalizeNumber(value, fallback1, fallback2, defaultValue = 0) {
-    if (value !== null && value !== undefined) {
-        const num = Number(value);
-        if (!isNaN(num)) return num;
-    }
-    
-    if (fallback1 !== null && fallback1 !== undefined) {
-        const num = Number(fallback1);
-        if (!isNaN(num)) return num;
-    }
-    
-    if (fallback2 !== null && fallback2 !== undefined) {
-        const num = Number(fallback2);
-        if (!isNaN(num)) return num;
-    }
-    
-    return defaultValue;
-}
-
-normalizeBoolean(value, fallback1, fallback2, fallback3, defaultValue = true) {
-    // Cek value utama
-    if (value !== null && value !== undefined) {
-        if (typeof value === 'boolean') return value;
-        if (typeof value === 'number') return value !== 0;
-        if (typeof value === 'string') {
-            const lower = value.toLowerCase();
-            return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'active';
-        }
-    }
-    
-    // Cek fallback 1
-    if (fallback1 !== null && fallback1 !== undefined) {
-        if (typeof fallback1 === 'boolean') return fallback1;
-        if (typeof fallback1 === 'number') return fallback1 !== 0;
-        if (typeof fallback1 === 'string') {
-            const lower = fallback1.toLowerCase();
-            return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'active';
-        }
-    }
-    
-    // Cek fallback 2
-    if (fallback2 !== null && fallback2 !== undefined) {
-        if (typeof fallback2 === 'boolean') return fallback2;
-        if (typeof fallback2 === 'number') return fallback2 !== 0;
-        if (typeof fallback2 === 'string') {
-            const lower = fallback2.toLowerCase();
-            return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'active';
-        }
-    }
-    
-    // Cek fallback 3 untuk status
-    if (fallback3 !== null && fallback3 !== undefined) {
-        if (typeof fallback3 === 'string') {
-            const lower = fallback3.toLowerCase();
-            return lower === 'active' || lower === 'aktif' || lower === 'true';
-        }
-    }
-    
-    return defaultValue;
-}
-          formatMenuFromSupabase(menu) {
-    // Debug: tampilkan semua field yang tersedia
-    console.log('Formatting menu:', menu);
-    
-    return {
-        id: menu.id,
-        name: menu.name || 'Menu',
-        description: menu.description || '',
-        price: Number(menu.price) || 0,
-        originalPrice: Number(menu.original_price) || null,
-        image: menu.image_url || menu.image || '',
-        image_url: menu.image_url || menu.image || '',
-        category: menu.category || 'minuman',
-        isPromo: Boolean(menu.is_promo) || false,
-        isActive: menu.is_active !== false, // true jika null/undefined, false jika eksplisit false
-        stock: Number(menu.stock) || 0,
-        isDailyStock: Boolean(menu.is_daily_stock) || false,
-        dailyStock: Number(menu.daily_stock) || 0,
-        currentDailyStock: Number(menu.current_daily_stock) || 0
-    };
-}
-
-            getDefaultMenus() {
-                return [
-                    { 
-                        id: 1, 
-                        name: "Espresso Premium", 
-                        description: "Kopi espresso dengan cita rasa kuat dan aroma harum",
-                        price: 35000, 
-                        image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "minuman",
-                        isPromo: false,
-                        stock: 10,
-                        isDailyStock: false,
-                        isActive: true
-                    },
-                    { 
-                        id: 2, 
-                        name: "Cappuccino Special", 
-                        description: "Espresso dengan susu steamed dan busa susu lembut",
-                        price: 42000, 
-                        image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "minuman",
-                        isPromo: false,
-                        stock: 15,
-                        isDailyStock: false,
-                        isActive: true
-                    },
-                    { 
-                        id: 3, 
-                        name: "Latte Art", 
-                        description: "Kopi latte dengan seni gambar di atasnya",
-                        price: 45000, 
-                        image: "https://images.unsplash.com/photo-1570196911496-66bd58a5b7b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "minuman",
-                        isPromo: true,
-                        originalPrice: 50000,
-                        stock: 8,
-                        isDailyStock: false,
-                        isActive: true
-                    },
-                    { 
-                        id: 4, 
-                        name: "Croissant", 
-                        description: "Roti croissant renyah dengan isian coklat",
-                        price: 28000, 
-                        image: "https://images.unsplash.com/photo-1555507036-ab794f27d2e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-                        category: "makanan",
-                        isPromo: false,
-                        stock: 20,
-                        isDailyStock: true,
-                        currentDailyStock: 15,
-                        isActive: true
-                    }
-                ];
-            }
-
-            // ==================== ORDER FUNCTIONS ====================
-            async createOrder(orderData) {
-                try {
-                    console.log('📝 Creating order:', orderData);
-                    
-                    let supabaseOrderId = null;
-                    const orderNumber = 'ORD-' + Date.now().toString().slice(-8);
-                    
-                    if (this.isOnline) {
-                        const { data, error } = await supabaseClient
-                            .from('orders')
-                            .insert([{
-                                order_number: orderNumber,
-                                customer_name: orderData.customer.name,
-                                customer_phone: orderData.customer.phone,
-                                customer_address: '-',
-                                order_type: orderData.orderType,
-                                total_amount: orderData.total,
-                                status: 'pending',
-                                payment_method: 'qris',
-                                payment_status: 'waiting_payment',
-                                admin_seen: false,
-                                created_at: new Date().toISOString()
-                            }])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        supabaseOrderId = data.id;
-                        
-                        const orderItems = orderData.items.map(item => ({
-                            order_id: data.id,
-                            menu_item_id: item.id,
-                            menu_item_name: item.name,
-                            quantity: item.quantity,
-                            price: item.price,
-                            total_price: item.price * item.quantity
-                        }));
-                        
-                        await supabaseClient
-                            .from('order_items')
-                            .insert(orderItems);
-                        
-                        console.log('🔄 Updating stock for order items...');
-                        await this.updateStockAfterCheckout(orderData.items);
-                        
-                        await supabaseClient
-                            .from('admin_notifications')
-                            .insert([{
-                                type: 'new_order',
-                                title: 'Pesanan Baru!',
-                                message: `Pesanan baru #${orderNumber} dari ${orderData.customer.name}`,
-                                data: {
-                                    order_id: data.id,
-                                    order_number: orderNumber,
-                                    total: orderData.total,
-                                    customer_name: orderData.customer.name,
-                                    order_type: orderData.orderType
-                                },
-                                is_read: false,
-                                created_at: new Date().toISOString()
-                            }]);
-                        
-                        console.log('✅ Order saved to Supabase');
-                    }
-                    
-                    const order = {
-                        id: supabaseOrderId || Date.now(),
-                        orderNumber: orderNumber,
-                        customer: orderData.customer,
-                        orderType: orderData.orderType,
-                        items: orderData.items,
-                        total: orderData.total,
-                        status: 'pending',
-                        paymentMethod: 'qris',
-                        paymentStatus: 'waiting_payment',
-                        createdAt: new Date().toISOString(),
-                        supabase_id: supabaseOrderId,
-                        reservation: null,
-                        paymentProof: null
-                    };
-                    
-                    this.customerPhone = orderData.customer.phone;
-                    localStorage.setItem('customer_phone', this.customerPhone);
-                    
-                    const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                    customerOrders.unshift(order);
-                    localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
-                    
-                    window.customerOrders = customerOrders;
-                    
-                    console.log('✅ Order created:', orderNumber);
-                    return order;
-                    
-                } catch (error) {
-                    console.error('❌ Error creating order:', error);
-                    
-                    const orderNumber = 'ORD-OFFLINE-' + Date.now().toString().slice(-8);
-                    const order = {
-                        id: Date.now(),
-                        orderNumber: orderNumber,
-                        customer: orderData.customer,
-                        orderType: orderData.orderType,
-                        items: orderData.items,
-                        total: orderData.total,
-                        status: 'pending',
-                        paymentMethod: 'qris',
-                        paymentStatus: 'waiting_payment',
-                        createdAt: new Date().toISOString(),
-                        supabase_id: null,
-                        reservation: null,
-                        paymentProof: null
-                    };
-                    
-                    this.updateLocalStock(orderData.items);
-                    
-                    const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                    customerOrders.unshift(order);
-                    localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
-                    
-                    window.customerOrders = customerOrders;
-                    
-                    console.log('✅ Order saved locally (offline):', orderNumber);
-                    return order;
-                }
-            }
-
-            async updateStockAfterCheckout(items) {
-                try {
-                    console.log('📦 Updating stock for items:', items);
-                    
-                    for (const item of items) {
-                        const { data: menu, error: menuError } = await supabaseClient
-                            .from('menu_items')
-                            .select('*')
-                            .eq('id', item.id)
-                            .single();
-                        
-                        if (menuError) {
-                            console.error(`❌ Error finding menu ${item.id}:`, menuError);
-                            continue;
-                        }
-                        
-                        let newStock = menu.stock - item.quantity;
-                        
-                        if (menu.is_daily_stock && menu.current_daily_stock !== null) {
-                            const newDailyStock = Math.max(0, menu.current_daily_stock - item.quantity);
-                            
-                            const { error: updateError } = await supabaseClient
-                                .from('menu_items')
-                                .update({ 
-                                    stock: newStock,
-                                    current_daily_stock: newDailyStock
-                                })
-                                .eq('id', item.id);
-                            
-                            if (updateError) {
-                                console.error(`❌ Error updating stock for menu ${item.id}:`, updateError);
-                            } else {
-                                console.log(`✅ Updated stock for menu ${menu.name}: 
-                                    stock from ${menu.stock} to ${newStock},
-                                    daily stock from ${menu.current_daily_stock} to ${newDailyStock}`);
-                            }
-                        } else {
-                            const { error: updateError } = await supabaseClient
-                                .from('menu_items')
-                                .update({ stock: newStock })
-                                .eq('id', item.id);
-                            
-                            if (updateError) {
-                                console.error(`❌ Error updating stock for menu ${item.id}:`, updateError);
-                            } else {
-                                console.log(`✅ Updated stock for menu ${menu.name}: from ${menu.stock} to ${newStock}`);
-                            }
-                        }
-                        
-                        this.updateLocalMenuStock(item.id, item.quantity);
-                    }
-                    
-                    await this.loadMenus();
-                    
-                } catch (error) {
-                    console.error('❌ Error in updateStockAfterCheckout:', error);
-                }
-            }
-
-            updateLocalStock(items) {
-                console.log('🔄 Updating local stock for items:', items);
-                
-                const menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-                
-                for (const item of items) {
-                    const menuIndex = menus.findIndex(m => m.id == item.id);
-                    if (menuIndex !== -1) {
-                        let newStock = menus[menuIndex].stock - item.quantity;
-                        if (newStock < 0) newStock = 0;
-                        
-                        if (menus[menuIndex].isDailyStock && menus[menuIndex].currentDailyStock !== null) {
-                            let newDailyStock = menus[menuIndex].currentDailyStock - item.quantity;
-                            if (newDailyStock < 0) newDailyStock = 0;
-                            menus[menuIndex].currentDailyStock = newDailyStock;
-                        }
-                        
-                        menus[menuIndex].stock = newStock;
-                        
-                        console.log(`📝 Updated local stock for ${menus[menuIndex].name}: from ${menus[menuIndex].stock + item.quantity} to ${newStock}`);
-                    }
-                }
-                
-                localStorage.setItem('cafe_menus', JSON.stringify(menus));
-                window.currentMenus = menus;
-                renderMenus(menus);
-            }
-
-            updateLocalMenuStock(menuId, quantity) {
-                const menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-                const menuIndex = menus.findIndex(m => m.id == menuId);
-                
-                if (menuIndex !== -1) {
-                    menus[menuIndex].stock = Math.max(0, menus[menuIndex].stock - quantity);
-                    
-                    if (menus[menuIndex].isDailyStock && menus[menuIndex].currentDailyStock !== null) {
-                        menus[menuIndex].currentDailyStock = Math.max(0, menus[menuIndex].currentDailyStock - quantity);
-                    }
-                    
-                    localStorage.setItem('cafe_menus', JSON.stringify(menus));
-                    window.currentMenus = menus;
-                }
-            }
-
-            async loadCustomerOrders() {
-                try {
-                    console.log('📥 Loading customer orders...');
-                    
-                    if (!this.customerPhone) {
-                        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                        window.customerOrders = orders;
-                        console.log(`📦 Loaded ${orders.length} orders from localStorage`);
-                        return orders;
-                    }
-                    
-                    if (!this.isOnline) {
-                        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                        window.customerOrders = orders;
-                        return orders;
-                    }
-                    
-                    const { data: orders, error: ordersError } = await supabaseClient
-                        .from('orders')
-                        .select('*')
-                        .eq('customer_phone', this.customerPhone)
-                        .order('created_at', { ascending: false });
-                    
-                    if (ordersError) {
-                        console.error('Error loading orders:', ordersError);
-                        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                        window.customerOrders = orders;
-                        return orders;
-                    }
-                    
-                    if (orders && orders.length > 0) {
-                        const ordersWithDetails = await Promise.all(
-                            orders.map(async (order) => {
-                                try {
-                                    const { data: items, error: itemsError } = await supabaseClient
-                                        .from('order_items')
-                                        .select('*')
-                                        .eq('order_id', order.id);
-                                    
-                                    const { data: reservation, error: reservationError } = await supabaseClient
-                                        .from('reservations')
-                                        .select('*')
-                                        .eq('order_id', order.id)
-                                        .single();
-                                    
-                                    const { data: paymentProof, error: proofError } = await supabaseClient
-                                        .from('payment_proofs')
-                                        .select('*')
-                                        .eq('order_id', order.id)
-                                        .order('created_at', { ascending: false })
-                                        .limit(1)
-                                        .maybeSingle();
-                                    
-                                    const formattedOrder = await this.formatOrderFromSupabase(
-                                        order, 
-                                        items || [], 
-                                        reservation,
-                                        paymentProof
-                                    );
-                                    
-                                    return formattedOrder;
-                                } catch (error) {
-                                    console.error(`Error loading details for order ${order.id}:`, error);
-                                    return this.formatOrderFromSupabase(order, [], null, null);
-                                }
-                            })
-                        );
-                        
-                        localStorage.setItem('customer_orders', JSON.stringify(ordersWithDetails));
-                        window.customerOrders = ordersWithDetails;
-                        console.log(`✅ Loaded ${ordersWithDetails.length} orders with details`);
-                        return ordersWithDetails;
-                    } else {
-                        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                        window.customerOrders = orders;
-                        return orders;
-                    }
-                    
-                } catch (error) {
-                    console.error('Error loading customer orders:', error);
-                    const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                    window.customerOrders = orders;
-                    return orders;
-                }
-            }
-
-            async formatOrderFromSupabase(order, items = [], reservation = null, paymentProof = null) {
-                try {
-                    return {
-                        id: order.id,
-                        orderNumber: order.order_number,
-                        customer: {
-                            name: order.customer_name,
-                            phone: order.customer_phone,
-                            address: order.customer_address
-                        },
-                        orderType: order.order_type,
-                        items: items.map(item => ({
-                            id: item.menu_item_id,
-                            name: item.menu_item_name,
-                            price: item.price,
-                            quantity: item.quantity
-                        })),
-                        total: order.total_amount,
-                        status: order.status,
-                        paymentMethod: order.payment_method || 'qris',
-                        paymentStatus: paymentProof ? paymentProof.status : order.payment_status,
-                        createdAt: order.created_at,
-                        supabase_id: order.id,
-                        reservation: reservation ? {
-                            id: reservation.id,
-                            tableNumber: reservation.table_number,
-                            date: reservation.reservation_date,
-                            time: reservation.reservation_time,
-                            status: reservation.status
-                        } : null,
-                        paymentProof: paymentProof ? {
-                            id: paymentProof.id,
-                            whatsapp_message: paymentProof.whatsapp_message,
-                            whatsapp_image_url: paymentProof.whatsapp_image_url,
-                            status: paymentProof.status,
-                            verified_at: paymentProof.verified_at,
-                            created_at: paymentProof.created_at
-                        } : null
-                    };
-                } catch (error) {
-                    console.error('Error formatting order:', error);
-                    return {
-                        id: order.id,
-                        orderNumber: order.order_number,
-                        customer: {
-                            name: order.customer_name,
-                            phone: order.customer_phone,
-                            address: order.customer_address
-                        },
-                        orderType: order.order_type,
-                        items: items.map(item => ({
-                            id: item.menu_item_id,
-                            name: item.menu_item_name,
-                            price: item.price,
-                            quantity: item.quantity
-                        })),
-                        total: order.total_amount,
-                        status: order.status,
-                        paymentMethod: order.payment_method || 'qris',
-                        paymentStatus: order.payment_status || 'waiting_payment',
-                        createdAt: order.created_at,
-                        supabase_id: order.id,
-                        reservation: reservation,
-                        paymentProof: null
-                    };
-                }
-            }
-
-            // ==================== TABLE RESERVATION FUNCTIONS ====================
-            async loadAvailableTables(date = null) {
-                try {
-                    const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
-                    
-                    if (tables.length === 0) {
-                        return this.getDefaultTables();
-                    }
-                    
-                    const targetDate = date || new Date().toISOString().split('T')[0];
-                    
-                    if (this.isOnline) {
-                        try {
-                            const { data: reservations, error } = await supabaseClient
-                                .from('reservations')
-                                .select('*')
-                                .eq('reservation_date', targetDate)
-                                .in('status', ['confirmed', 'pending']);
-                            
-                            if (error) {
-                                console.error('Error loading reservations:', error);
-                                return tables.map(table => ({
-                                    ...table,
-                                    status: table.status || 'available'
-                                }));
-                            }
-                            
-                            if (reservations && reservations.length > 0) {
-                                reservations.forEach(reservation => {
-                                    const tableIndex = tables.findIndex(t => t.number == reservation.table_number);
-                                    if (tableIndex !== -1) {
-                                        tables[tableIndex].status = 'reserved';
-                                        tables[tableIndex].reservedBy = reservation.customer_name;
-                                        tables[tableIndex].reservationTime = reservation.reservation_time;
-                                        tables[tableIndex].reservationId = reservation.id;
-                                    }
-                                });
-                            }
-                        } catch (error) {
-                            console.error('Error loading reservations from Supabase:', error);
-                        }
-                    }
-                    
-                    return tables;
-                    
-                } catch (error) {
-                    console.error('Error loading tables:', error);
-                    return this.getDefaultTables();
-                }
-            }
-
-            getDefaultTables() {
-                const storedTables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
-                if (storedTables.length > 0) {
-                    return storedTables;
-                }
-                
-                const tables = [];
-                for (let i = 1; i <= 24; i++) {
-                    tables.push({
-                        id: i,
-                        number: i.toString(),
-                        capacity: i <= 8 ? 2 : (i <= 16 ? 4 : 6),
-                        status: 'available',
-                        location: i <= 12 ? 'indoor' : 'outdoor',
-                        description: i <= 8 ? 'Meja kecil' : i <= 16 ? 'Meja sedang' : 'Meja besar',
-                        reservedBy: null,
-                        reservationTime: null,
-                        reservationId: null
-                    });
-                }
-                
-                localStorage.setItem('cafe_tables', JSON.stringify(tables));
-                return tables;
-            }
-
-            async createReservation(orderNumber, tableNumber, reservationDate, reservationTime, customerName, customerPhone) {
-                try {
-                    console.log('📝 Creating reservation:', { 
-                        orderNumber, tableNumber, reservationDate, reservationTime, customerName, customerPhone 
-                    });
-                    
-                    let supabaseReservationId = null;
-                    let orderData = null;
-                    
-                    if (this.isOnline) {
-                        const { data: order, error: orderError } = await supabaseClient
-                            .from('orders')
-                            .select('*')
-                            .eq('order_number', orderNumber)
-                            .single();
-                        
-                        if (orderError) {
-                            console.error('Order not found in Supabase:', orderError);
-                            orderData = { id: Date.now(), order_number: orderNumber };
-                        } else {
-                            orderData = order;
-                        }
-                        
-                        const { data: existingReservation, error: checkError } = await supabaseClient
-                            .from('reservations')
-                            .select('*')
-                            .eq('table_number', tableNumber)
-                            .eq('reservation_date', reservationDate)
-                            .eq('reservation_time', reservationTime)
-                            .in('status', ['confirmed', 'pending'])
-                            .maybeSingle();
-                        
-                        if (existingReservation) {
-                            throw new Error(`Meja ${tableNumber} sudah dipesan untuk ${reservationDate} ${reservationTime}`);
-                        }
-                        
-                        const { data, error: insertError } = await supabaseClient
-                            .from('reservations')
-                            .insert([{
-                                order_id: orderData.id,
-                                order_number: orderNumber,
-                                table_number: tableNumber,
-                                customer_name: customerName,
-                                customer_phone: customerPhone,
-                                reservation_date: reservationDate,
-                                reservation_time: reservationTime,
-                                status: 'pending',
-                                created_at: new Date().toISOString()
-                            }])
-                            .select()
-                            .single();
-                        
-                        if (insertError) throw insertError;
-                        
-                        supabaseReservationId = data.id;
-                        console.log('✅ Reservation saved to Supabase');
-                        
-                        const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
-                        const tableIndex = tables.findIndex(t => t.number == tableNumber);
-                        if (tableIndex !== -1) {
-                            tables[tableIndex].status = 'reserved';
-                            localStorage.setItem('cafe_tables', JSON.stringify(tables));
-                        }
-                        
-                        await supabaseClient
-                            .from('admin_notifications')
-                            .insert([{
-                                type: 'new_reservation',
-                                title: 'Reservasi Meja Baru!',
-                                message: `Meja ${tableNumber} dipesan oleh ${customerName} untuk ${reservationDate} ${reservationTime}`,
-                                data: {
-                                    reservation_id: data.id,
-                                    table_number: tableNumber,
-                                    customer_name: customerName,
-                                    reservation_date: reservationDate,
-                                    reservation_time: reservationTime,
-                                    order_number: orderNumber
-                                },
-                                is_read: false,
-                                created_at: new Date().toISOString()
-                            }]);
-                    }
-                    
-                    const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                    const orderIndex = orders.findIndex(o => o.orderNumber === orderNumber);
-                    
-                    if (orderIndex !== -1) {
-                        orders[orderIndex].reservation = {
-                            id: supabaseReservationId || Date.now(),
-                            tableNumber: tableNumber,
-                            date: reservationDate,
-                            time: reservationTime,
-                            status: 'pending'
-                        };
-                        
-                        localStorage.setItem('customer_orders', JSON.stringify(orders));
-                        window.customerOrders = orders;
-                    }
-                    
-                    console.log('✅ Reservation created successfully');
-                    return true;
-                    
-                } catch (error) {
-                    console.error('❌ Error creating reservation:', error);
-                    throw error;
-                }
-            }
-
-            // ==================== CART FUNCTIONS ====================
-            addToCart(menuId) {
-                const menu = window.currentMenus.find(item => item.id == menuId);
-                if (!menu) return false;
-                
-                if (!menu.isActive) {
-                    showToast('Menu tidak tersedia', 'error');
-                    return false;
-                }
-                
-                let availableStock = menu.stock;
-                if (menu.isDailyStock) {
-                    availableStock = menu.currentDailyStock || 0;
-                }
-                
-                if (availableStock <= 0) {
-                    showToast('Stok menu habis', 'error');
-                    return false;
-                }
-                
-                const existingItem = this.cart.find(item => item.id == menuId);
-                
-                if (existingItem) {
-                    const newQuantity = existingItem.quantity + 1;
-                    if (newQuantity > availableStock) {
-                        showToast(`Stok tersedia: ${availableStock}`, 'error');
-                        return false;
-                    }
-                    existingItem.quantity = newQuantity;
-                } else {
-                    if (1 > availableStock) {
-                        showToast(`Stok tersedia: ${availableStock}`, 'error');
-                        return false;
-                    }
-                    this.cart.push({
-                        id: menu.id,
-                        name: menu.name,
-                        price: menu.price,
-                        quantity: 1,
-                        image: menu.image || menu.image_url
-                    });
-                }
-                
-                this.saveCart();
-                return true;
-            }
-
-            removeFromCart(itemId) {
-                this.cart = this.cart.filter(item => item.id != itemId);
-                this.saveCart();
-            }
-
-            updateCartQuantity(itemId, quantity) {
-                if (quantity < 1) {
-                    this.removeFromCart(itemId);
-                    return;
-                }
-                
-                const menu = window.currentMenus.find(item => item.id == itemId);
-                if (menu) {
-                    let availableStock = menu.stock;
-                    if (menu.isDailyStock) {
-                        availableStock = menu.currentDailyStock || 0;
-                    }
-                    
-                    if (quantity > availableStock) {
-                        showToast(`Stok tersedia: ${availableStock}`, 'error');
-                        return;
-                    }
-                }
-                
-                const item = this.cart.find(item => item.id == itemId);
-                if (item) {
-                    item.quantity = quantity;
-                    this.saveCart();
-                }
-            }
-
-            clearCart() {
-                this.cart = [];
-                this.saveCart();
-            }
-
-            saveCart() {
-                localStorage.setItem('customer_cart', JSON.stringify(this.cart));
-            }
-
-            getCartTotal() {
-                return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-            }
-
-            // ==================== UTILITY FUNCTIONS ====================
-            startAutoRefresh() {
-                if (this.autoRefreshInterval) {
-                    clearInterval(this.autoRefreshInterval);
-                }
-                
-                this.autoRefreshInterval = setInterval(async () => {
-                    if (this.isOnline) {
-                        console.log('🔄 Auto-refreshing data...');
-                        await this.loadMenus();
-                        await this.loadCustomerOrders();
-                        updateOrdersDisplay();
-                        updateOrdersCount();
-                    }
-                }, 30000);
-            }
-        }
-
         // ============================
         // GLOBAL VARIABLES
         // ============================
@@ -3412,7 +2797,7 @@ normalizeBoolean(value, fallback1, fallback2, fallback3, defaultValue = true) {
     return `
         <div class="menu-card ${shouldDisable ? 'out-of-stock' : ''}" style="position: relative;">
             ${safeMenu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
-            ${showCategory ? `<span class="category-badge">${this.getCategoryText(safeMenu.category)}</span>` : ''}
+            ${showCategory ? `<span class="category-badge">${getCategoryText(safeMenu.category)}</span>` : ''}
             
             <!-- Badge untuk menu tidak aktif -->
             ${!isActive ? 
@@ -3453,6 +2838,29 @@ normalizeBoolean(value, fallback1, fallback2, fallback3, defaultValue = true) {
         </div>
     `;
 }
+
+// Tambahkan fungsi getCategoryText di pelanggan
+function getCategoryText(category) {
+    const categoryMap = {
+        'minuman': 'Minuman',
+        'makanan': 'Makanan',
+        'snack': 'Snack',
+        'dessert': 'Dessert'
+    };
+    return categoryMap[category] || category;
+}
+
+// Tambahkan fungsi getCategoryText di pelanggan
+function getCategoryText(category) {
+    const categoryMap = {
+        'minuman': 'Minuman',
+        'makanan': 'Makanan',
+        'snack': 'Snack',
+        'dessert': 'Dessert'
+    };
+    return categoryMap[category] || category;
+}
+
 // Tambahkan fungsi ini untuk cek struktur database
 async function checkDatabaseStructure() {
     console.log('🔍 Checking database structure...');
@@ -3512,28 +2920,8 @@ setTimeout(() => {
 
         // ==================== CART FUNCTIONS ====================
        function addToCartFromMenu(menuId) {
-    if (!customerSystem) return false;
-    
-    const menu = window.currentMenus.find(item => item.id == menuId);
-    if (!menu) {
-        showToast('Menu tidak ditemukan', 'error');
-        return false;
-    }
-    
-    // Cek apakah menu aktif
-    if (!menu.isActive) {
-        showToast('Menu ini tidak tersedia untuk dipesan', 'error');
-        return false;
-    }
-    
-    // Cek stok
-    let availableStock = menu.stock;
-    if (menu.isDailyStock && menu.currentDailyStock !== null) {
-        availableStock = menu.currentDailyStock;
-    }
-    
-    if (availableStock <= 0) {
-        showToast('Stok menu habis', 'error');
+    if (!customerSystem) {
+        showToast('Sistem belum siap', 'error');
         return false;
     }
     
@@ -4569,6 +3957,16 @@ setTimeout(() => {
             }, 3000);
         }
 
+        function getCategoryText(category) {
+    const categoryMap = {
+        'minuman': 'Minuman',
+        'makanan': 'Makanan',
+        'snack': 'Snack',
+        'dessert': 'Dessert'
+    };
+    return categoryMap[category] || category;
+}
+
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
@@ -4669,69 +4067,61 @@ setTimeout(() => {
         }
 
         // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🚀 Starting MAN CAFE Customer System...');
+     document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Starting MAN CAFE Customer System...');
+    
+    // Debug: cek localStorage
+    console.log('🔍 Checking localStorage...');
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        console.log(`  ${key}: ${localStorage.getItem(key).length} chars`);
+    }
+    
+    try {
+        customerSystem = new CustomerSystem();
+        await customerSystem.init();
+        
+        updateCartDisplay();
+        updateCartCount();
+        updateOrdersCount();
+        
+        if (window.customerOrders) {
+            showOrders('all');
+        }
+        
+        setupNavigation();
+        
+        console.log('✅ MAN CAFE ready!');
+        console.log('📊 Current menus:', window.currentMenus?.length || 0);
+        
+    } catch (error) {
+        console.error('❌ Error initializing system:', error);
+        
+        // Fallback sederhana
+        customerSystem = new CustomerSystem();
+        customerSystem.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
+        
+        // Coba load menus secara manual
+        const cached = localStorage.getItem('cafe_menus_fresh') || 
+                       localStorage.getItem('cafe_menus');
+        if (cached) {
+            window.currentMenus = JSON.parse(cached);
+            console.log('📦 Loaded menus from cache:', window.currentMenus.length);
             
-            try {
-                customerSystem = new CustomerSystem();
-                await customerSystem.init();
-                
-                updateCartDisplay();
-                updateCartCount();
-                updateOrdersCount();
-                
-                if (window.customerOrders) {
-                    showOrders('all');
-                }
-                
-                setupNavigation();
-                
-                setTimeout(() => {
-                    const pendingOrders = window.customerOrders?.filter(order => order.status === 'pending') || [];
-                    if (pendingOrders.length > 0) {
-                        showToast(`Anda memiliki ${pendingOrders.length} pesanan menunggu konfirmasi`, 'info');
-                    }
-                    
-                    const waitingPaymentOrders = window.customerOrders?.filter(order => 
-                        order.paymentStatus === 'waiting_payment'
-                    ) || [];
-                    
-                    if (waitingPaymentOrders.length > 0) {
-                        setTimeout(() => {
-                            showToast(`Anda memiliki ${waitingPaymentOrders.length} pesanan menunggu pembayaran. Kirim bukti transfer via WhatsApp.`, 'info');
-                        }, 2000);
-                    }
-                    
-                    const confirmedDineInOrders = window.customerOrders?.filter(order => 
-                        order.status === 'confirmed' && 
-                        order.orderType === 'dine_in' &&
-                        !order.reservation
-                    ) || [];
-                    
-                    if (confirmedDineInOrders.length > 0) {
-                        setTimeout(() => {
-                            showToast(`Anda dapat reservasi meja untuk ${confirmedDineInOrders.length} pesanan`, 'info');
-                        }, 4000);
-                    }
-                }, 2000);
-                
-                console.log('✅ MAN CAFE ready!');
-                
-            } catch (error) {
-                console.error('❌ Error initializing system:', error);
-                customerSystem = new CustomerSystem();
-                customerSystem.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
-                window.currentMenus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-                window.customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                
-                updateCartDisplay();
-                updateCartCount();
-                updateOrdersCount();
-                renderMenus(window.currentMenus);
-                showOrders('all');
-                setupNavigation();
+            // Render manual
+            const allMenuGrid = document.getElementById('all-menu-items');
+            if (allMenuGrid && window.currentMenus.length > 0) {
+                allMenuGrid.innerHTML = window.currentMenus.map(menu => 
+                    customerSystem.createMenuCard(menu, true)
+                ).join('');
             }
-        });
+        }
+        
+        updateCartDisplay();
+        updateCartCount();
+        setupNavigation();
+    }
+});
     </script>
 </body>
 </html>
