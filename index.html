@@ -2205,214 +2205,409 @@
             }
 
             // ==================== MENU FUNCTIONS ====================
-           async loadMenus() {
+        async loadMenus() {
     try {
-        console.log('📥 Loading menus...');
+        console.log('🔄 Loading menus from database...');
         
-        let menus = [];
+        // Clear cache lama
+        localStorage.removeItem('cafe_menus');
         
-        if (this.isOnline) {
-            // PERBAIKAN: Query yang lebih komprehensif
-           const { data, error } = await supabaseClient
-    .from('menu_items')
-    .select('*')
-    .order('category')
-    .order('name');
-            
-            if (error) {
-                console.error('❌ Error loading menus from Supabase:', error);
-                menus = this.getDefaultMenus();
-            } else if (data && data.length > 0) {
-                console.log(`📊 Total menu dari database: ${data.length}`);
-                console.log('📋 Daftar menu dari database:');
-                data.forEach(menu => console.log(`  - ${menu.name} (active: ${menu.is_active})`));
-                
-                // Filter hanya yang active dan ada stok
-                menus = data
-                    .filter(menu => menu.is_active !== false) // Tambahkan filter manual
-                    .map(menu => this.formatMenuFromSupabase(menu));
-                
-                console.log(`✅ Loaded ${menus.length} active menus from Supabase`);
-            } else {
-                console.log('⚠️ No data from Supabase, using default menus');
-                menus = this.getDefaultMenus();
-            }
-        } else {
-            menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-            if (menus.length === 0) {
-                menus = this.getDefaultMenus();
-            }
+        // Ambil data dari Supabase
+        const { data, error } = await supabaseClient
+            .from('menu_items')
+            .select('*')
+            .order('category', { ascending: true })
+            .order('name', { ascending: true });
+        
+        if (error) {
+            console.error('❌ Database error:', error);
+            throw error;
         }
         
-        localStorage.setItem('cafe_menus', JSON.stringify(menus));
-        window.currentMenus = menus;
+        console.log(`✅ Loaded ${data.length} menu items from database`);
         
-        renderMenus(menus);
+        // DEBUG: Tampilkan semua data
+        console.log('📋 Database Data:');
+        data.forEach(item => {
+            console.log(`  ${item.id}. ${item.name}`, {
+                active: item.is_active,
+                image: item.image_url ? '✅' : '❌',
+                stock: item.stock,
+                daily_stock: item.current_daily_stock,
+                price: item.price
+            });
+        });
         
-        return menus;
+        // Format data untuk frontend
+        const formattedMenus = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            originalPrice: item.original_price,
+            image: item.image_url,
+            image_url: item.image_url,
+            category: item.category,
+            isPromo: item.is_promo,
+            isActive: item.is_active, // langsung pakai dari database
+            stock: item.stock,
+            isDailyStock: item.is_daily_stock,
+            currentDailyStock: item.current_daily_stock
+        }));
+        
+        // Simpan ke global variable dan localStorage
+        window.currentMenus = formattedMenus;
+        localStorage.setItem('cafe_menus', JSON.stringify(formattedMenus));
+        
+        // Render menus
+        this.renderMenus(formattedMenus);
+        
+        return formattedMenus;
         
     } catch (error) {
         console.error('❌ Error loading menus:', error);
-        const defaultMenus = this.getDefaultMenus();
-        localStorage.setItem('cafe_menus', JSON.stringify(defaultMenus));
+        
+        // Fallback ke data default
+        const defaultMenus = [
+            {
+                id: 1,
+                name: "Butterscotch",
+                description: "Kopi creamy dengan perpaduan rasa manis karamel butterscotch yang lembut.",
+                price: 25000,
+                image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                category: "minuman",
+                isPromo: false,
+                isActive: true,
+                stock: 15,
+                isDailyStock: true,
+                currentDailyStock: 11
+            },
+            {
+                id: 2,
+                name: "Caramel Machiato",
+                description: "Espresso berpadu susu dan sirup karamel dengan rasa manis seimbang.",
+                price: 25000,
+                image: "https://images.unsplash.com/photo-1561047029-3000c68339ca?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                category: "minuman",
+                isPromo: false,
+                isActive: true,
+                stock: 15,
+                isDailyStock: true,
+                currentDailyStock: 11
+            },
+            {
+                id: 3,
+                name: "Kentang Crispy",
+                description: "Kentang goreng crispy dengan tekstur renyah luar lembut dalam.",
+                price: 15000,
+                image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                category: "makanan",
+                isPromo: false,
+                isActive: true,
+                stock: 10,
+                isDailyStock: true,
+                currentDailyStock: 10
+            }
+        ];
+        
         window.currentMenus = defaultMenus;
-        renderMenus(defaultMenus);
+        localStorage.setItem('cafe_menus', JSON.stringify(defaultMenus));
+        this.renderMenus(defaultMenus);
+        
         return defaultMenus;
     }
 }
-            formatMenuFromSupabase(menu) {
-                return {
-                    id: menu.id,
-                    name: menu.name || 'Menu',
-                    description: menu.description || '',
-                    price: menu.price || 0,
-                    image: menu.image_url || menu.image || '',
-                    image_url: menu.image_url || menu.image || '',
-                    category: menu.category || 'minuman',
-                    isPromo: menu.is_promo || false,
-                    originalPrice: menu.original_price || null,
-                    isActive: menu.is_active !== false,
-                    stock: menu.stock || 0,
-                    isDailyStock: menu.is_daily_stock || false,
-                    dailyStock: menu.daily_stock || 0,
-                    currentDailyStock: menu.current_daily_stock || 0
-                };
+// FUNGSI BARU: Render semua menu tanpa filter
+renderAllMenus(menus) {
+    console.log('🎨 Rendering ALL menus:', menus.length);
+    
+    currentMenus = menus;
+    
+    // 1. TAMPILKAN SEMUA di "Semua Menu"
+    const allMenuGrid = document.getElementById('all-menu-items');
+    if (allMenuGrid) {
+        if (menus.length > 0) {
+            allMenuGrid.innerHTML = menus.map(menu => this.createMenuCard(menu, true)).join('');
+            console.log(`✅ Rendered ${menus.length} items in "All Menu"`);
+        } else {
+            allMenuGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                    <i class="fas fa-utensils" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <h3>Belum ada menu</h3>
+                    <p>Admin sedang menyiapkan menu</p>
+                </div>
+            `;
+        }
+    }
+    
+    // 2. TAMPILKAN FEATURED (hanya yang aktif dan ada stok)
+    const featuredGrid = document.getElementById('featured-menu');
+    if (featuredGrid) {
+        const featuredMenus = menus.filter(menu => {
+            if (!menu.isActive) return false;
+            
+            let availableStock = menu.stock;
+            if (menu.isDailyStock) {
+                availableStock = menu.currentDailyStock || 0;
+            }
+            
+            return availableStock > 0;
+        }).slice(0, 4);
+        
+        console.log(`⭐ Featured menus: ${featuredMenus.length} (active with stock)`);
+        
+        if (featuredMenus.length > 0) {
+            featuredGrid.innerHTML = featuredMenus.map(menu => this.createMenuCard(menu)).join('');
+        } else {
+            // Fallback: tampilkan 4 menu pertama yang aktif
+            const fallbackMenus = menus.filter(menu => menu.isActive).slice(0, 4);
+            if (fallbackMenus.length > 0) {
+                featuredGrid.innerHTML = fallbackMenus.map(menu => this.createMenuCard(menu)).join('');
+            } else {
+                // Fallback terakhir: tampilkan 4 menu pertama
+                const firstMenus = menus.slice(0, 4);
+                if (firstMenus.length > 0) {
+                    featuredGrid.innerHTML = firstMenus.map(menu => this.createMenuCard(menu)).join('');
+                } else {
+                    featuredGrid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                            <i class="fas fa-coffee" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <h3>Tidak ada menu tersedia</h3>
+                        </div>
+                    `;
+                }
+            }
+        }
+    }
+    
+    // 3. TAMPILKAN PROMO
+    const promoGrid = document.getElementById('promo-menu');
+    if (promoGrid) {
+        const promoMenus = menus.filter(menu => menu.isPromo && menu.isActive);
+        console.log(`🏷️  Promo menus: ${promoMenus.length}`);
+        
+        if (promoMenus.length > 0) {
+            promoGrid.innerHTML = promoMenus.map(menu => `
+                <div class="promo-card">
+                    <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
+                    <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
+                         alt="${menu.name}"
+                         onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'">
+                    <div class="promo-info">
+                        <h3>${menu.name}</h3>
+                        <p class="description">${menu.description || 'Tidak ada deskripsi'}</p>
+                        <p class="price">
+                            ${menu.originalPrice ? 
+                                `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
+                                ''
+                            }
+                            <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
+                        </p>
+                        <button class="btn-order" onclick="addToCartFromMenu(${menu.id})" 
+                                ${(!menu.isActive || menu.stock <= 0) ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
+                            <i class="fas fa-bolt"></i> 
+                            ${!menu.isActive ? 'Tidak Aktif' : 
+                              (menu.stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang')}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            promoGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-tag" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p>Tidak ada promo saat ini</p>
+                </div>
+            `;
+        }
+    }
+}
+// FUNGSI BARU: Normalize data dari berbagai format
+normalizeMenuData(item) {
+    console.log('Normalizing item:', item);
+    
+    // Cari field dengan berbagai kemungkinan nama
+    const normalized = {
+        // ID
+        id: item.id || item.ID || Date.now(),
+        
+        // Basic info dengan fallback ke berbagai kemungkinan nama field
+        name: item.name || item.nama || item.menu_name || 'Menu',
+        description: item.description || item.deskripsi || '',
+        
+        // Price dengan berbagai format
+        price: this.normalizePrice(item.price || item.harga || item.price_value || 0),
+        originalPrice: this.normalizePrice(item.original_price || item.harga_asli || item.originalPrice || null),
+        
+        // Images
+        image: item.image_url || item.image || item.gambar || item.image_url || '',
+        image_url: item.image_url || item.image || item.gambar || '',
+        
+        // Category
+        category: item.category || item.kategori || 'minuman',
+        
+        // Status flags - cek berbagai kemungkinan nama field
+        isPromo: this.normalizeBoolean(item.is_promo, item.promo, item.isPromo, false),
+        isActive: this.normalizeBoolean(item.is_active, item.active, item.isActive, item.status, true),
+        
+        // Stock - cek berbagai kemungkinan nama field
+        stock: this.normalizeNumber(item.stock, item.stok, item.quantity, 0),
+        isDailyStock: this.normalizeBoolean(item.is_daily_stock, item.daily_stock_flag, false),
+        dailyStock: this.normalizeNumber(item.daily_stock, item.stok_harian, 0),
+        currentDailyStock: this.normalizeNumber(item.current_daily_stock, item.stok_harian_sekarang, 0),
+        
+        // Simpan juga data asli untuk debugging
+        _raw: item
+    };
+    
+    console.log('Normalized result:', normalized.name, 'Active:', normalized.isActive);
+    return normalized;
+}
+
+// Helper functions untuk normalize
+normalizePrice(value) {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+}
+
+normalizeNumber(value, fallback1, fallback2, defaultValue = 0) {
+    if (value !== null && value !== undefined) {
+        const num = Number(value);
+        if (!isNaN(num)) return num;
+    }
+    
+    if (fallback1 !== null && fallback1 !== undefined) {
+        const num = Number(fallback1);
+        if (!isNaN(num)) return num;
+    }
+    
+    if (fallback2 !== null && fallback2 !== undefined) {
+        const num = Number(fallback2);
+        if (!isNaN(num)) return num;
+    }
+    
+    return defaultValue;
+}
+
+normalizeBoolean(value, fallback1, fallback2, fallback3, defaultValue = true) {
+    // Cek value utama
+    if (value !== null && value !== undefined) {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'number') return value !== 0;
+        if (typeof value === 'string') {
+            const lower = value.toLowerCase();
+            return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'active';
+        }
+    }
+    
+    // Cek fallback 1
+    if (fallback1 !== null && fallback1 !== undefined) {
+        if (typeof fallback1 === 'boolean') return fallback1;
+        if (typeof fallback1 === 'number') return fallback1 !== 0;
+        if (typeof fallback1 === 'string') {
+            const lower = fallback1.toLowerCase();
+            return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'active';
+        }
+    }
+    
+    // Cek fallback 2
+    if (fallback2 !== null && fallback2 !== undefined) {
+        if (typeof fallback2 === 'boolean') return fallback2;
+        if (typeof fallback2 === 'number') return fallback2 !== 0;
+        if (typeof fallback2 === 'string') {
+            const lower = fallback2.toLowerCase();
+            return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'active';
+        }
+    }
+    
+    // Cek fallback 3 untuk status
+    if (fallback3 !== null && fallback3 !== undefined) {
+        if (typeof fallback3 === 'string') {
+            const lower = fallback3.toLowerCase();
+            return lower === 'active' || lower === 'aktif' || lower === 'true';
+        }
+    }
+    
+    return defaultValue;
+}
+          formatMenuFromSupabase(menu) {
+    // Debug: tampilkan semua field yang tersedia
+    console.log('Formatting menu:', menu);
+    
+    return {
+        id: menu.id,
+        name: menu.name || 'Menu',
+        description: menu.description || '',
+        price: Number(menu.price) || 0,
+        originalPrice: Number(menu.original_price) || null,
+        image: menu.image_url || menu.image || '',
+        image_url: menu.image_url || menu.image || '',
+        category: menu.category || 'minuman',
+        isPromo: Boolean(menu.is_promo) || false,
+        isActive: menu.is_active !== false, // true jika null/undefined, false jika eksplisit false
+        stock: Number(menu.stock) || 0,
+        isDailyStock: Boolean(menu.is_daily_stock) || false,
+        dailyStock: Number(menu.daily_stock) || 0,
+        currentDailyStock: Number(menu.current_daily_stock) || 0
+    };
+}
+
+            getDefaultMenus() {
+                return [
+                    { 
+                        id: 1, 
+                        name: "Espresso Premium", 
+                        description: "Kopi espresso dengan cita rasa kuat dan aroma harum",
+                        price: 35000, 
+                        image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                        category: "minuman",
+                        isPromo: false,
+                        stock: 10,
+                        isDailyStock: false,
+                        isActive: true
+                    },
+                    { 
+                        id: 2, 
+                        name: "Cappuccino Special", 
+                        description: "Espresso dengan susu steamed dan busa susu lembut",
+                        price: 42000, 
+                        image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                        category: "minuman",
+                        isPromo: false,
+                        stock: 15,
+                        isDailyStock: false,
+                        isActive: true
+                    },
+                    { 
+                        id: 3, 
+                        name: "Latte Art", 
+                        description: "Kopi latte dengan seni gambar di atasnya",
+                        price: 45000, 
+                        image: "https://images.unsplash.com/photo-1570196911496-66bd58a5b7b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                        category: "minuman",
+                        isPromo: true,
+                        originalPrice: 50000,
+                        stock: 8,
+                        isDailyStock: false,
+                        isActive: true
+                    },
+                    { 
+                        id: 4, 
+                        name: "Croissant", 
+                        description: "Roti croissant renyah dengan isian coklat",
+                        price: 28000, 
+                        image: "https://images.unsplash.com/photo-1555507036-ab794f27d2e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
+                        category: "makanan",
+                        isPromo: false,
+                        stock: 20,
+                        isDailyStock: true,
+                        currentDailyStock: 15,
+                        isActive: true
+                    }
+                ];
             }
 
-           getDefaultMenus() {
-    return [
-        // Menu dari screenshot pelanggan
-        { 
-            id: 1, 
-            name: "Espresso Premium", 
-            description: "Kopi espresso dengan cita rasa kuat dan aroma harum",
-            price: 35000, 
-            image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "minuman",
-            isPromo: false,
-            stock: 10,
-            isDailyStock: false,
-            isActive: true
-        },
-        { 
-            id: 2, 
-            name: "Cappuccino Special", 
-            description: "Espresso dengan susu steamed dan busa susu lembut",
-            price: 42000, 
-            image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "minuman",
-            isPromo: false,
-            stock: 15,
-            isDailyStock: false,
-            isActive: true
-        },
-        { 
-            id: 3, 
-            name: "Latte Art", 
-            description: "Kopi latte dengan seni gambar di atasnya",
-            price: 45000, 
-            image: "https://images.unsplash.com/photo-1570196911496-66bd58a5b7b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "minuman",
-            isPromo: true,
-            originalPrice: 50000,
-            stock: 8,
-            isDailyStock: false,
-            isActive: true
-        },
-        { 
-            id: 4, 
-            name: "Croissant", 
-            description: "Roti croissant renyah dengan isian coklat",
-            price: 28000, 
-            image: "https://images.unsplash.com/photo-1555507036-ab794f27d2e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "makanan",
-            isPromo: false,
-            stock: 20,
-            isDailyStock: true,
-            currentDailyStock: 15,
-            isActive: true
-        },
-        // Menu dari admin yang harusnya tampil
-        { 
-            id: 5, 
-            name: "Butterscotch", 
-            description: "Kopi creamy dengan perpaduan rasa manis karamel butterscotch yang lembut",
-            price: 25000, 
-            image: "https://images.unsplash.com/photo-1570598912132-0ba1dc952b7d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "minuman",
-            isPromo: false,
-            stock: 10,
-            isDailyStock: false,
-            isActive: true
-        },
-        { 
-            id: 6, 
-            name: "Caramel Machiatto", 
-            description: "Espresso berpadu susu dan sirup karamel dengan rasa manis seimbang",
-            price: 38000, 
-            image: "https://images.unsplash.com/photo-1510707577719-ae7c9b7886a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "minuman",
-            isPromo: false,
-            stock: 10,
-            isDailyStock: true,
-            currentDailyStock: 10,
-            isActive: true
-        },
-        { 
-            id: 7, 
-            name: "Kentang Crispy", 
-            description: "Kentang goreng crispy dengan tekstur renyah luar lembut dalam",
-            price: 18000, 
-            image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "snack",
-            isPromo: false,
-            stock: 20,
-            isDailyStock: true,
-            currentDailyStock: 15,
-            isActive: true
-        },
-        // Menu lainnya dari percakapan sebelumnya
-        { 
-            id: 8, 
-            name: "Pisang Coklat", 
-            description: "Pisang dengan lapisan coklat leleh",
-            price: 18000, 
-            image: "https://images.unsplash.com/photo-1571408302535-4d4b3b5c6c0e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "snack",
-            isPromo: false,
-            stock: 20,
-            isDailyStock: true,
-            currentDailyStock: 10,
-            isActive: true
-        },
-        { 
-            id: 9, 
-            name: "Popcorn Coffee", 
-            description: "Kopi unik dengan aroma dan rasa manis gurih khas popcorn",
-            price: 23000, 
-            image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "minuman",
-            isPromo: false,
-            stock: 15,
-            isDailyStock: true,
-            currentDailyStock: 9,
-            isActive: true
-        },
-        { 
-            id: 10, 
-            name: "Tahu Bakso", 
-            description: "Tahu isi atau tahu goreng dengan bumbu khas",
-            price: 15000, 
-            image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&h=300&q=80",
-            category: "snack",
-            isPromo: false,
-            stock: 20,
-            isDailyStock: true,
-            currentDailyStock: 10,
-            isActive: true
-        }
-    ];
-}
             // ==================== ORDER FUNCTIONS ====================
             async createOrder(orderData) {
                 try {
@@ -3121,39 +3316,45 @@
         // UI FUNCTIONS
         // ============================
         function renderMenus(menus) {
-    currentMenus = menus;
+    console.log('🎨 Rendering menus...');
     
-    console.log(`🎨 Rendering ${menus.length} menus to UI`);
-    
-    // Tampilkan semua menu di bagian "Semua Menu"
+    // 1. ALL MENU - tampilkan SEMUA
     const allMenuGrid = document.getElementById('all-menu-items');
     if (allMenuGrid) {
-        allMenuGrid.innerHTML = menus.map(menu => createMenuCard(menu, true)).join('');
-        console.log(`✅ Rendered ${menus.length} menus to all-menu section`);
+        const html = menus.map(menu => this.createMenuCard(menu, true)).join('');
+        allMenuGrid.innerHTML = html;
+        console.log(`✅ All Menu: ${menus.length} items`);
     }
     
-    // Untuk Featured Menu, ambil 4 menu pertama saja (atau bisa custom)
+    // 2. FEATURED MENU - hanya yang aktif DAN ada stok
     const featuredGrid = document.getElementById('featured-menu');
     if (featuredGrid) {
-        const featuredMenus = menus.slice(0, 4); // Ambil 4 menu pertama
-        featuredGrid.innerHTML = featuredMenus.map(menu => createMenuCard(menu, false)).join('');
-        console.log(`⭐ Rendered ${featuredMenus.length} featured menus`);
+        const featured = menus.filter(menu => {
+            if (!menu.isActive) return false;
+            
+            // Cek stok
+            const availableStock = menu.isDailyStock ? menu.currentDailyStock : menu.stock;
+            return availableStock > 0;
+        }).slice(0, 4);
+        
+        const html = featured.map(menu => this.createMenuCard(menu)).join('');
+        featuredGrid.innerHTML = html;
+        console.log(`⭐ Featured: ${featured.length} items (active with stock)`);
     }
     
-    // Untuk Promo Menu
+    // 3. PROMO MENU - hanya yang promo DAN aktif
     const promoGrid = document.getElementById('promo-menu');
     if (promoGrid) {
-        const promoMenus = menus.filter(menu => menu.isPromo);
-        if (promoMenus.length > 0) {
-            promoGrid.innerHTML = promoMenus.map(menu => `
+        const promo = menus.filter(menu => menu.isPromo && menu.isActive);
+        
+        if (promo.length > 0) {
+            const html = promo.map(menu => `
                 <div class="promo-card">
                     <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
-                    <img src="${menu.image_url || menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
-                         alt="${menu.name}"
-                         onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'}">
+                    <img src="${menu.image}" alt="${menu.name}">
                     <div class="promo-info">
                         <h3>${menu.name}</h3>
-                        <p class="description">${menu.description || 'Tidak ada deskripsi'}</p>
+                        <p class="description">${menu.description}</p>
                         <p class="price">
                             ${menu.originalPrice ? 
                                 `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
@@ -3167,7 +3368,8 @@
                     </div>
                 </div>
             `).join('');
-            console.log(`🎯 Rendered ${promoMenus.length} promo menus`);
+            promoGrid.innerHTML = html;
+            console.log(`🏷️  Promo: ${promo.length} items`);
         } else {
             promoGrid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
@@ -3178,77 +3380,125 @@
         }
     }
 }
-// Test connection di console browser
-async function testMenuQuery() {
-    const { data, error } = await supabaseClient
-        .from('menu_items')
-        .select('*');
+        function createMenuCard(menu, showCategory = false) {
+    // Pastikan semua field ada
+    const safeMenu = {
+        id: menu.id || Date.now(),
+        name: menu.name || 'Menu',
+        description: menu.description || 'Tidak ada deskripsi',
+        price: Number(menu.price) || 0,
+        originalPrice: Number(menu.originalPrice) || null,
+        image: menu.image_url || menu.image || 'https://via.placeholder.com/400x300?text=Menu',
+        category: menu.category || 'minuman',
+        isPromo: Boolean(menu.isPromo),
+        isActive: menu.isActive !== false, // default true
+        stock: Number(menu.stock) || 0,
+        isDailyStock: Boolean(menu.isDailyStock),
+        currentDailyStock: Number(menu.currentDailyStock) || 0
+    };
     
-    console.log('Test Query Result:', data);
-    console.log('Total Menu:', data?.length);
-    console.log('Menu Active:', data?.filter(m => m.is_active === true).length);
+    // Hitung stok yang tersedia
+    let availableStock = safeMenu.stock;
+    if (safeMenu.isDailyStock) {
+        availableStock = safeMenu.currentDailyStock || 0;
+    }
     
-    return data;
+    const isActive = safeMenu.isActive;
+    const hasStock = availableStock > 0;
+    const shouldDisable = !isActive || !hasStock;
+    
+    console.log(`Card for ${safeMenu.name}: Active=${isActive}, Stock=${availableStock}, Disabled=${shouldDisable}`);
+    
+    return `
+        <div class="menu-card ${shouldDisable ? 'out-of-stock' : ''}" style="position: relative;">
+            ${safeMenu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
+            ${showCategory ? `<span class="category-badge">${this.getCategoryText(safeMenu.category)}</span>` : ''}
+            
+            <!-- Badge untuk menu tidak aktif -->
+            ${!isActive ? 
+                '<span class="promo-badge" style="background: #6c757d; left: 1rem; right: auto;"><i class="fas fa-ban"></i> Tidak Aktif</span>' : 
+                ''
+            }
+            
+            <!-- Badge stok -->
+            <div class="stock-badge ${!hasStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
+                <i class="fas fa-box${!hasStock ? '-open' : ''}"></i>
+                ${safeMenu.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
+                ${!hasStock ? 'HABIS' : availableStock}
+            </div>
+            
+            <!-- Gambar -->
+            <img src="${safeMenu.image}" 
+                 alt="${safeMenu.name}"
+                 onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(safeMenu.name)}'"
+                 style="${!isActive ? 'filter: grayscale(0.7); opacity: 0.7;' : ''}">
+            
+            <!-- Info menu -->
+            <div class="menu-info">
+                <h3 style="${!isActive ? 'color: #999;' : ''}">${safeMenu.name}</h3>
+                <p class="description">${safeMenu.description}</p>
+                ${safeMenu.originalPrice ? 
+                    `<p class="price">
+                        <span class="original-price">Rp ${safeMenu.originalPrice.toLocaleString()}</span>
+                        <span class="discount-price">Rp ${safeMenu.price.toLocaleString()}</span>
+                    </p>` :
+                    `<p class="price">Rp ${safeMenu.price.toLocaleString()}</p>`
+                }
+                <button class="btn-order" onclick="addToCartFromMenu(${safeMenu.id})" 
+                        ${shouldDisable ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
+                    <i class="fas fa-shopping-cart"></i> 
+                    ${!isActive ? 'Tidak Tersedia' : (!hasStock ? 'Stok Habis' : 'Tambah ke Keranjang')}
+                </button>
+            </div>
+        </div>
+    `;
+}
+// Tambahkan fungsi ini untuk cek struktur database
+async function checkDatabaseStructure() {
+    console.log('🔍 Checking database structure...');
+    
+    try {
+        // Cek apakah tabel ada
+        const { data: tableInfo, error: tableError } = await supabaseClient
+            .from('menu_items')
+            .select('*')
+            .limit(1);
+        
+        if (tableError) {
+            console.error('❌ Table error:', tableError);
+            return;
+        }
+        
+        if (tableInfo && tableInfo.length > 0) {
+            const firstRow = tableInfo[0];
+            console.log('📋 Table structure (first row):');
+            Object.keys(firstRow).forEach(key => {
+                console.log(`  ${key}: ${firstRow[key]} (${typeof firstRow[key]})`);
+            });
+        }
+        
+        // Cek semua data
+        const { data: allData, error: allError } = await supabaseClient
+            .from('menu_items')
+            .select('*')
+            .order('id');
+        
+        if (!allError && allData) {
+            console.log('📊 All menu data:');
+            allData.forEach(item => {
+                console.log(`  [${item.id}] ${item.name} - Active: ${item.is_active}, Stock: ${item.stock}`);
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Check structure error:', error);
+    }
 }
 
-// Jalankan di console: testMenuQuery()
-
-        function createMenuCard(item, showCategory = false) {
-            const safeItem = {
-                id: item.id || Date.now(),
-                name: item.name || 'Menu',
-                description: item.description || 'Tidak ada deskripsi',
-                price: item.price || 0,
-                originalPrice: item.originalPrice,
-                image: item.image_url || item.image || 'https://via.placeholder.com/400x300?text=Menu',
-                category: item.category || 'minuman',
-                isPromo: item.isPromo || false,
-                stock: item.stock || 0,
-                isDailyStock: item.isDailyStock || false,
-                currentDailyStock: item.currentDailyStock || 0,
-                isActive: item.isActive !== false
-            };
-
-            let availableStock = safeItem.stock;
-            if (safeItem.isDailyStock) {
-                availableStock = safeItem.currentDailyStock || 0;
-            }
-
-            const isOutOfStock = availableStock <= 0 || !safeItem.isActive;
-
-            return `
-                <div class="menu-card ${isOutOfStock ? 'out-of-stock' : ''}" style="position: relative;">
-                    ${safeItem.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
-                    ${showCategory ? `<span class="category-badge">${getCategoryText(safeItem.category)}</span>` : ''}
-                    
-                    <div class="stock-badge ${isOutOfStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
-                        <i class="fas fa-box${availableStock <= 0 ? '-open' : ''}"></i>
-                        ${safeItem.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
-                        ${isOutOfStock ? 'HABIS' : availableStock}
-                    </div>
-                    
-                    <img src="${safeItem.image}" 
-                         alt="${safeItem.name}"
-                         onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(safeItem.name)}'">
-                    <div class="menu-info">
-                        <h3>${safeItem.name}</h3>
-                        <p class="description">${safeItem.description}</p>
-                        ${safeItem.originalPrice ? 
-                            `<p class="price">
-                                <span class="original-price">Rp ${safeItem.originalPrice.toLocaleString()}</span>
-                                <span class="discount-price">Rp ${safeItem.price.toLocaleString()}</span>
-                            </p>` :
-                            `<p class="price">Rp ${safeItem.price.toLocaleString()}</p>`
-                        }
-                        <button class="btn-order" onclick="addToCartFromMenu(${safeItem.id})" 
-                                ${isOutOfStock ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
-                            <i class="fas fa-shopping-cart"></i> 
-                            ${isOutOfStock ? 'Stok Habis' : 'Tambah ke Keranjang'}
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
+// Panggil saat inisialisasi
+setTimeout(() => {
+    checkDatabaseStructure();
+}, 2000);
 
         function getCategoryText(category) {
             const categoryMap = {
@@ -3261,15 +3511,40 @@ async function testMenuQuery() {
         }
 
         // ==================== CART FUNCTIONS ====================
-        function addToCartFromMenu(menuId) {
-            if (!customerSystem) return;
-            
-            if (customerSystem.addToCart(menuId)) {
-                updateCartDisplay();
-                updateCartCount();
-                showToast('Item ditambahkan ke keranjang', 'success');
-            }
-        }
+       function addToCartFromMenu(menuId) {
+    if (!customerSystem) return false;
+    
+    const menu = window.currentMenus.find(item => item.id == menuId);
+    if (!menu) {
+        showToast('Menu tidak ditemukan', 'error');
+        return false;
+    }
+    
+    // Cek apakah menu aktif
+    if (!menu.isActive) {
+        showToast('Menu ini tidak tersedia untuk dipesan', 'error');
+        return false;
+    }
+    
+    // Cek stok
+    let availableStock = menu.stock;
+    if (menu.isDailyStock && menu.currentDailyStock !== null) {
+        availableStock = menu.currentDailyStock;
+    }
+    
+    if (availableStock <= 0) {
+        showToast('Stok menu habis', 'error');
+        return false;
+    }
+    
+    if (customerSystem.addToCart(menuId)) {
+        updateCartDisplay();
+        updateCartCount();
+        showToast('Item ditambahkan ke keranjang', 'success');
+        return true;
+    }
+    return false;
+}
 
         function updateCartDisplay() {
             if (!customerSystem) return;
