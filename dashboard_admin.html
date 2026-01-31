@@ -1426,6 +1426,17 @@
     animation: fadeIn 0.2s ease;
 }
 
+/* Tambahkan di CSS admin */
+.btn-whatsapp {
+    background: #25D366 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-whatsapp:hover {
+    background: #128C7E !important;
+}
+
         .info-value {
             text-align: right;
             color: var(--dark-color);
@@ -2654,70 +2665,102 @@ setInterval(autoSyncData, 10000);
         // ============================
         // ADMIN SYSTEM
         // ============================
-        async function initializeAdminSystem() {
-            console.log('🚀 Initializing admin system...');
-            
-            adminSystem = {
-                orders: [],
-                reservations: [],
-                allReservations: [],
-                allOrders: [],
-                menus: [],
-                activities: [],
-                isOnline: true,
-                autoRefreshInterval: null,
-                initialized: false
-            };
+        // Di admin, pastikan syncOrdersFromSupabase dipanggil saat init
+async function initializeAdminSystem() {
+    console.log('🚀 Initializing admin system...');
+    
+    adminSystem = {
+        orders: [],
+        reservations: [],
+        allReservations: [],
+        allOrders: [],
+        menus: [],
+        activities: [],
+        isOnline: true,
+        autoRefreshInterval: null,
+        initialized: false
+    };
 
-            try {
-                // Check connection
-                adminSystem.isOnline = await checkSupabaseConnection();
-                console.log(adminSystem.isOnline ? '✅ Online mode' : '⚠️ Offline mode');
-                
-                // Update profile connection mode
-                const connectionMode = document.getElementById('profileConnectionMode');
-                if (connectionMode) {
-                    connectionMode.innerHTML = adminSystem.isOnline ? 
-                        '<span style="color: #28a745;"><i class="fas fa-wifi"></i> Online</span>' :
-                        '<span style="color: #ffc107;"><i class="fas fa-unlink"></i> Offline</span>';
+    try {
+        // Check connection
+        adminSystem.isOnline = await checkSupabaseConnection();
+        console.log(adminSystem.isOnline ? '✅ Online mode' : '⚠️ Offline mode');
+        
+        // LOAD DATA DARI LOCALSTORAGE DULU
+        loadLocalData();
+        
+        // JIKA ONLINE, SYNC DARI SUPABASE
+        if (adminSystem.isOnline) {
+            await syncFromSupabase();
+        }
+        
+        // SETUP AUTO-REFRESH UNTUK CHECK PESANAN BARU
+        adminSystem.autoRefreshInterval = setInterval(() => {
+            checkForNewOrders();
+        }, 5000); // Cek setiap 5 detik
+        
+        adminSystem.initialized = true;
+        console.log('✅ Admin System initialized');
+        
+        // FORCE LOAD ORDERS PERTAMA KALI
+        setTimeout(() => {
+            loadNewOrders();
+            loadAllOrders();
+            updateNotifications();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('❌ Error initializing admin system:', error);
+    }
+}
+
+function checkForNewOrders() {
+    if (!adminSystem || !adminSystem.initialized) return;
+    
+    try {
+        // 1. Check flag dari pelanggan
+        const hasNewOrder = localStorage.getItem('has_new_order') === 'true';
+        const lastOrderTime = parseInt(localStorage.getItem('last_order_time') || '0');
+        const currentTime = Date.now();
+        
+        // 2. Jika ada order baru dalam 30 detik terakhir
+        if (hasNewOrder && (currentTime - lastOrderTime < 30000)) {
+            console.log('🔄 New order detected! Refreshing...');
+            
+            // Refresh data dari localStorage
+            loadLocalData();
+            
+            // Update UI
+            if (currentSection === 'orders' || currentSection === 'dashboard') {
+                loadSectionData(currentSection);
+            }
+            
+            // Clear flag
+            localStorage.removeItem('has_new_order');
+            
+            // Show notification
+            if (document.visibilityState === 'visible') {
+                const notification = document.getElementById('notificationCount');
+                if (notification) {
+                    notification.style.animation = 'none';
+                    setTimeout(() => {
+                        notification.style.animation = 'pulse 2s infinite';
+                    }, 10);
                 }
-                
-                // Load data
-                if (!adminSystem.isOnline) {
-                    loadLocalData();
-                } else {
-                    await syncFromSupabase();
-                }
-                
-                // Initialize
-                initializeDefaultTables();
-                await resetDailyStockIfNeeded();
-                
-                // Update UI
-                updateStats();
-                updateNotifications();
-                updateProfileStats();
-                
-                // Start auto refresh
-                startAutoRefresh();
-                
-                adminSystem.initialized = true;
-                console.log('✅ Admin System initialized successfully');
-                
-                // Load dashboard
-                loadDashboardSection();
-                
-            } catch (error) {
-                console.error('❌ Error initializing admin system:', error);
-                showToast('Gagal menginisialisasi sistem admin', 'error');
-                
-                // Fallback to local data
-                loadLocalData();
-                loadDashboardSection();
-                updateProfileStats();
             }
         }
-
+        
+        // 3. Auto-sync dari localStorage setiap 10 detik
+        const lastSync = localStorage.getItem('last_admin_sync') || '0';
+        if (currentTime - parseInt(lastSync) > 10000) {
+            loadLocalData();
+            localStorage.setItem('last_admin_sync', currentTime.toString());
+        }
+        
+    } catch (error) {
+        console.error('❌ Error checking for new orders:', error);
+    }
+}
         async function checkSupabaseConnection() {
             try {
                 const { data, error } = await supabaseClient
@@ -2736,49 +2779,70 @@ setInterval(autoSyncData, 10000);
             }
         }
 
-        function loadLocalData() {
-            console.log('📥 Loading local data...');
-            
-            try {
-                adminSystem.orders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-                adminSystem.reservations = JSON.parse(localStorage.getItem('pending_reservations') || '[]');
-                adminSystem.allReservations = JSON.parse(localStorage.getItem('all_reservations') || '[]');
-                adminSystem.allOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
-                adminSystem.menus = JSON.parse(localStorage.getItem('admin_menus') || '[]');
-                adminSystem.activities = JSON.parse(localStorage.getItem('admin_activities') || '[]');
-                
-                const customerMenus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-                if (customerMenus.length > 0 && adminSystem.menus.length === 0) {
-                    adminSystem.menus = customerMenus;
-                }
-                
-                if (adminSystem.menus.length === 0) {
-                    adminSystem.menus = getDefaultMenus();
-                    localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-                    localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-                }
-                
-                if (adminSystem.activities.length === 0) {
-                    adminSystem.activities = getDefaultActivities();
-                    localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
-                }
-                
-                console.log(`📊 Loaded: ${adminSystem.orders.length} orders, ${adminSystem.menus.length} menus`);
-                
-            } catch (error) {
-                console.error('Error loading local data:', error);
-                adminSystem.menus = getDefaultMenus();
-                adminSystem.activities = getDefaultActivities();
-                adminSystem.orders = [];
-                adminSystem.reservations = [];
-                adminSystem.allReservations = [];
-                adminSystem.allOrders = [];
-                
-                localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-                localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-                localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
-            }
+       function loadLocalData() {
+    console.log('📥 Loading local data for admin...');
+    
+    try {
+        // 1. LOAD PENDING ORDERS DARI LOCALSTORAGE
+        const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        console.log('📊 Pending orders found:', pendingOrders.length);
+        
+        // Debug: tampilkan semua pending orders
+        if (pendingOrders.length > 0) {
+            console.log('📋 Pending orders list:');
+            pendingOrders.forEach((order, i) => {
+                console.log(`  [${i}] ${order.orderNumber} - ${order.customer?.name} - Rp ${order.total}`);
+            });
         }
+        
+        // 2. UPDATE ADMIN SYSTEM
+        adminSystem.orders = pendingOrders;
+        
+        // 3. LOAD ALL ORDERS
+        adminSystem.allOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
+        
+        // 4. LOAD DATA LAINNYA
+        adminSystem.reservations = JSON.parse(localStorage.getItem('pending_reservations') || '[]');
+        adminSystem.allReservations = JSON.parse(localStorage.getItem('all_reservations') || '[]');
+        adminSystem.menus = JSON.parse(localStorage.getItem('admin_menus') || '[]');
+        adminSystem.activities = JSON.parse(localStorage.getItem('admin_activities') || '[]');
+        
+        // 5. LOAD CUSTOMER MENUS JIKA PERLU
+        const customerMenus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
+        if (customerMenus.length > 0 && adminSystem.menus.length === 0) {
+            adminSystem.menus = customerMenus;
+            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+        }
+        
+        if (adminSystem.menus.length === 0) {
+            adminSystem.menus = getDefaultMenus();
+            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+            localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+        }
+        
+        if (adminSystem.activities.length === 0) {
+            adminSystem.activities = getDefaultActivities();
+            localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
+        }
+        
+        console.log(`✅ Loaded: ${adminSystem.orders.length} pending orders, ${adminSystem.allOrders.length} all orders`);
+        
+    } catch (error) {
+        console.error('❌ Error loading local data:', error);
+        adminSystem.menus = getDefaultMenus();
+        adminSystem.activities = getDefaultActivities();
+        adminSystem.orders = [];
+        adminSystem.allOrders = [];
+        adminSystem.reservations = [];
+        adminSystem.allReservations = [];
+        
+        localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+        localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
+        localStorage.setItem('pending_orders', '[]');
+        localStorage.setItem('all_orders', '[]');
+    }
+}
 
         function getDefaultMenus() {
             return [
@@ -2906,108 +2970,268 @@ async function syncMenusFromSupabase() {
     }
 }
 
-        async function syncOrdersFromSupabase() {
-            try {
-                let { data: orders, error } = await supabaseClient
-                    .from('orders')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) {
-                    console.warn('Error fetching orders, using local data:', error.message);
-                    return;
+        // Di ADMIN, tambahkan fungsi ini untuk load pesanan
+// Di ADMIN, perbaiki fungsi syncOrdersFromSupabase
+async function syncOrdersFromSupabase() {
+    try {
+        console.log('🔄 Syncing orders from Supabase (Admin)...');
+        
+        // Ambil data dari Supabase dengan semua kolom
+        let { data: orders, error } = await supabaseClient
+            .from('orders')
+            .select(`
+                id,
+                order_number,
+                customer_name,
+                customer_phone,
+                customer_address,
+                order_type,
+                total_amount,
+                items,
+                status,
+                payment_method,
+                payment_status,
+                payment_proof_url,
+                whatsapp_proof_received,
+                whatsapp_proof_verified,
+                whatsapp_proof_notes,
+                admin_seen,
+                created_at,
+                updated_at
+            `)
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('❌ Error fetching orders from Supabase:', error);
+            return;
+        }
+        
+        console.log(`📊 Fetched ${orders?.length || 0} orders from Supabase`);
+        
+        if (orders && orders.length > 0) {
+            // Format data untuk admin system dengan benar
+            adminSystem.allOrders = orders.map(order => {
+                // Parse items jika berupa string
+                let items = [];
+                try {
+                    if (typeof order.items === 'string') {
+                        items = JSON.parse(order.items);
+                    } else {
+                        items = order.items || [];
+                    }
+                } catch (e) {
+                    console.warn('Error parsing items:', e);
+                    items = [];
                 }
                 
-                if (orders && orders.length > 0) {
-                    adminSystem.allOrders = orders.map(order => ({
-                        id: order.id,
-                        orderNumber: order.order_number || 'ORD-' + order.id.toString().slice(-6),
-                        customer: {
-                            name: order.customer_name || 'Pelanggan',
-                            phone: order.customer_phone || '',
-                            address: order.customer_address || '',
-                            whatsapp: order.customer_whatsapp || order.customer_phone || ''
-                        },
-                        total: order.total_amount || 0,
-                        status: order.status || 'pending',
-                        paymentProof: order.payment_proof_url || '',
-                        paymentMethod: order.payment_method || 'whatsapp',
-                        paymentStatus: order.payment_status || 'pending',
-                        whatsappProofReceived: order.whatsapp_proof_received || false,
-                        whatsappProofVerified: order.whatsapp_proof_verified || false,
-                        whatsappProofNotes: order.whatsapp_proof_notes || '',
-                        createdAt: order.created_at || new Date().toISOString(),
-                        adminSeen: order.admin_seen || false,
-                        items: order.items || [],
-                        orderType: order.order_type || 'dine_in'
-                    }));
-                    
-                    adminSystem.orders = adminSystem.allOrders.filter(order => 
-                        (order.status === 'pending' || order.status === 'waiting_payment') && 
-                        !order.adminSeen
-                    );
-                    
-                    localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
-                    localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
-                    localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
-                    
-                    console.log(`✅ Synced ${orders.length} orders from Supabase`);
-                } else {
-                    console.log('⚠️ No orders found in Supabase');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error syncing orders:', error);
+                return {
+                    id: order.id,
+                    orderNumber: order.order_number || `ORD-${order.id.toString().slice(-6)}`,
+                    customer: {
+                        name: order.customer_name || 'Pelanggan',
+                        phone: order.customer_phone || '',
+                        address: order.customer_address || '',
+                        whatsapp: order.customer_phone || ''
+                    },
+                    total: order.total_amount || 0,
+                    status: order.status || 'pending',
+                    paymentProof: order.payment_proof_url || '',
+                    paymentMethod: order.payment_method || 'qris',
+                    paymentStatus: order.payment_status || 'waiting_payment',
+                    whatsappProofReceived: order.whatsapp_proof_received || false,
+                    whatsappProofVerified: order.whatsapp_proof_verified || false,
+                    whatsappProofNotes: order.whatsapp_proof_notes || '',
+                    createdAt: order.created_at || new Date().toISOString(),
+                    adminSeen: order.admin_seen || false,
+                    items: items,
+                    orderType: order.order_type || 'dine_in'
+                };
+            });
+            
+            // Filter pesanan baru (pending dan waiting_payment)
+            adminSystem.orders = adminSystem.allOrders.filter(order => 
+                (order.status === 'pending' || order.status === 'waiting_payment') && 
+                !order.adminSeen
+            );
+            
+            // Simpan ke localStorage
+            localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
+            localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
+            
+            console.log(`✅ Admin: ${adminSystem.orders.length} pending, ${adminSystem.allOrders.length} total orders`);
+            
+            // Update UI admin
+            loadNewOrders();
+            loadAllOrders();
+            updateNotifications();
+            
+        } else {
+            console.log('⚠️ No orders found in Supabase');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error syncing orders:', error);
+    }
+}
+
+// Tambahkan fungsi untuk cek apakah order masuk ke Supabase
+async function checkOrderInSupabase(orderNumber) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('order_number', orderNumber)
+            .single();
+        
+        if (error) {
+            console.log(`❌ Order ${orderNumber} not found in Supabase:`, error.message);
+            return false;
+        }
+        
+        console.log(`✅ Order ${orderNumber} found in Supabase:`, data);
+        return true;
+        
+    } catch (error) {
+        console.error('Error checking order:', error);
+        return false;
+    }
+}
+
+// Di ADMIN, tambahkan fungsi debug
+window.debugAdminOrders = async function() {
+    console.clear();
+    console.log('🔧 ADMIN ORDERS DEBUG 🔧');
+    console.log('=========================');
+    
+    // 1. Cek adminSystem
+    console.log('1. ADMIN SYSTEM:');
+    console.log('- isOnline:', adminSystem?.isOnline);
+    console.log('- All orders:', adminSystem?.allOrders?.length || 0);
+    console.log('- Pending orders:', adminSystem?.orders?.length || 0);
+    
+    // 2. Cek localStorage
+    console.log('\n2. LOCALSTORAGE:');
+    console.log('- all_orders:', JSON.parse(localStorage.getItem('all_orders') || '[]').length);
+    console.log('- pending_orders:', JSON.parse(localStorage.getItem('pending_orders') || '[]').length);
+    console.log('- customer_orders:', JSON.parse(localStorage.getItem('customer_orders') || '[]').length);
+    
+    // 3. Cek Supabase langsung
+    console.log('\n3. SUPABASE CHECK:');
+    try {
+        const { data: supabaseOrders, error } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10);
+        
+        if (error) {
+            console.log('❌ Supabase error:', error.message);
+        } else {
+            console.log(`✅ Total orders in Supabase: ${supabaseOrders?.length || 0}`);
+            if (supabaseOrders && supabaseOrders.length > 0) {
+                supabaseOrders.forEach((order, i) => {
+                    console.log(`   [${i}] ${order.order_number} - ${order.status} - ${order.customer_name} - Rp ${order.total_amount}`);
+                });
             }
         }
+    } catch (e) {
+        console.log('❌ Supabase check failed:', e.message);
+    }
+    
+    // 4. Force refresh
+    console.log('\n4. REFRESHING...');
+    await syncOrdersFromSupabase();
+    loadNewOrders();
+    loadAllOrders();
+    
+    showToast('Admin debug info di console', 'info');
+};
 
-        async function syncReservationsFromSupabase() {
-            try {
-                let { data: reservations, error } = await supabaseClient
-                    .from('reservations')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) {
-                    console.warn('Error fetching reservations, using local data:', error.message);
-                    return;
-                }
-                
-                if (reservations && reservations.length > 0) {
-                    adminSystem.allReservations = reservations.map(res => ({
-                        id: res.id,
-                        name: res.customer_name || '',
-                        phone: res.customer_phone || '',
-                        whatsapp: res.customer_whatsapp || res.customer_phone || '',
-                        date: res.reservation_date || '',
-                        time: res.reservation_time || '',
-                        tableNumber: res.table_number || '',
-                        guests: res.number_of_guests || 1,
-                        notes: res.notes || '',
-                        status: res.status || 'pending',
-                        orderNumber: res.order_number || '',
-                        adminSeen: res.admin_seen || false,
-                        createdAt: res.created_at || new Date().toISOString()
-                    }));
-                    
-                    adminSystem.reservations = adminSystem.allReservations.filter(res => 
-                        !res.adminSeen && res.status === 'pending'
-                    );
-                    
-                    localStorage.setItem('all_reservations', JSON.stringify(adminSystem.allReservations));
-                    localStorage.setItem('pending_reservations', JSON.stringify(adminSystem.reservations));
-                    localStorage.setItem('customer_reservations', JSON.stringify(adminSystem.allReservations));
-                    
-                    console.log(`✅ Synced ${reservations.length} reservations from Supabase`);
-                } else {
-                    console.log('⚠️ No reservations found in Supabase');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error syncing reservations:', error);
-            }
+// Tombol debug untuk admin (tambahkan di HTML admin)
+function addAdminDebugButton() {
+    const debugBtn = document.createElement('button');
+    debugBtn.innerHTML = '<i class="fas fa-bug"></i> Debug';
+    debugBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 100px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        z-index: 10000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    debugBtn.onclick = window.debugAdminOrders;
+    document.body.appendChild(debugBtn);
+}
+
+// Panggil di admin initialization
+setTimeout(addAdminDebugButton, 2000);
+
+      async function syncReservationsFromSupabase() {
+    try {
+        console.log('🔄 Syncing reservations from Supabase...');
+        
+        let { data: reservations, error } = await supabaseClient
+            .from('reservations')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.warn('Error fetching reservations, using local data:', error.message);
+            return;
         }
-
+        
+        if (reservations && reservations.length > 0) {
+            console.log(`✅ Fetched ${reservations.length} reservations from Supabase`);
+            
+            // Format data dengan benar
+            const formattedReservations = reservations.map(res => ({
+                id: res.id,
+                name: res.customer_name || '',
+                customerName: res.customer_name || '',
+                phone: res.customer_phone || '',
+                customerPhone: res.customer_phone || '',
+                date: res.reservation_date || '',
+                time: res.reservation_time || '',
+                tableNumber: res.table_number || '',
+                guests: res.number_of_guests || 1,
+                notes: res.notes || '',
+                status: res.status || 'pending',
+                orderNumber: res.order_number || '',
+                adminSeen: res.admin_seen || false,
+                cancellationReason: res.cancellation_reason || '',
+                createdAt: res.created_at || new Date().toISOString(),
+                updatedAt: res.updated_at || new Date().toISOString()
+            }));
+            
+            // Update admin system
+            adminSystem.allReservations = formattedReservations;
+            adminSystem.reservations = formattedReservations.filter(res => 
+                !res.adminSeen && res.status === 'pending'
+            );
+            
+            // Simpan ke localStorage
+            localStorage.setItem('all_reservations', JSON.stringify(adminSystem.allReservations));
+            localStorage.setItem('pending_reservations', JSON.stringify(adminSystem.reservations));
+            
+            // Simpan ke customer_reservations juga
+            localStorage.setItem('customer_reservations', JSON.stringify(formattedReservations));
+            
+            console.log(`✅ Synced: ${adminSystem.reservations.length} pending, ${adminSystem.allReservations.length} total`);
+            
+        } else {
+            console.log('⚠️ No reservations found in Supabase');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error syncing reservations:', error);
+    }
+}
         // Di fungsi save menu di admin, tambahkan:
 async function syncMenuToCustomerCache(menuData) {
     try {
@@ -3082,15 +3306,19 @@ async function syncMenuToCustomerCache(menuData) {
             }
         }
 
-        function saveLocalData() {
-            localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
-            localStorage.setItem('pending_reservations', JSON.stringify(adminSystem.reservations));
-            localStorage.setItem('all_reservations', JSON.stringify(adminSystem.allReservations));
-            localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
-            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-            localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
-        }
-
+       function saveLocalData() {
+    try {
+        localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
+        localStorage.setItem('pending_reservations', JSON.stringify(adminSystem.reservations));
+        localStorage.setItem('all_reservations', JSON.stringify(adminSystem.allReservations));
+        localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
+        localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+        localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
+        console.log('✅ Local data saved successfully');
+    } catch (error) {
+        console.error('❌ Error saving local data:', error);
+    }
+}
         function addActivity(message) {
             const activity = {
                 id: Date.now(),
@@ -3194,25 +3422,49 @@ async function syncMenuToCustomerCache(menuData) {
             );
         }
 
-        function updateNotifications() {
-            try {
-                const newOrdersCount = adminSystem.orders.filter(order => 
-                    !order.adminSeen && (order.status === 'pending' || order.status === 'waiting_payment')
-                ).length;
-                
-                const newReservationsCount = adminSystem.reservations.filter(r => 
-                    !r.adminSeen && r.status === 'pending'
-                ).length;
-                
-                const totalNotifications = newOrdersCount + newReservationsCount;
-                
-                document.getElementById('notificationCount').textContent = totalNotifications;
-                document.getElementById('sidebarOrderCount').textContent = newOrdersCount;
-                document.getElementById('sidebarReservationCount').textContent = newReservationsCount;
-            } catch (error) {
-                console.error('Error updating notifications:', error);
-            }
+       function updateNotifications() {
+    try {
+        if (!adminSystem) return;
+        
+        // Hitung pending orders yang belum dilihat admin
+        const newOrdersCount = adminSystem.orders.filter(order => 
+            !order.adminSeen && (order.status === 'pending' || order.status === 'waiting_payment')
+        ).length;
+        
+        // Hitung new reservations
+        const newReservationsCount = adminSystem.reservations.filter(r => 
+            !r.adminSeen && r.status === 'pending'
+        ).length;
+        
+        const totalNotifications = newOrdersCount + newReservationsCount;
+        
+        // Update UI
+        const notificationCountElement = document.getElementById('notificationCount');
+        const sidebarOrderCount = document.getElementById('sidebarOrderCount');
+        const sidebarReservationCount = document.getElementById('sidebarReservationCount');
+        
+        if (notificationCountElement) {
+            notificationCountElement.textContent = totalNotifications;
         }
+        
+        if (sidebarOrderCount) {
+            sidebarOrderCount.textContent = newOrdersCount;
+        }
+        
+        if (sidebarReservationCount) {
+            sidebarReservationCount.textContent = newReservationsCount;
+        }
+        
+        console.log('🔔 Notifications updated:', {
+            newOrders: newOrdersCount,
+            newReservations: newReservationsCount,
+            total: totalNotifications
+        });
+        
+    } catch (error) {
+        console.error('Error updating notifications:', error);
+    }
+}
 
         function initializeDefaultTables() {
             try {
@@ -3519,74 +3771,126 @@ async function setupAdminRealtimeUpdates() {
 
 
 
-        function loadNewOrders() {
-    if (!adminSystem) return;
+    function loadNewOrders() {
+    if (!adminSystem) {
+        console.error('❌ Admin system not initialized');
+        return;
+    }
     
+    console.log('📥 Loading new orders for admin...');
+    
+    // 1. AMBIL DATA DARI LOCALSTORAGE ADMIN
+    let pendingOrders = [];
     try {
-        const newOrders = adminSystem.orders;
-        const table = document.getElementById('newOrdersTable');
+        pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        console.log('📊 Pending orders from localStorage:', pendingOrders.length);
         
-        if (newOrders.length === 0) {
-            table.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                        Tidak ada pesanan baru
-                    </td>
-                </tr>
-            `;
-        } else {
-            table.innerHTML = newOrders.map(order => {
-                // Konversi waktu ke WIB (UTC+7)
-                let formattedTime;
-                try {
+        // Debug: tampilkan detail setiap order
+        pendingOrders.forEach((order, index) => {
+            console.log(`  [${index}] Order ${order.orderNumber}:`, {
+                name: order.customer?.name,
+                items: order.items?.length,
+                total: order.total
+            });
+        });
+        
+    } catch (error) {
+        console.error('Error reading pending_orders:', error);
+        pendingOrders = [];
+    }
+    
+    // 2. UPDATE ADMIN SYSTEM
+    adminSystem.orders = pendingOrders;
+    
+    // 3. UPDATE TABLE
+    const table = document.getElementById('newOrdersTable');
+    if (!table) {
+        console.error('❌ Table element not found');
+        return;
+    }
+    
+    if (pendingOrders.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745; margin-bottom: 1rem;"></i>
+                    <p>Tidak ada pesanan baru</p>
+                    <small>Semua pesanan sudah diproses</small>
+                </td>
+            </tr>
+        `;
+    } else {
+        table.innerHTML = pendingOrders.map(order => {
+            // Format waktu
+            let formattedTime = '--:--';
+            try {
+                if (order.createdAt) {
                     const orderTime = new Date(order.createdAt);
-                    
-                    // Konversi ke WIB (UTC+7)
-                    const timeInWIB = new Date(orderTime.getTime() + (7 * 60 * 60 * 1000));
-                    
-                    // Format waktu menjadi HH:MM dengan 24 jam format
-                    formattedTime = timeInWIB.toLocaleTimeString('id-ID', { 
+                    formattedTime = orderTime.toLocaleTimeString('id-ID', { 
                         hour: '2-digit', 
                         minute: '2-digit',
-                        hour12: false,
-                        timeZone: 'Asia/Jakarta'
+                        hour12: false
                     });
-                    
-                    // Fallback jika formatting gagal
-                    if (formattedTime === 'Invalid Date') {
-                        formattedTime = orderTime.getHours().toString().padStart(2, '0') + ':' + 
-                                       orderTime.getMinutes().toString().padStart(2, '0');
-                    }
-                } catch (error) {
-                    console.warn('Error formatting time:', error);
-                    formattedTime = '--:--';
                 }
-                
-                // Tentukan status WhatsApp
-                let whatsappStatus = '';
-                let whatsappBadge = '';
-                let whatsappIcon = '';
-                
-                if (order.paymentMethod === 'whatsapp') {
-                    if (order.whatsappProofVerified) {
-                        whatsappStatus = 'Terverifikasi';
-                        whatsappBadge = 'verified';
-                        whatsappIcon = '✓';
-                    } else if (order.whatsappProofReceived) {
-                        whatsappStatus = 'Dikirim';
-                        whatsappBadge = 'received';
-                        whatsappIcon = '✓';
-                    } else {
-                        whatsappStatus = 'Menunggu';
-                        whatsappBadge = 'waiting';
-                        whatsappIcon = '⏳';
+            } catch (e) {
+                console.warn('Error formatting time:', e);
+            }
+            
+            // PERBAIKAN: Ambil nama dari customer atau dari items
+            let customerName = order.customer?.name || 'Pelanggan';
+            
+            // Jika tidak ada nama di customer, coba ambil dari items pertama
+            if (!order.customer?.name && order.items && order.items.length > 0) {
+                // Coba beberapa kemungkinan field untuk nama
+                const firstItem = order.items[0];
+                if (firstItem.customerName) {
+                    customerName = firstItem.customerName;
+                } else if (firstItem.name && firstItem.name.includes(' - ')) {
+                    // Jika format "Nama - Menu", ambil bagian nama
+                    const parts = firstItem.name.split(' - ');
+                    if (parts.length > 1) {
+                        customerName = parts[0].trim();
                     }
                 }
-                
-                return `
+            }
+            
+            // Format WhatsApp status
+            let whatsappStatusHTML = '';
+            if (order.paymentMethod === 'whatsapp') {
+                if (order.whatsappProofVerified) {
+                    whatsappStatusHTML = `
+                        <span class="whatsapp-status-badge verified">
+                            <i class="fas fa-check-circle"></i> Terverifikasi
+                        </span>
+                    `;
+                } else if (order.whatsappProofReceived) {
+                    whatsappStatusHTML = `
+                        <span class="whatsapp-status-badge received">
+                            <i class="fas fa-check"></i> Dikirim
+                        </span>
+                    `;
+                } else {
+                    whatsappStatusHTML = `
+                        <span class="whatsapp-status-badge waiting">
+                            <i class="fas fa-clock"></i> Menunggu
+                        </span>
+                    `;
+                }
+            }
+            
+            return `
                 <tr>
-                    <td>${order.orderNumber || 'ORD-' + order.id.toString().slice(-6)}</td>
-                    <td>${order.customer?.name || 'Pelanggan'}</td>
+                    <td>${order.orderNumber || 'ORD-' + (order.id || '').toString().slice(-6)}</td>
+                    <td>
+                        <div style="display: flex; flex-direction: column;">
+                            <strong>${customerName}</strong>
+                            ${order.customer?.phone ? 
+                                `<small style="color: #666; font-size: 0.8rem;">
+                                    <i class="fas fa-phone"></i> ${order.customer.phone}
+                                </small>` : ''
+                            }
+                        </div>
+                    </td>
                     <td>Rp ${order.total?.toLocaleString() || '0'}</td>
                     <td>${formattedTime}</td>
                     <td>
@@ -3595,113 +3899,210 @@ async function setupAdminRealtimeUpdates() {
                         </span>
                     </td>
                     <td>
-                        ${order.paymentMethod === 'whatsapp' ? `
+
+                
                         <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                            <span class="whatsapp-status-badge ${whatsappBadge}">
-                                <i class="fab fa-whatsapp"></i> ${whatsappIcon} ${whatsappStatus}
+                            <span style="color: #666; font-size: 0.9rem;">
+                                ${order.paymentMethod === 'whatsapp' ? 'WhatsApp' : 'QRIS'}
                             </span>
-                            ${!order.whatsappProofReceived ? `
-                            <small style="color: #ff9800; font-size: 0.8rem;">
-                                <i class="fas fa-clock"></i> Belum ada bukti
-                            </small>` : ''}
-                        </div>` : `
-                        <span style="color: #666; font-size: 0.9rem;">
-                            Transfer Bank
-                        </span>`}
+                            ${whatsappStatusHTML}
+                        </div>
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-primary btn-sm" onclick="viewOrderDetail('${order.id}')">
+                            <button class="btn btn-primary btn-sm" onclick="viewOrderDetail('${order.id}')" title="Lihat detail pesanan">
                                 <i class="fas fa-eye"></i> Detail
                             </button>
-                           ${order.paymentMethod === 'whatsapp' ? `
-<button class="btn btn-warning btn-sm" 
-        onclick="quickCheckWhatsAppStatus('${order.id}')"
-        title="Buka WhatsApp pelanggan untuk cek bukti transfer">
-    <i class="fab fa-whatsapp"></i> Cek Bukti
-</button>` : ''}
-                            <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')">
+                            <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')" title="Konfirmasi pesanan">
                                 <i class="fas fa-check"></i> Konfirmasi
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')">
+                            <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')" title="Tolak pesanan">
                                 <i class="fas fa-times"></i> Tolak
                             </button>
+                            ${order.paymentMethod === 'whatsapp' && !order.whatsappProofReceived ? `
+                            <button class="btn btn-warning btn-sm" onclick="checkWhatsAppProof('${order.id}')" title="Cek bukti WhatsApp">
+                                <i class="fab fa-whatsapp"></i> Cek Bukti
+                            </button>` : ''}
                         </div>
                     </td>
                 </tr>
-            `}).join('');
+            `;
+        }).join('');
+    }
+    
+    // 4. UPDATE NOTIFICATIONS
+    updateNotifications();
+    
+    console.log('✅ New orders loaded:', pendingOrders.length);
+}
+    
+    // 4. UPDATE NOTIFICATIONS
+    updateNotifications();
+    
+    console.log('✅ New orders loaded:', pendingOrders.length);
+
+// Di ADMIN, tambahkan fungsi untuk realtime orders
+async function setupAdminRealtimeForOrders() {
+    try {
+        // Subscribe ke perubahan orders di Supabase
+        supabaseClient
+            .channel('admin-orders-realtime')
+            .on('postgres_changes', 
+                { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'orders' 
+                }, 
+                async (payload) => {
+                    console.log('🔄 New order received in admin:', payload.new);
+                    
+                    // Tambahkan ke data admin
+                    const newOrder = {
+                        id: payload.new.id,
+                        orderNumber: payload.new.order_number,
+                        customer: {
+                            name: payload.new.customer_name,
+                            phone: payload.new.customer_phone
+                        },
+                        total: payload.new.total_amount,
+                        status: payload.new.status,
+                        paymentMethod: payload.new.payment_method,
+                        whatsappProofReceived: payload.new.whatsapp_proof_received || false,
+                        whatsappProofVerified: payload.new.whatsapp_proof_verified || false,
+                        createdAt: payload.new.created_at,
+                        adminSeen: false
+                    };
+                    
+                    // Tambahkan ke orders admin
+                    if (!adminSystem.orders.some(o => o.id === newOrder.id)) {
+                        adminSystem.orders.unshift(newOrder);
+                    }
+                    
+                    // Tambahkan ke allOrders
+                    if (!adminSystem.allOrders.some(o => o.id === newOrder.id)) {
+                        adminSystem.allOrders.unshift(newOrder);
+                    }
+                    
+                    // Simpan ke localStorage
+                    localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
+                    localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
+                    
+                    // Update notifikasi
+                    updateNotifications();
+                    
+                    // Tampilkan notifikasi
+                    showToast(`Pesanan baru: ${newOrder.orderNumber}`, 'success');
+                    
+                    // Refresh tampilan jika di halaman orders
+                    if (currentSection === 'orders' || currentSection === 'dashboard') {
+                        loadSectionData(currentSection);
+                    }
+                }
+            )
+            .subscribe();
+            
+    } catch (error) {
+        console.error('Error setting up admin realtime:', error);
+    }
+}
+
+       function loadReservations() {
+    if (!adminSystem) return;
+    
+    try {
+        const newReservations = adminSystem.reservations;
+        const table = document.getElementById('reservationsTable');
+        
+        console.log('Loading reservations:', newReservations.length);
+        
+        if (newReservations.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745; margin-bottom: 1rem;"></i>
+                        <p>Tidak ada reservasi baru</p>
+                        <small>Semua reservasi sudah diproses</small>
+                    </td>
+                </tr>
+            `;
+        } else {
+            table.innerHTML = newReservations.map(res => {
+                // Format tanggal
+                let formattedDate = '-';
+                try {
+                    if (res.date) {
+                        const dateObj = new Date(res.date);
+                        formattedDate = dateObj.toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Error formatting date:', e);
+                }
+                
+                // Tentukan apakah tombol harus ditampilkan
+                const shouldShowActions = res.status === 'pending';
+                
+                return `
+                    <tr>
+                        <td>#${res.id.toString().slice(-6)}</td>
+                        <td>
+                            <div style="display: flex; flex-direction: column;">
+                                <strong>${res.customerName || res.name || 'Pelanggan'}</strong>
+                                ${res.customerPhone || res.phone ? 
+                                    `<small style="color: #666; font-size: 0.8rem;">
+                                        <i class="fas fa-phone"></i> ${res.customerPhone || res.phone}
+                                    </small>` : ''
+                                }
+                            </div>
+                        </td>
+                        <td>${formattedDate}</td>
+                        <td>${res.time || '-'}</td>
+                        <td>${res.tableNumber || '-'}</td>
+                        <td>
+                            <span class="status-badge ${res.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
+                                ${res.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="viewReservationDetail('${res.id}')" title="Lihat detail reservasi">
+                                    <i class="fas fa-eye"></i> Detail
+                                </button>
+                                ${shouldShowActions ? `
+                                <button class="btn btn-success btn-sm" onclick="confirmReservation('${res.id}')" title="Konfirmasi reservasi">
+                                    <i class="fas fa-check"></i> Konfirmasi
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectReservation('${res.id}')" title="Tolak reservasi">
+                                    <i class="fas fa-times"></i> Tolak
+                                </button>` : ''}
+                                ${(res.customerPhone || res.phone) ? `
+                                <button class="btn btn-warning btn-sm" onclick="openWhatsAppMessageModal('${res.customerPhone || res.phone}', 'Halo ${res.customerName || res.name || 'Pelanggan'}, mengenai reservasi Anda di MAN CAFE untuk tanggal ${formattedDate} jam ${res.time || ''} di meja ${res.tableNumber || ''}')" title="Kirim pesan WhatsApp">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
         
         updateNotifications();
+        
     } catch (error) {
-        console.error('Error loading new orders:', error);
-        document.getElementById('newOrdersTable').innerHTML = `
+        console.error('Error loading reservations:', error);
+        document.getElementById('reservationsTable').innerHTML = `
             <tr>
                 <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                    Gagal memuat pesanan
+                    <i class="fas fa-exclamation-triangle"></i> Gagal memuat reservasi
+                    <br><small>${error.message}</small>
                 </td>
             </tr>
         `;
     }
 }
-        function loadReservations() {
-            if (!adminSystem) return;
-            
-            try {
-                const newReservations = adminSystem.reservations;
-                const table = document.getElementById('reservationsTable');
-                
-                if (newReservations.length === 0) {
-                    table.innerHTML = `
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                                Tidak ada reservasi baru
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    table.innerHTML = newReservations.map(res => `
-                        <tr>
-                            <td>#${res.id.toString().slice(-6)}</td>
-                            <td>${res.name}</td>
-                            <td>${res.date ? new Date(res.date).toLocaleDateString('id-ID') : '-'}</td>
-                            <td>${res.time || '-'}</td>
-                            <td>${res.tableNumber || '-'}</td>
-                            <td>
-                                <span class="status-badge ${res.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
-                                    ${res.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
-                                </span>
-                            </td>
-                            <td>
-                                 <div class="action-buttons">
-                                    ${res.status === 'pending' ? `
-                                    <button class="btn btn-success btn-sm" onclick="confirmReservation('${res.id}')">
-                                        <i class="fas fa-check"></i> Konfirmasi
-                                    </button>
-                                    <button class="btn btn-danger btn-sm" onclick="rejectReservation('${res.id}')">
-                                        <i class="fas fa-times"></i> Tolak
-                                    </button>` : ''}
-                                    <button class="btn btn-primary btn-sm" onclick="viewReservationDetail('${res.id}')">
-                                        <i class="fas fa-eye"></i> Detail
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-                
-                updateNotifications();
-            } catch (error) {
-                console.error('Error loading reservations:', error);
-                document.getElementById('reservationsTable').innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                            Gagal memuat reservasi
-                        </td>
-                    </tr>
-                `;
-            }
-        }
 
         function loadAllOrders() {
             if (!adminSystem) return;
@@ -5411,69 +5812,149 @@ async function setupAdminRealtimeUpdates() {
         // ============================
         // ACTION FUNCTIONS
         // ============================
-        async function confirmOrder(orderId) {
-            if (!adminSystem) return;
+     async function confirmOrder(orderId) {
+    if (!adminSystem) return;
+    
+    if (confirm('Konfirmasi pesanan ini?')) {
+        try {
+            console.log('✅ Confirming order:', orderId);
             
-            // Cek apakah pesanan menggunakan WhatsApp dan belum ada bukti
-            const order = adminSystem.allOrders.find(o => o.id == orderId) || 
-                          adminSystem.orders.find(o => o.id == orderId);
-            
-            if (order && order.paymentMethod === 'whatsapp' && !order.whatsappProofReceived) {
-                if (!confirm('Pesanan ini menggunakan WhatsApp transfer. Apakah bukti transfer sudah diterima di WhatsApp?')) {
-                    // Arahkan ke cek WhatsApp proof
-                    checkWhatsAppProof(orderId);
+            // 1. Cari order di admin system
+            const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
+            if (orderIndex === -1) {
+                console.log('Order not found in admin system, checking localStorage...');
+                // Coba cari di localStorage
+                const allOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
+                const order = allOrders.find(o => o.id == orderId);
+                if (!order) {
+                    showToast('Pesanan tidak ditemukan', 'error');
                     return;
                 }
+                // Tambahkan ke admin system
+                adminSystem.allOrders.push(order);
             }
             
-            if (confirm('Konfirmasi pesanan ini?')) {
+            const order = adminSystem.allOrders.find(o => o.id == orderId);
+            if (!order) {
+                showToast('Pesanan tidak ditemukan', 'error');
+                return;
+            }
+            
+            console.log('Order found:', order.orderNumber);
+            
+            // 2. Update di Supabase jika online
+            if (adminSystem.isOnline && order.supabase_id) {
                 try {
-                    if (adminSystem.isOnline) {
-                        try {
-                            const { error } = await supabaseClient
-                                .from('orders')
-                                .update({
-                                    status: 'confirmed',
-                                    admin_seen: true,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', orderId);
-                            
-                            if (error) throw error;
-                        } catch (error) {
-                            console.warn('Error confirming order in Supabase:', error.message);
-                        }
-                    }
+                    const { error } = await supabaseClient
+                        .from('orders')
+                        .update({
+                            status: 'confirmed',
+                            admin_seen: true,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', order.supabase_id);
                     
-                    const orderIndex = adminSystem.allOrders.findIndex(o => o.id == orderId);
-                    if (orderIndex !== -1) {
-                        adminSystem.allOrders[orderIndex].status = 'confirmed';
-                        adminSystem.allOrders[orderIndex].adminSeen = true;
-                        
-                        const pendingIndex = adminSystem.orders.findIndex(o => o.id == orderId);
-                        if (pendingIndex !== -1) {
-                            adminSystem.orders.splice(pendingIndex, 1);
-                        }
-                        
-                        saveLocalData();
-                        localStorage.setItem('customer_orders', JSON.stringify(adminSystem.allOrders));
-                        
-                        addActivity(`Pesanan #${adminSystem.allOrders[orderIndex].orderNumber} dikonfirmasi`);
-                        updateNotifications();
-                        updateProfileStats();
-                        
-                        showToast('Pesanan berhasil dikonfirmasi', 'success');
-                        loadNewOrders();
-                        loadAllOrders();
-                        loadDashboardSection();
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        throw error;
                     }
+                    console.log('✅ Order confirmed in Supabase');
                 } catch (error) {
-                    console.error('Error confirming order:', error);
-                    showToast('Gagal mengonfirmasi pesanan', 'error');
+                    console.warn('Error updating in Supabase:', error.message);
                 }
             }
+            
+            // 3. Update status di admin system
+            const updatedOrder = {
+                ...order,
+                status: 'confirmed',
+                adminSeen: true,
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Update di allOrders
+            adminSystem.allOrders = adminSystem.allOrders.map(o => 
+                o.id == orderId ? updatedOrder : o
+            );
+            
+            // Hapus dari pending orders
+            adminSystem.orders = adminSystem.orders.filter(o => o.id != orderId);
+            
+            // 4. UPDATE PENTING: Update data di CUSTOMER_ORDERS
+            console.log('🔄 Updating customer_orders...');
+            let customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            
+            // Cari order di customer_orders
+            const customerOrderIndex = customerOrders.findIndex(co => 
+                co.id == orderId || co.orderNumber === order.orderNumber
+            );
+            
+            if (customerOrderIndex !== -1) {
+                // Update order di customer_orders
+                customerOrders[customerOrderIndex] = {
+                    ...customerOrders[customerOrderIndex],
+                    status: 'confirmed',
+                    updatedAt: new Date().toISOString()
+                };
+                console.log('✅ Updated order in customer_orders:', customerOrders[customerOrderIndex].orderNumber);
+            } else {
+                // Jika tidak ditemukan, tambahkan baru
+                const customerOrder = {
+                    id: order.id,
+                    orderNumber: order.orderNumber,
+                    customer: order.customer,
+                    items: order.items,
+                    total: order.total,
+                    status: 'confirmed',
+                    paymentMethod: order.paymentMethod,
+                    paymentStatus: order.paymentStatus,
+                    createdAt: order.createdAt,
+                    updatedAt: new Date().toISOString(),
+                    supabase_id: order.supabase_id,
+                    adminSeen: true
+                };
+                customerOrders.push(customerOrder);
+                console.log('✅ Added new order to customer_orders:', customerOrder.orderNumber);
+            }
+            
+            // Simpan kembali ke localStorage
+            localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+            
+            // 5. Simpan data admin
+            localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
+            localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
+            
+            // 6. Update window.customerOrders di pelanggan (jika halaman terbuka)
+            if (typeof window.customerOrders !== 'undefined') {
+                window.customerOrders = customerOrders;
+                console.log('✅ Updated window.customerOrders');
+            }
+            
+            // 7. Set flag untuk refresh di pelanggan
+            localStorage.setItem('order_updated_' + orderId, 'confirmed');
+            localStorage.setItem('last_order_update', Date.now().toString());
+            
+            // 8. Log aktivitas
+            addActivity(`Pesanan #${order.orderNumber} dikonfirmasi`);
+            updateNotifications();
+            updateProfileStats();
+            
+            // 9. Show success message
+            showToast('Pesanan berhasil dikonfirmasi', 'success');
+            
+            // 10. Refresh tampilan
+            loadNewOrders();
+            loadAllOrders();
+            loadDashboardSection();
+            
+            console.log('✅ Order confirmed successfully');
+            
+        } catch (error) {
+            console.error('❌ Error confirming order:', error);
+            showToast('Gagal mengonfirmasi pesanan: ' + error.message, 'error');
         }
-
+    }
+}
         async function rejectOrder(orderId) {
             if (!adminSystem) return;
             
@@ -5636,171 +6117,378 @@ async function setupAdminRealtimeUpdates() {
             }
         }
 
-        async function confirmReservation(reservationId) {
-            if (!adminSystem) return;
-            
-            if (confirm('Konfirmasi reservasi ini?')) {
-                try {
-                    if (adminSystem.isOnline) {
-                        try {
-                            const { error } = await supabaseClient
-                                .from('reservations')
-                                .update({
-                                    status: 'confirmed',
-                                    admin_seen: true,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', reservationId);
-                            
-                            if (error) throw error;
-                        } catch (error) {
-                            console.warn('Error confirming reservation in Supabase:', error.message);
-                        }
-                    }
-                    
-                    const resIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
-                    if (resIndex !== -1) {
-                        adminSystem.allReservations[resIndex].status = 'confirmed';
-                        adminSystem.allReservations[resIndex].adminSeen = true;
-                        
-                        const pendingIndex = adminSystem.reservations.findIndex(r => r.id == reservationId);
-                        if (pendingIndex !== -1) {
-                            adminSystem.reservations.splice(pendingIndex, 1);
-                        }
-                        
-                        saveLocalData();
-                        localStorage.setItem('customer_reservations', JSON.stringify(adminSystem.allReservations));
-                        
-                        addActivity(`Reservasi #${reservationId} dikonfirmasi`);
-                        updateNotifications();
-                        updateProfileStats();
-                        
-                        showToast('Reservasi berhasil dikonfirmasi', 'success');
-                        loadReservations();
-                        loadAllReservations();
-                        loadDashboardSection();
-                    }
-                } catch (error) {
-                    console.error('Error confirming reservation:', error);
-                    showToast(`Gagal mengonfirmasi reservasi`, 'error');
-                }
+       async function confirmReservation(reservationId) {
+    if (!adminSystem) {
+        showToast('Sistem admin belum siap', 'error');
+        return;
+    }
+    
+    if (!confirm('Konfirmasi reservasi ini?')) return;
+    
+    try {
+        console.log('✅ Confirming reservation:', reservationId);
+        
+        // 1. Cari reservasi di semua data
+        let reservation = null;
+        let source = '';
+        
+        // Cari di pending reservations dulu
+        reservation = adminSystem.reservations.find(r => r.id == reservationId);
+        if (reservation) {
+            source = 'pending';
+        } else {
+            // Cari di all reservations
+            reservation = adminSystem.allReservations.find(r => r.id == reservationId);
+            if (reservation) {
+                source = 'all';
             }
         }
-
+        
+        if (!reservation) {
+            showToast('Reservasi tidak ditemukan', 'error');
+            return;
+        }
+        
+        console.log('Found reservation:', reservation);
+        
+        // 2. Update di Supabase jika online
+        if (adminSystem.isOnline) {
+            try {
+                const { error } = await supabaseClient
+                    .from('reservations')
+                    .update({
+                        status: 'confirmed',
+                        admin_seen: true,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', reservationId);
+                
+                if (error) throw error;
+                console.log('✅ Reservation updated in Supabase');
+            } catch (error) {
+                console.warn('Error updating reservation in Supabase:', error.message);
+                // Lanjut mode offline
+            }
+        }
+        
+        // 3. Update data lokal admin
+        const updatedReservation = {
+            ...reservation,
+            status: 'confirmed',
+            adminSeen: true,
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Update di allReservations
+        const allIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
+        if (allIndex !== -1) {
+            adminSystem.allReservations[allIndex] = updatedReservation;
+        }
+        
+        // Update di pending reservations
+        const pendingIndex = adminSystem.reservations.findIndex(r => r.id == reservationId);
+        if (pendingIndex !== -1) {
+            adminSystem.reservations.splice(pendingIndex, 1);
+        }
+        
+        // 4. Update data di localStorage
+        saveLocalData(); // Simpan data admin
+        
+        // 5. Update data di customer_reservations (pelanggan)
+        let customerReservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+        const customerResIndex = customerReservations.findIndex(r => r.id == reservationId);
+        if (customerResIndex !== -1) {
+            customerReservations[customerResIndex].status = 'confirmed';
+            localStorage.setItem('customer_reservations', JSON.stringify(customerReservations));
+        }
+        
+        // 6. Update data di customer_orders (jika ada order terkait)
+        let customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        customerOrders = customerOrders.map(order => {
+            if (order.reservation && order.reservation.id == reservationId) {
+                return {
+                    ...order,
+                    reservation: {
+                        ...order.reservation,
+                        status: 'confirmed'
+                    }
+                };
+            }
+            return order;
+        });
+        localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+        
+        // 7. Log aktivitas
+        addActivity(`Reservasi #${reservationId} dikonfirmasi`);
+        
+        // 8. Update notifikasi dan UI
+        updateNotifications();
+        updateProfileStats();
+        
+        // 9. Show success message
+        showToast('Reservasi berhasil dikonfirmasi', 'success');
+        
+        // 10. Refresh tampilan
+        if (currentSection === 'reservations') {
+            loadReservations();
+        }
+        if (currentSection === 'all-reservations') {
+            loadAllReservations();
+        }
+        if (currentSection === 'dashboard') {
+            loadDashboardSection();
+        }
+        
+        console.log('✅ Reservation confirmed successfully');
+        
+    } catch (error) {
+        console.error('❌ Error confirming reservation:', error);
+        showToast(`Gagal mengonfirmasi reservasi: ${error.message}`, 'error');
+    }
+}
         async function rejectReservation(reservationId) {
-            if (!adminSystem) return;
+    if (!adminSystem) {
+        showToast('Sistem admin belum siap', 'error');
+        return;
+    }
+    
+    const reason = prompt('Alasan menolak reservasi:', '');
+    if (reason === null) return; // User cancelled
+    if (!reason || reason.trim() === '') {
+        showToast('Harap isi alasan penolakan', 'error');
+        return;
+    }
+    
+    if (!confirm(`Yakin ingin menolak reservasi ini?\n\nAlasan: ${reason}`)) return;
+    
+    try {
+        console.log('❌ Rejecting reservation:', reservationId);
+        
+        // 1. Cari reservasi
+        let reservation = null;
+        
+        // Cari di pending reservations dulu
+        reservation = adminSystem.reservations.find(r => r.id == reservationId);
+        if (!reservation) {
+            // Cari di all reservations
+            reservation = adminSystem.allReservations.find(r => r.id == reservationId);
+        }
+        
+        if (!reservation) {
+            showToast('Reservasi tidak ditemukan', 'error');
+            return;
+        }
+        
+        // 2. Update di Supabase jika online
+        if (adminSystem.isOnline) {
+            try {
+                const { error } = await supabaseClient
+                    .from('reservations')
+                    .update({
+                        status: 'cancelled',
+                        admin_seen: true,
+                        cancellation_reason: reason,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', reservationId);
+                
+                if (error) throw error;
+                console.log('✅ Reservation rejected in Supabase');
+            } catch (error) {
+                console.warn('Error rejecting reservation in Supabase:', error.message);
+                // Lanjut mode offline
+            }
+        }
+        
+        // 3. Update data lokal admin
+        const updatedReservation = {
+            ...reservation,
+            status: 'cancelled',
+            adminSeen: true,
+            cancellationReason: reason,
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Update di allReservations
+        const allIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
+        if (allIndex !== -1) {
+            adminSystem.allReservations[allIndex] = updatedReservation;
+        }
+        
+        // Hapus dari pending reservations
+        const pendingIndex = adminSystem.reservations.findIndex(r => r.id == reservationId);
+        if (pendingIndex !== -1) {
+            adminSystem.reservations.splice(pendingIndex, 1);
+        }
+        
+        // 4. Update tabel meja (ubah status kembali ke available)
+        let tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+        const tableIndex = tables.findIndex(t => t.number === reservation.tableNumber);
+        if (tableIndex !== -1) {
+            tables[tableIndex].status = 'available';
+            tables[tableIndex].reservationTime = null;
+            localStorage.setItem('cafe_tables', JSON.stringify(tables));
+        }
+        
+        // 5. Update data di localStorage
+        saveLocalData(); // Simpan data admin
+        
+        // 6. Update data di customer_reservations (pelanggan)
+        let customerReservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+        const customerResIndex = customerReservations.findIndex(r => r.id == reservationId);
+        if (customerResIndex !== -1) {
+            customerReservations[customerResIndex].status = 'cancelled';
+            customerReservations[customerResIndex].cancellationReason = reason;
+            localStorage.setItem('customer_reservations', JSON.stringify(customerReservations));
+        }
+        
+        // 7. Update data di customer_orders (jika ada order terkait)
+        let customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        customerOrders = customerOrders.map(order => {
+            if (order.reservation && order.reservation.id == reservationId) {
+                return {
+                    ...order,
+                    reservation: {
+                        ...order.reservation,
+                        status: 'cancelled',
+                        cancellationReason: reason
+                    }
+                };
+            }
+            return order;
+        });
+        localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+        
+        // 8. Log aktivitas
+        addActivity(`Reservasi #${reservationId} ditolak: ${reason}`);
+        
+        // 9. Update notifikasi dan UI
+        updateNotifications();
+        updateProfileStats();
+        
+        // 10. Show success message
+        showToast('Reservasi berhasil ditolak', 'success');
+        
+        // 11. Refresh tampilan
+        if (currentSection === 'reservations') {
+            loadReservations();
+        }
+        if (currentSection === 'all-reservations') {
+            loadAllReservations();
+        }
+        if (currentSection === 'dashboard') {
+            loadDashboardSection();
+        }
+        
+        console.log('✅ Reservation rejected successfully');
+        
+    } catch (error) {
+        console.error('❌ Error rejecting reservation:', error);
+        showToast(`Gagal menolak reservasi: ${error.message}`, 'error');
+    }
+}
+
+        async function reopenReservation(reservationId) {
+    if (!adminSystem) return;
+    
+    if (confirm('Yakin ingin membuka kembali reservasi ini?')) {
+        try {
+            console.log('Reopening reservation:', reservationId);
             
-            const reason = prompt('Alasan menolak reservasi:', '');
-            if (reason === null) return; // User cancelled
-            if (!reason || reason.trim() === '') {
-                showToast('Harap isi alasan penolakan', 'error');
+            // 1. Cari reservasi
+            let reservation = adminSystem.allReservations.find(r => r.id == reservationId);
+            if (!reservation) {
+                showToast('Reservasi tidak ditemukan', 'error');
                 return;
             }
             
-            if (confirm(`Yakin ingin menolak reservasi ini?\n\nAlasan: ${reason}`)) {
+            // 2. Update di Supabase jika online
+            if (adminSystem.isOnline) {
                 try {
-                    if (adminSystem.isOnline) {
-                        try {
-                            const { error } = await supabaseClient
-                                .from('reservations')
-                                .update({
-                                    status: 'rejected',
-                                    admin_seen: true,
-                                    cancellation_reason: reason,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', reservationId);
-                            
-                            if (error) throw error;
-                        } catch (error) {
-                            console.warn('Error rejecting reservation in Supabase:', error.message);
-                        }
-                    }
+                    const { error } = await supabaseClient
+                        .from('reservations')
+                        .update({
+                            status: 'pending',
+                            admin_seen: false,
+                            cancellation_reason: null,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', reservationId);
                     
-                    const resIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
-                    if (resIndex !== -1) {
-                        adminSystem.allReservations[resIndex].status = 'rejected';
-                        adminSystem.allReservations[resIndex].adminSeen = true;
-                        adminSystem.allReservations[resIndex].cancellationReason = reason;
-                        
-                        const pendingIndex = adminSystem.reservations.findIndex(r => r.id == reservationId);
-                        if (pendingIndex !== -1) {
-                            adminSystem.reservations.splice(pendingIndex, 1);
-                        }
-                        
-                        saveLocalData();
-                        localStorage.setItem('customer_reservations', JSON.stringify(adminSystem.allReservations));
-                        
-                        addActivity(`Reservasi #${reservationId} ditolak`);
-                        updateNotifications();
-                        updateProfileStats();
-                        
-                        showToast('Reservasi berhasil ditolak', 'success');
-                        loadReservations();
-                        loadAllReservations();
-                        loadDashboardSection();
-                    }
+                    if (error) throw error;
                 } catch (error) {
-                    console.error('Error rejecting reservation:', error);
-                    showToast('Gagal menolak reservasi', 'error');
+                    console.warn('Error reopening reservation in Supabase:', error.message);
                 }
             }
-        }
-
-        async function reopenReservation(reservationId) {
-            if (!adminSystem) return;
             
-            if (confirm('Yakin ingin membuka kembali reservasi ini?')) {
-                try {
-                    if (adminSystem.isOnline) {
-                        try {
-                            const { error } = await supabaseClient
-                                .from('reservations')
-                                .update({
-                                    status: 'pending',
-                                    admin_seen: false,
-                                    cancellation_reason: null,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', reservationId);
-                            
-                            if (error) throw error;
-                        } catch (error) {
-                            console.warn('Error reopening reservation in Supabase:', error.message);
-                        }
-                    }
-                    
-                    const resIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
-                    if (resIndex !== -1) {
-                        adminSystem.allReservations[resIndex].status = 'pending';
-                        adminSystem.allReservations[resIndex].adminSeen = false;
-                        adminSystem.allReservations[resIndex].cancellationReason = null;
-                        
-                        // Tambahkan ke reservasi baru jika belum ada
-                        const existsInReservations = adminSystem.reservations.some(r => r.id == reservationId);
-                        if (!existsInReservations) {
-                            adminSystem.reservations.push(adminSystem.allReservations[resIndex]);
-                        }
-                        
-                        saveLocalData();
-                        localStorage.setItem('customer_reservations', JSON.stringify(adminSystem.allReservations));
-                        
-                        addActivity(`Reservasi #${reservationId} dibuka kembali`);
-                        updateNotifications();
-                        updateProfileStats();
-                        
-                        showToast('Reservasi berhasil dibuka kembali', 'success');
-                        loadReservations();
-                        loadAllReservations();
-                        loadDashboardSection();
-                    }
-                } catch (error) {
-                    console.error('Error reopening reservation:', error);
-                    showToast('Gagal membuka kembali reservasi', 'error');
+            // 3. Update data lokal
+            const updatedReservation = {
+                ...reservation,
+                status: 'pending',
+                adminSeen: false,
+                cancellationReason: null
+            };
+            
+            // Update di allReservations
+            const allIndex = adminSystem.allReservations.findIndex(r => r.id == reservationId);
+            if (allIndex !== -1) {
+                adminSystem.allReservations[allIndex] = updatedReservation;
+            }
+            
+            // Tambahkan ke pending jika belum ada
+            const existsInPending = adminSystem.reservations.some(r => r.id == reservationId);
+            if (!existsInPending) {
+                adminSystem.reservations.push(updatedReservation);
+            }
+            
+            // 4. Update tabel meja (ubah status ke reserved)
+            if (reservation.tableNumber) {
+                let tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+                const tableIndex = tables.findIndex(t => t.number === reservation.tableNumber);
+                if (tableIndex !== -1) {
+                    tables[tableIndex].status = 'reserved';
+                    tables[tableIndex].reservationTime = reservation.time;
+                    localStorage.setItem('cafe_tables', JSON.stringify(tables));
                 }
             }
+            
+            // 5. Update data di localStorage
+            saveLocalData();
+            
+            // 6. Update data pelanggan
+            let customerReservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+            const customerResIndex = customerReservations.findIndex(r => r.id == reservationId);
+            if (customerResIndex !== -1) {
+                customerReservations[customerResIndex].status = 'pending';
+                customerReservations[customerResIndex].cancellationReason = null;
+                localStorage.setItem('customer_reservations', JSON.stringify(customerReservations));
+            }
+            
+            // 7. Log aktivitas
+            addActivity(`Reservasi #${reservationId} dibuka kembali`);
+            updateNotifications();
+            updateProfileStats();
+            
+            // 8. Show success message
+            showToast('Reservasi berhasil dibuka kembali', 'success');
+            
+            // 9. Refresh tampilan
+            if (currentSection === 'reservations') {
+                loadReservations();
+            }
+            if (currentSection === 'all-reservations') {
+                loadAllReservations();
+            }
+            if (currentSection === 'dashboard') {
+                loadDashboardSection();
+            }
+            
+        } catch (error) {
+            console.error('Error reopening reservation:', error);
+            showToast('Gagal membuka kembali reservasi', 'error');
         }
-
+    }
+}
         // ============================
         // MENU FUNCTIONS
         // ============================
@@ -6459,6 +7147,44 @@ function viewOrderDetail(orderId) {
             console.warn('Error formatting time:', e);
         }
         
+        // PERBAIKAN: Ambil nama dengan benar
+        let customerName = order.customer?.name || 'Pelanggan';
+        let customerPhone = order.customer?.phone || '';
+        
+        // Cek apakah data nama ada di items
+        if (!order.customer?.name && order.items && order.items.length > 0) {
+            const firstItem = order.items[0];
+            
+            // Debug: tampilkan struktur item
+            console.log('First item structure:', firstItem);
+            
+            // Cari nama pelanggan dari berbagai kemungkinan field
+            if (firstItem.customerName) {
+                customerName = firstItem.customerName;
+            } else if (firstItem.name && firstItem.name.includes(' - ')) {
+                const parts = firstItem.name.split(' - ');
+                if (parts.length > 1) {
+                    customerName = parts[0].trim();
+                }
+            } else if (firstItem.name && firstItem.name.includes('Nama:')) {
+                // Jika format "Nama: [nama] Menu: [menu]"
+                const nameMatch = firstItem.name.match(/Nama:\s*(.+?)(?:\s*Menu:|$)/i);
+                if (nameMatch && nameMatch[1]) {
+                    customerName = nameMatch[1].trim();
+                }
+            }
+            
+            // Cari nomor telepon
+            if (firstItem.customerPhone) {
+                customerPhone = firstItem.customerPhone;
+            } else if (firstItem.name && firstItem.name.includes('No:')) {
+                const phoneMatch = firstItem.name.match(/No:\s*([0-9]+)/i);
+                if (phoneMatch && phoneMatch[1]) {
+                    customerPhone = phoneMatch[1].trim();
+                }
+            }
+        }
+        
         // Tentukan status WhatsApp
         let whatsappStatusHTML = '';
         if (order.paymentMethod === 'whatsapp') {
@@ -6507,11 +7233,19 @@ function viewOrderDetail(orderId) {
                         </div>
                         <div>
                             <strong>Pelanggan:</strong><br>
-                            ${order.customer?.name || 'Pelanggan'}
+                            ${customerName}
+                        </div>
+                        <div>
+                            <strong>Telepon:</strong><br>
+                            ${customerPhone || '-'}
                         </div>
                         <div>
                             <strong>Total:</strong><br>
                             Rp ${(order.total || 0).toLocaleString()}
+                        </div>
+                        <div>
+                            <strong>Tipe Pesanan:</strong><br>
+                            ${order.orderType === 'dine_in' ? 'Makan di Tempat' : 'Bawa Pulang'}
                         </div>
                         <div>
                             <strong>Status Pesanan:</strong><br>
@@ -6521,7 +7255,7 @@ function viewOrderDetail(orderId) {
                         </div>
                         <div>
                             <strong>Metode Pembayaran:</strong><br>
-                            ${order.paymentMethod === 'whatsapp' ? 'Transfer via WhatsApp' : 'Transfer Bank'}
+                            ${order.paymentMethod === 'whatsapp' ? 'Transfer via WhatsApp' : 'QRIS'}
                         </div>
                     </div>
                 </div>
@@ -6537,13 +7271,22 @@ function viewOrderDetail(orderId) {
         
         if (order.items && order.items.length > 0) {
             order.items.forEach(item => {
-                const itemName = item.name || item.menu_name || 'Item';
-                const quantity = item.quantity || 1;
-                const price = item.price || item.unit_price || 0;
-                const total = price * quantity;
+                // PERBAIKAN: Format nama item dengan benar
+                let itemName = item.name || item.menu_name || 'Item';
+                let quantity = item.quantity || 1;
+                let price = item.price || item.unit_price || 0;
+                let total = price * quantity;
+                
+                // Jika item name mengandung nama pelanggan, hanya tampilkan nama menu
+                if (itemName.includes(' - ')) {
+                    const parts = itemName.split(' - ');
+                    if (parts.length > 1) {
+                        itemName = parts.slice(1).join(' - '); // Ambil bagian setelah nama
+                    }
+                }
                 
                 html += `
-                    <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #f0f0f0;">
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0;">
                         <span>${itemName} (${quantity}x)</span>
                         <span>Rp ${total.toLocaleString()}</span>
                     </div>
@@ -6567,36 +7310,39 @@ function viewOrderDetail(orderId) {
         // Tombol aksi berdasarkan status
         if (order.status === 'pending' || order.status === 'waiting_payment') {
             html += `
-    <button class="btn" style="background: #25D366; color: white;" 
-            onclick="openCustomerWhatsApp('${orderId}')"
-            title="Buka WhatsApp pelanggan untuk melihat bukti transfer">
-        <i class="fab fa-whatsapp"></i> Lihat WhatsApp
-    </button>
-`;
-        }
-        
-        // Tombol khusus WhatsApp
-        if (order.paymentMethod === 'whatsapp') {
-            html += `
-                <button class="btn btn-warning" onclick="viewWhatsAppProofDetail('${orderId}')">
-                    <i class="fab fa-whatsapp"></i> Detail Bukti WhatsApp
+                <button class="btn btn-success" onclick="confirmOrder('${orderId}')" style="flex: 1; min-width: 120px;">
+                    <i class="fas fa-check"></i> Konfirmasi
+                </button>
+                <button class="btn btn-danger" onclick="rejectOrder('${orderId}')" style="flex: 1; min-width: 120px;">
+                    <i class="fas fa-times"></i> Tolak
                 </button>
             `;
         }
         
         // Tombol WhatsApp jika pelanggan memiliki nomor
-        if (order.customer?.whatsapp || order.customer?.phone) {
-            const phone = order.customer.whatsapp || order.customer.phone;
+        if (customerPhone) {
+            const formattedPhone = customerPhone.replace(/\D/g, '');
+            const whatsappNumber = formattedPhone.startsWith('0') ? '62' + formattedPhone.substring(1) : formattedPhone;
+            
             html += `
-                <button class="btn" style="background: #25D366; color: white;" 
-                        onclick="openWhatsAppMessageModal('${phone}', 'Halo ${order.customer?.name || 'Pelanggan'}, mengenai pesanan ${order.orderNumber || ''} di MAN CAFE  akan segera kami konfirmasi... Terimakasih sudah memesan di MAN cafe, silahkan jika ingin melakukan reservasi meja setelah kami konfirmasi')">
-                    <i class="fab fa-whatsapp"></i> Chat Pelanggan
+                <button class="btn" style="background: #25D366; color: white; flex: 1; min-width: 120px;" 
+                        onclick="openWhatsAppMessageModal('${whatsappNumber}', 'Halo ${customerName}, mengenai pesanan ${order.orderNumber || ''} di MAN CAFE akan segera kami konfirmasi... Terimakasih sudah memesan di MAN cafe, silahkan jika ingin melakukan reservasi meja setelah kami konfirmasi')">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+            `;
+        }
+        
+        // Tombol khusus WhatsApp transfer
+        if (order.paymentMethod === 'whatsapp') {
+            html += `
+                <button class="btn btn-warning" onclick="viewWhatsAppProofDetail('${orderId}')" style="flex: 1; min-width: 120px;">
+                    <i class="fab fa-whatsapp"></i> Cek Bukti
                 </button>
             `;
         }
         
         html += `
-                    <button class="btn btn-secondary" onclick="closeModal('orderDetailModal')" style="margin-left: auto;">
+                    <button class="btn btn-secondary" onclick="closeModal('orderDetailModal')" style="flex: 1; min-width: 120px;">
                         <i class="fas fa-times"></i> Tutup
                     </button>
                 </div>
@@ -6605,6 +7351,13 @@ function viewOrderDetail(orderId) {
         
         content.innerHTML = html;
         modal.style.display = 'flex';
+        
+        console.log('Order detail loaded for:', {
+            orderNumber: order.orderNumber,
+            customerName: customerName,
+            customerPhone: customerPhone,
+            itemsCount: order.items?.length
+        });
         
     } catch (error) {
         console.error('Error viewing order detail:', error);
@@ -6667,95 +7420,142 @@ function quickCheckWhatsAppStatus(orderId) {
 }
 
         function viewReservationDetail(reservationId) {
-            if (!adminSystem) return;
+    if (!adminSystem) return;
+    
+    try {
+        console.log('Viewing reservation detail:', reservationId);
+        
+        // Cari reservasi di semua sumber
+        let reservation = adminSystem.reservations.find(r => r.id == reservationId) || 
+                         adminSystem.allReservations.find(r => r.id == reservationId);
+        
+        if (!reservation) {
+            // Coba cari di localStorage customer_reservations
+            const customerReservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+            reservation = customerReservations.find(r => r.id == reservationId);
             
-            try {
-                const reservation = adminSystem.allReservations.find(r => r.id == reservationId) || 
-                                  adminSystem.reservations.find(r => r.id == reservationId);
-                if (!reservation) return;
-                
-                const content = document.getElementById('reservationDetailContent');
-                content.innerHTML = `
-                    <div style="padding: 1rem 0;">
-                        <h3 style="margin-bottom: 1rem;">Detail Reservasi</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <strong>No. Reservasi:</strong><br>
-                                #${reservation.id.toString().slice(-6)}
-                            </div>
-                            <div>
-                                <strong>Tanggal:</strong><br>
-                                ${reservation.date ? new Date(reservation.date).toLocaleDateString('id-ID') : '-'}
-                            </div>
-                            <div>
-                                <strong>Nama:</strong><br>
-                                ${reservation.name}
-                            </div>
-                            <div>
-                                <strong>Telepon:</strong><br>
-                                ${reservation.phone}
-                            </div>
-                            <div>
-                                <strong>Waktu:</strong><br>
-                                ${reservation.time || '-'}
-                            </div>
-                            <div>
-                                <strong>Meja:</strong><br>
-                                ${reservation.tableNumber || '-'}
-                            </div>
-                        </div>
-                        
-                        ${reservation.cancellationReason ? `
-                        <div style="margin: 1rem 0; padding: 0.8rem; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545;">
-                            <strong><i class="fas fa-exclamation-triangle"></i> Alasan Ditolak:</strong><br>
-                            ${reservation.cancellationReason}
-                        </div>` : ''}
-                        
-                        ${reservation.notes ? `
-                        <div style="margin-bottom: 1rem;">
-                            <strong>Catatan:</strong><br>
-                            ${reservation.notes}
-                        </div>` : ''}
-                        
-                        <div style="margin-bottom: 1rem;">
-                            <strong>Status:</strong><br>
-                            <span class="status-badge ${reservation.status === 'confirmed' ? 'status-confirmed' : 
-                                                     reservation.status === 'cancelled' ? 'status-cancelled' : 
-                                                     'status-pending'}">
-                                ${reservation.status === 'confirmed' ? 'Dikonfirmasi' : 
-                                 reservation.status === 'cancelled' ? 'Ditolak' : 
-                                 'Menunggu'}
-                            </span>
-                        </div>
-                        
-                        <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
-                            ${reservation.status === 'pending' ? `
-                            <button class="btn btn-success" onclick="confirmReservation('${reservation.id}')">
-                                <i class="fas fa-check"></i> Konfirmasi
-                            </button>
-                            <button class="btn btn-danger" onclick="rejectReservation('${reservation.id}')">
-                                <i class="fas fa-times"></i> Tolak
-                            </button>` : ''}
-                            
-                            ${reservation.status === 'cancelled' ? `
-                            <button class="btn btn-warning" onclick="reopenReservation('${reservation.id}')" style="background: #ffc107; color: #212529;">
-                                <i class="fas fa-redo"></i> Buka Kembali
-                            </button>` : ''}
-                            
-                            ${reservation.whatsapp ? `
-                            <button class="btn" style="background: #25D366; color: white;" onclick="openWhatsAppMessageModal('${reservation.whatsapp}', 'Halo ${reservation.name}, mengenai reservasi Anda di MAN CAFE...')">
-                                <i class="fab fa-whatsapp"></i> WhatsApp
-                            </button>` : ''}
-                        </div>
-                    </div>
-                `;
-                
-                openModal('reservationDetailModal');
-            } catch (error) {
-                console.error('Error viewing reservation detail:', error);
-                showToast('Gagal memuat detail reservasi', 'error');
+            if (!reservation) {
+                showToast('Reservasi tidak ditemukan', 'error');
+                return;
             }
         }
+        
+        const content = document.getElementById('reservationDetailContent');
+        
+        // Format tanggal
+        let formattedDate = '-';
+        try {
+            if (reservation.date) {
+                const dateObj = new Date(reservation.date);
+                formattedDate = dateObj.toLocaleDateString('id-ID', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+        } catch (e) {
+            console.warn('Error formatting date:', e);
+        }
+        
+        content.innerHTML = `
+            <div style="padding: 1rem 0;">
+                <h3 style="margin-bottom: 1rem; color: #8B4513;">Detail Reservasi</h3>
+                
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <strong>No. Reservasi:</strong><br>
+                            #${reservation.id.toString().slice(-6)}
+                        </div>
+                        <div>
+                            <strong>Tanggal:</strong><br>
+                            ${formattedDate}
+                        </div>
+                        <div>
+                            <strong>Nama:</strong><br>
+                            ${reservation.customerName || reservation.name || 'Pelanggan'}
+                        </div>
+                        <div>
+                            <strong>Telepon:</strong><br>
+                            ${reservation.customerPhone || reservation.phone || '-'}
+                        </div>
+                        <div>
+                            <strong>Waktu:</strong><br>
+                            ${reservation.time || '-'}
+                        </div>
+                        <div>
+                            <strong>Meja:</strong><br>
+                            ${reservation.tableNumber || '-'}
+                        </div>
+                        <div>
+                            <strong>Jumlah Tamu:</strong><br>
+                            ${reservation.guests || 2} orang
+                        </div>
+                        <div>
+                            <strong>No. Pesanan:</strong><br>
+                            ${reservation.orderNumber || '-'}
+                        </div>
+                    </div>
+                </div>
+                
+                ${reservation.notes ? `
+                <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <strong>Catatan:</strong><br>
+                    ${reservation.notes}
+                </div>` : ''}
+                
+                ${reservation.cancellationReason ? `
+                <div style="background: #f8d7da; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <strong><i class="fas fa-exclamation-triangle"></i> Alasan Ditolak:</strong><br>
+                    ${reservation.cancellationReason}
+                </div>` : ''}
+                
+                <div style="margin-bottom: 1rem;">
+                    <strong>Status:</strong><br>
+                    <span class="status-badge ${reservation.status === 'confirmed' ? 'status-confirmed' : 
+                                             reservation.status === 'cancelled' ? 'status-cancelled' : 
+                                             'status-pending'}">
+                        ${reservation.status === 'confirmed' ? 'Dikonfirmasi' : 
+                         reservation.status === 'cancelled' ? 'Ditolak' : 
+                         'Menunggu'}
+                    </span>
+                </div>
+                
+                <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                    ${reservation.status === 'pending' ? `
+                    <button class="btn btn-success" onclick="confirmReservation('${reservation.id}')" style="flex: 1; min-width: 120px;">
+                        <i class="fas fa-check"></i> Konfirmasi
+                    </button>
+                    <button class="btn btn-danger" onclick="rejectReservation('${reservation.id}')" style="flex: 1; min-width: 120px;">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>` : ''}
+                    
+                    ${reservation.status === 'cancelled' ? `
+                    <button class="btn btn-warning" onclick="reopenReservation('${reservation.id}')" style="background: #ffc107; color: #212529; flex: 1; min-width: 120px;">
+                        <i class="fas fa-redo"></i> Buka Kembali
+                    </button>` : ''}
+                    
+                    ${(reservation.customerPhone || reservation.phone) ? `
+                    <button class="btn" style="background: #25D366; color: white; flex: 1; min-width: 120px;" 
+                            onclick="openWhatsAppMessageModal('${reservation.customerPhone || reservation.phone}', 'Halo ${reservation.customerName || reservation.name || 'Pelanggan'}, mengenai reservasi Anda di MAN CAFE untuk tanggal ${formattedDate} jam ${reservation.time || ''} di meja ${reservation.tableNumber || ''}')">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>` : ''}
+                    
+                    <button class="btn btn-secondary" onclick="closeModal('reservationDetailModal')" style="flex: 1; min-width: 120px;">
+                        <i class="fas fa-times"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        openModal('reservationDetailModal');
+        
+    } catch (error) {
+        console.error('Error viewing reservation detail:', error);
+        showToast('Gagal memuat detail reservasi: ' + error.message, 'error');
+    }
+}
 
         // ============================
         // IMAGE HANDLING

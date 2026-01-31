@@ -1059,6 +1059,36 @@
             font-size: 0.85rem;
         }
 
+        /* Tambahkan di CSS admin */
+.whatsapp-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.whatsapp-status-badge.verified {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.whatsapp-status-badge.received {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.whatsapp-status-badge.waiting {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
         .qris-details .amount {
             font-size: 1.2rem;
             font-weight: bold;
@@ -1688,6 +1718,136 @@
                 width: 140px;
                 height: 140px;
             }
+
+        /* CSS untuk tabel */
+.table-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+}
+
+.table-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.table-item.selectable:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.1);
+}
+
+.table-item.selected {
+    border-color: var(--success-color) !important;
+    background: #e8f5e9;
+}
+
+.table-item.occupied {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.table-item.reserved {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.table-item.maintenance {
+    background: #e9ecef;
+    border-color: #6c757d;
+    color: #495057;
+}
+
+.table-item.disabled {
+    opacity: 0.7;
+    cursor: not-allowed !important;
+}
+
+.table-number {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+.table-status {
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.table-details {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.3;
+}
+
+/* CSS untuk time slots */
+.time-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.6rem;
+    margin: 1rem 0;
+}
+
+.time-slot {
+    background: white;
+    border-radius: 6px;
+    padding: 0.6rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid #e0e0e0;
+    font-size: 0.85rem;
+}
+
+.time-slot:hover:not(.booked):not(.disabled) {
+    border-color: var(--primary-color);
+    background: #f8f9fa;
+}
+
+.time-slot.selected {
+    border-color: var(--success-color);
+    background: #d4edda;
+    color: #155724;
+    font-weight: bold;
+}
+
+.time-slot.booked {
+    background: #f8d7da;
+    color: #721c24;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.time-slot.disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
         }
     </style>
 </head>
@@ -1881,9 +2041,9 @@
                 <div class="footer-section">
                     <h3>Jam Operasional</h3>
                     <ul class="footer-links">
-                        <li><strong>Senin - Jumat:</strong> 11:00 - 22:00</li>
-                        <li><strong>Sabtu:</strong> 11:00 - 00:00</li>
-                        <li><strong>Minggu:</strong> 11:00 - 23:00</li>
+                        <li><strong>Senin - Jumat:</strong> 16:00 - 22:00</li>
+                        <li><strong>Sabtu:</strong> 16:00 - 00:00</li>
+                        <li><strong>Minggu:</strong> 16:00 - 23:00</li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -2098,31 +2258,71 @@ class CustomerSystem {
         this.currentFilter = 'all';
         this.selectedOrderForReservation = null;
     }
-
-    async init() {
-        console.log('🚀 Initializing Customer System...');
+// Di file PELANGGAN, perbaiki init()
+async init() {
+    console.log('🚀 Initializing Customer System...');
+    
+    try {
+        // 1. Cek koneksi
+        this.isOnline = await this.checkSupabaseConnection();
+        console.log('🌐 Connection:', this.isOnline ? 'ONLINE' : 'OFFLINE');
         
-        try {
-            this.isOnline = await this.checkSupabaseConnection();
-            console.log(this.isOnline ? '✅ Connected to Supabase' : '⚠️ Running in offline mode');
-            
-            await this.loadMenus();
-            await this.loadCustomerOrders();
-            
-            if (this.isOnline) {
-                this.setupRealtimeUpdates();
-            }
-            
-            this.startAutoRefresh();
-            
-            console.log('✅ Customer System initialized');
-            
-        } catch (error) {
-            console.error('❌ Error in init:', error);
-            await this.loadMenus();
-            await this.loadCustomerOrders();
+        // 2. Load data dari localStorage dulu (agar cepat)
+        this.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
+        this.customerPhone = localStorage.getItem('customer_phone') || '';
+        
+        console.log('📦 Initial data:');
+        console.log('- Cart items:', this.cart.length);
+        console.log('- Customer phone:', this.customerPhone);
+        
+        // 3. Load menus
+        await this.loadMenus();
+        
+        // 4. Load orders dari localStorage
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        window.customerOrders = orders;
+        console.log('- Orders loaded:', orders.length);
+        
+        // 5. Update UI
+        updateCartDisplay();
+        updateCartCount();
+        updateOrdersCount();
+        
+        // 6. Jika online, sync dengan Supabase
+        if (this.isOnline && this.customerPhone) {
+            console.log('🔄 Syncing with Supabase...');
+            await this.syncWithSupabase();
+        }
+        
+        // 7. Setup realtime
+        if (this.isOnline) {
+            this.setupRealtimeUpdates();
+        }
+        
+        console.log('✅ Customer System ready!');
+        
+        // 8. Auto-show orders jika di halaman my-orders
+        if (window.location.hash === '#my-orders') {
+            setTimeout(() => showOrders('all'), 500);
+        }
+        
+    } catch (error) {
+        console.error('❌ Initialization error:', error);
+        
+        // Fallback minimal
+        this.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
+        window.customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        
+        updateCartDisplay();
+        updateCartCount();
+        updateOrdersCount();
+        
+        if (window.location.hash === '#my-orders') {
+            showOrders('all');
         }
     }
+}
+    
 
     async checkSupabaseConnection() {
         try {
@@ -2515,53 +2715,78 @@ class CustomerSystem {
     }
 
     async loadCustomerOrders() {
-        try {
-            console.log('📥 Loading customer orders...');
-            
-            if (!this.customerPhone) {
-                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                window.customerOrders = orders;
-                console.log(`📦 Loaded ${orders.length} orders from localStorage`);
-                return orders;
-            }
-            
-            if (!this.isOnline) {
-                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                window.customerOrders = orders;
-                return orders;
-            }
-            
-            const { data: orders, error: ordersError } = await supabaseClient
-                .from('orders')
-                .select('*')
-                .eq('customer_phone', this.customerPhone)
-                .order('created_at', { ascending: false });
-            
-            if (ordersError) {
-                console.error('Error loading orders:', ordersError);
-                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                window.customerOrders = orders;
-                return orders;
-            }
-            
-            if (orders && orders.length > 0) {
-                localStorage.setItem('customer_orders', JSON.stringify(orders));
-                window.customerOrders = orders;
-                console.log(`✅ Loaded ${orders.length} orders from Supabase`);
-                return orders;
-            } else {
-                const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-                window.customerOrders = orders;
-                return orders;
-            }
-            
-        } catch (error) {
-            console.error('Error loading customer orders:', error);
+    try {
+        console.log('📥 Loading customer orders...');
+        
+        if (!this.customerPhone) {
+            const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            window.customerOrders = orders;
+            console.log(`📦 Loaded ${orders.length} orders from localStorage`);
+            return orders;
+        }
+        
+        if (!this.isOnline) {
             const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
             window.customerOrders = orders;
             return orders;
         }
+        
+        // SELALU AMBIL DATA TERBARU DARI SUPABASE
+        const { data: orders, error: ordersError } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('customer_phone', this.customerPhone)
+            .order('created_at', { ascending: false });
+        
+        if (ordersError) {
+            console.error('Error loading orders:', ordersError);
+            const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            window.customerOrders = orders;
+            return orders;
+        }
+        
+        if (orders && orders.length > 0) {
+            // FORMAT DATA DENGAN BENAR
+            const formattedOrders = orders.map(order => ({
+                id: order.id,
+                orderNumber: order.order_number,
+                customer: {
+                    name: order.customer_name,
+                    phone: order.customer_phone
+                },
+                orderType: order.order_type || 'dine_in',
+                items: order.items || [],
+                total: order.total_amount || 0,
+                status: order.status || 'pending',
+                paymentMethod: order.payment_method || 'qris',
+                paymentStatus: order.payment_status || 'waiting_payment',
+                whatsappProofReceived: order.whatsapp_proof_received || false,
+                whatsappProofVerified: order.whatsapp_proof_verified || false,
+                reservation: null, // Akan diisi jika ada reservasi
+                createdAt: order.created_at
+            }));
+            
+            localStorage.setItem('customer_orders', JSON.stringify(formattedOrders));
+            window.customerOrders = formattedOrders;
+            
+            console.log(`✅ Loaded ${formattedOrders.length} orders from Supabase`);
+            console.log('Order statuses:', formattedOrders.map(o => o.status));
+            
+            return formattedOrders;
+        } else {
+            const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            window.customerOrders = orders;
+            return orders;
+        }
+        
+    } catch (error) {
+        console.error('Error loading customer orders:', error);
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        window.customerOrders = orders;
+        return orders;
     }
+}
+    
 
     // ==================== CART FUNCTIONS ====================
     addToCart(menuId) {
@@ -2763,6 +2988,131 @@ class CustomerSystem {
                 </div>
             `;
         }
+    }
+}
+
+// Di CustomerSystem class, tambahkan fungsi sinkronisasi orders
+async function syncOrdersRealtime() {
+    try {
+        console.log('🔄 Syncing orders from Supabase...');
+        
+        if (!this.customerPhone) {
+            console.log('No customer phone, using local orders');
+            return;
+        }
+        
+        if (!this.isOnline) {
+            console.log('Offline mode, using local orders');
+            return;
+        }
+        
+        const { data: orders, error } = await supabaseClient
+            .from('orders')
+            .select(`
+                *,
+                order_items (
+                    menu_item_name,
+                    quantity,
+                    price,
+                    total_price
+                )
+            `)
+            .eq('customer_phone', this.customerPhone)
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('Error syncing orders:', error);
+            return;
+        }
+        
+        if (orders && orders.length > 0) {
+            const formattedOrders = orders.map(order => ({
+                id: order.id,
+                orderNumber: order.order_number,
+                customer: {
+                    name: order.customer_name,
+                    phone: order.customer_phone,
+                    address: order.customer_address || ''
+                },
+                orderType: order.order_type || 'dine_in',
+                items: (order.order_items || []).map(item => ({
+                    name: item.menu_item_name,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                total: order.total_amount || 0,
+                status: order.status || 'pending',
+                paymentMethod: order.payment_method || 'qris',
+                paymentStatus: order.payment_status || 'waiting_payment',
+                paymentProof: order.payment_proof_url || null,
+                whatsappProofReceived: order.whatsapp_proof_received || false,
+                whatsappProofVerified: order.whatsapp_proof_verified || false,
+                whatsappProofNotes: order.whatsapp_proof_notes || '',
+                reservation: order.reservation_data ? JSON.parse(order.reservation_data) : null,
+                createdAt: order.created_at,
+                adminSeen: order.admin_seen || false
+            }));
+            
+            // Simpan ke localStorage pelanggan
+            localStorage.setItem('customer_orders', JSON.stringify(formattedOrders));
+            window.customerOrders = formattedOrders;
+            
+            console.log(`✅ Synced ${formattedOrders.length} orders for customer`);
+            
+            // Update tampilan jika di halaman orders
+            if (window.location.hash === '#my-orders') {
+                updateOrdersDisplay();
+                updateOrdersCount();
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error in syncOrdersRealtime:', error);
+    }
+}
+
+// Tambahkan realtime subscription untuk orders
+function setupOrdersRealtimeSubscription() {
+    try {
+        supabaseClient
+            .channel('customer-orders-updates')
+            .on('postgres_changes', 
+                { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'orders' 
+                }, 
+                async (payload) => {
+                    console.log('🔄 Orders update received:', payload);
+                    
+                    // Cek apakah order ini milik pelanggan yang sedang login
+                    if (customerSystem && 
+                        customerSystem.customerPhone && 
+                        payload.new.customer_phone === customerSystem.customerPhone) {
+                        
+                        console.log(`📢 Order update for current customer: ${payload.new.order_number}`);
+                        
+                        // Sync ulang data orders
+                        await customerSystem.syncOrdersRealtime();
+                        
+                        // Tampilkan notifikasi jika ada perubahan status
+                        if (payload.new.status === 'confirmed' && payload.old.status === 'pending') {
+                            showToast(`Pesanan ${payload.new.order_number} telah dikonfirmasi admin!`, 'success');
+                        }
+                        
+                        // Update tampilan
+                        if (window.location.hash === '#my-orders') {
+                            showOrders(currentFilter);
+                        }
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('📡 Customer orders subscription:', status);
+            });
+            
+    } catch (error) {
+        console.error('❌ Error setting up orders subscription:', error);
     }
 }
         function createMenuCard(menu, showCategory = false) {
@@ -3019,217 +3369,504 @@ setTimeout(() => {
         }
 
         // ==================== ORDER FUNCTIONS ====================
-        function showOrders(filter, eventElement = null) {
-            currentFilter = filter;
-            const container = document.getElementById('orders-container');
-            const orders = window.customerOrders || [];
-            
-            let filteredOrders = orders;
-            
-            if (filter === 'pending') {
-                filteredOrders = orders.filter(order => order.status === 'pending');
-            } else if (filter === 'confirmed') {
-                filteredOrders = orders.filter(order => order.status === 'confirmed');
-            } else if (filter === 'reservations') {
-                filteredOrders = orders.filter(order => 
-                    order.orderType === 'dine_in' &&
-                    order.reservation
-                );
-            }
-            
-            displayOrders(filteredOrders, container, filter);
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            if (eventElement) {
-                eventElement.classList.add('active');
-            } else {
-                const targetBtn = document.querySelector(`.tab-btn[onclick*="${filter}"]`);
-                if (targetBtn) {
-                    targetBtn.classList.add('active');
-                }
-            }
+      function showOrders(filter, eventElement = null) {
+    console.log('🔍 showOrders called with filter:', filter);
+    
+    currentFilter = filter;
+    const container = document.getElementById('orders-container');
+    
+    if (!container) {
+        console.error('❌ Orders container not found!');
+        return;
+    }
+    
+    // AMBIL DATA DARI LOCALSTORAGE PELANGGAN
+    let orders = [];
+    try {
+        orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        console.log('📥 Orders from customer_orders:', orders.length);
+        
+        // Debug: tampilkan status semua order
+        orders.forEach((order, i) => {
+            console.log(`  [${i}] ${order.orderNumber} - ${order.status} - ${order.orderType || 'unknown'}`);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error reading customer_orders:', error);
+        orders = [];
+    }
+    
+    // Update window.customerOrders
+    window.customerOrders = orders;
+    
+    if (orders.length === 0) {
+        container.innerHTML = `
+            <div class="no-orders">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Belum ada pesanan</h3>
+                <p>Mulai pesan dari menu kami!</p>
+                <button class="btn-primary" onclick="window.location.hash='#menu'" style="margin-top: 1rem;">
+                    <i class="fas fa-utensils"></i> Lihat Menu
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // FILTER ORDERS
+    let filteredOrders = orders;
+    
+    if (filter === 'pending') {
+        filteredOrders = orders.filter(order => order.status === 'pending');
+        console.log('📋 Pending orders:', filteredOrders.length);
+    } else if (filter === 'confirmed') {
+        filteredOrders = orders.filter(order => order.status === 'confirmed');
+        console.log('✅ Confirmed orders for reservation check:', filteredOrders.length);
+        
+        // Debug: cek order yang bisa reservasi
+        filteredOrders.forEach((order, i) => {
+            console.log(`  [${i}] ${order.orderNumber}: type=${order.orderType}, hasReservation=${!!order.reservation}`);
+        });
+    } else if (filter === 'reservations') {
+        filteredOrders = orders.filter(order => 
+            order.orderType === 'dine_in' && order.reservation
+        );
+    }
+    
+    // TAMPILKAN PESAN JIKA TIDAK ADA
+    if (filteredOrders.length === 0) {
+        let message = '';
+        let icon = 'fas fa-clipboard-list';
+        
+        switch(filter) {
+            case 'pending':
+                message = 'Tidak ada pesanan yang menunggu konfirmasi';
+                icon = 'fas fa-clock';
+                break;
+            case 'confirmed':
+                message = 'Tidak ada pesanan yang sudah dikonfirmasi';
+                icon = 'fas fa-check-circle';
+                break;
+            case 'reservations':
+                message = 'Tidak ada reservasi meja';
+                icon = 'fas fa-calendar-alt';
+                break;
+            default:
+                message = 'Belum ada pesanan';
         }
+        
+        container.innerHTML = `
+            <div class="no-orders">
+                <i class="${icon}"></i>
+                <h3>Tidak ada pesanan</h3>
+                <p>${message}</p>
+                ${filter === 'confirmed' ? 
+                    '<p><small>Pesanan yang sudah dikonfirmasi admin akan muncul di sini</small></p>' : 
+                    ''
+                }
+                <button class="btn-primary" onclick="window.location.hash='#menu'" style="margin-top: 1rem;">
+                    <i class="fas fa-utensils"></i> Pesan Sekarang
+                </button>
+            </div>
+        `;
+        
+        return;
+    }
+    
+    console.log(`🎯 Displaying ${filteredOrders.length} ${filter} orders`);
+    
+    // TAMPILKAN ORDERS DENGAN TOMBOL RESERVASI
+    displayOrdersWithReservation(filteredOrders, container, filter);
+    
+    // UPDATE ACTIVE TAB
+    if (eventElement) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        eventElement.classList.add('active');
+    }
+}
 
-        function displayOrders(ordersList, container, filter) {
-            if (ordersList.length === 0) {
-                let message = 'Belum ada pesanan yang Anda buat';
-                if (filter === 'pending') message = 'Tidak ada pesanan yang menunggu konfirmasi';
-                if (filter === 'confirmed') message = 'Tidak ada pesanan yang sudah dikonfirmasi';
-                if (filter === 'reservations') message = 'Tidak ada reservasi meja';
+// FUNGSI BARU UNTUK MENAMPILKAN ORDER DENGAN TOMBOL RESERVASI
+function displayOrdersWithReservation(ordersList, container, filter) {
+    container.innerHTML = ordersList.map(order => {
+        const statusText = {
+            'pending': 'Menunggu Konfirmasi',
+            'confirmed': 'Dikonfirmasi',
+            'completed': 'Selesai',
+            'cancelled': 'Dibatalkan'
+        };
+        
+        const statusClass = {
+            'pending': 'status-pending',
+            'confirmed': 'status-confirmed',
+            'completed': 'status-completed',
+            'cancelled': 'status-cancelled'
+        };
+        
+        // PERBAIKAN PENTING: Cek apakah order bisa di-reservasi
+        const canReserve = order.status === 'confirmed' && 
+                         order.orderType === 'dine_in' && 
+                         !order.reservation;
+        
+        console.log(`Order ${order.orderNumber}: canReserve=${canReserve}, status=${order.status}, type=${order.orderType}, hasReservation=${!!order.reservation}`);
+        
+        // Format WhatsApp message
+        const whatsappMessage = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${order.orderNumber} sebesar Rp ${order.total.toLocaleString()}.%0A%0ANama: ${order.customer?.name || 'Pelanggan'}%0ANo. HP: ${order.customer?.phone || '-'}%0A%0ABerikut bukti transfer saya:`;
+        const whatsappUrl = `https://wa.me/6283832184173?text=${encodeURIComponent(whatsappMessage)}`;
+        
+        return `
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-number">${order.orderNumber}</div>
+                    <span class="order-status ${statusClass[order.status] || 'status-pending'}">
+                        ${statusText[order.status] || order.status}
+                    </span>
+                </div>
                 
-                container.innerHTML = `
-                    <div class="no-orders">
-                        <i class="fas fa-clipboard-list"></i>
-                        <h3>Tidak ada pesanan</h3>
-                        <p>${message}</p>
-                        ${filter === 'confirmed' ? 
-                            '<p><small>Pesanan yang sudah dikonfirmasi admin akan muncul di sini</small></p>' : 
-                            ''
-                        }
+                <div class="order-details">
+                    <div class="detail-item">
+                        <strong>Nama:</strong> ${order.customer?.name || 'Pelanggan'}
                     </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = ordersList.map(order => {
-                const statusText = {
-                    'pending': 'Menunggu Konfirmasi',
-                    'confirmed': 'Dikonfirmasi',
-                    'completed': 'Selesai',
-                    'cancelled': 'Dibatalkan'
-                };
+                    <div class="detail-item">
+                        <strong>Tanggal:</strong> ${new Date(order.createdAt).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Total:</strong> Rp ${order.total?.toLocaleString() || '0'}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Tipe:</strong> ${order.orderType === 'dine_in' ? 'Makan di Tempat' : 'Bawa Pulang'}
+                    </div>
+                </div>
                 
-                const paymentStatusText = {
-                    'waiting_payment': 'Menunggu Pembayaran',
-                    'waiting_verification': 'Menunggu Verifikasi',
-                    'verified': 'Terverifikasi',
-                    'paid': 'Lunas',
-                    'failed': 'Gagal'
-                };
-                
-                const statusClass = {
-                    'pending': 'status-pending',
-                    'confirmed': 'status-confirmed',
-                    'completed': 'status-completed',
-                    'cancelled': 'status-cancelled'
-                };
-                
-                const canReserve = order.status === 'confirmed' && 
-                                 order.orderType === 'dine_in' && 
-                                 !order.reservation;
-                
-                const hasReservation = order.reservation !== null;
-                
-                const canUploadProof = order.paymentStatus === 'waiting_payment' && 
-                                      order.status === 'pending';
-                
-                const hasPaymentProof = order.paymentProof !== null;
-                
-                return `
-                    <div class="order-card">
-                        <div class="order-header">
-                            <div class="order-number">${order.orderNumber}</div>
-                            <span class="order-status ${statusClass[order.status]}">
-                                ${statusText[order.status] || order.status}
-                            </span>
-                        </div>
-                        <div class="order-details">
-                            <div class="detail-item">
-                                <strong>Nama:</strong> ${order.customer.name}
+                <div class="order-items">
+                    <h4>Items Pesanan:</h4>
+                    ${(order.items || []).map(item => {
+                        // Tampilkan hanya nama menu, hilangkan nama pelanggan jika ada
+                        let itemName = item.name || 'Item';
+                        if (itemName.includes(' - ')) {
+                            const parts = itemName.split(' - ');
+                            itemName = parts.length > 1 ? parts[1] : parts[0];
+                        }
+                        
+                        return `
+                            <div class="order-item">
+                                <span>${itemName} (${item.quantity || 1}x)</span>
+                                <span>Rp ${((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
                             </div>
-                            <div class="detail-item">
-                                <strong>Tanggal:</strong> ${new Date(order.createdAt).toLocaleDateString('id-ID', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Total:</strong> Rp ${order.total.toLocaleString()}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Tipe:</strong> ${order.orderType === 'dine_in' ? 'Makan di Tempat' : 'Bawa Pulang'}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Status Pembayaran:</strong> 
-                                <span class="${order.paymentStatus === 'verified' || order.paymentStatus === 'paid' ? 'status-confirmed' : 
-                                              order.paymentStatus === 'waiting_verification' ? 'status-pending' : 
-                                              'status-pending'}" 
-                                      style="padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
-                                    ${paymentStatusText[order.paymentStatus] || 'Menunggu'}
+                        `;
+                    }).join('')}
+                    <div class="order-total">
+                        Total: Rp ${order.total.toLocaleString()}
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+                    ${order.status === 'pending' ? `
+                        <!-- TOMBOL WHATSAPP LANGSUNG -->
+                        <a href="${whatsappUrl}" 
+                           target="_blank" 
+                           class="btn-primary" 
+                           style="background: #25D366; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <i class="fab fa-whatsapp"></i> Kirim Bukti WhatsApp
+                        </a>
+                        
+                        <!-- TOMBOL SALIN INFO -->
+                        <button class="btn-secondary" onclick="copyOrderInfo('${order.orderNumber}')" 
+                                style="background: #6c757d; color: white; border: none; padding: 0.5rem 1rem;">
+                            <i class="fas fa-copy"></i> Salin Info
+                        </button>
+                    ` : ''}
+                    
+                    <!-- PERBAIKAN: TOMBOL RESERVASI HANYA UNTUK ORDER YANG BISA DI-RESERVASI -->
+                    ${canReserve ? `
+                        <button class="btn-primary" onclick="openReservationModal('${order.orderNumber}')" 
+                                style="padding: 0.5rem 1rem; background: var(--success-color);">
+                            <i class="fas fa-calendar-plus"></i> Reservasi Meja
+                        </button>
+                    ` : ''}
+                    
+                    <!-- TAMPILKAN INFO RESERVASI JIKA SUDAH ADA -->
+                    ${order.reservation ? `
+                        <div style="flex: 1; background: #e7f4e4; padding: 0.5rem; border-radius: 6px; border-left: 4px solid var(--success-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong><i class="fas fa-calendar-check"></i> Reservasi:</strong><br>
+                                    <small>Meja ${order.reservation.tableNumber} • ${order.reservation.date} • ${order.reservation.time}</small>
+                                </div>
+                                <span class="order-status ${order.reservation.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
+                                    ${order.reservation.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
                                 </span>
                             </div>
-                            <div class="detail-item">
-                                <strong>Metode:</strong> QRIS
-                            </div>
                         </div>
-                        ${hasPaymentProof ? `
-                            <div style="background: ${order.paymentProof.status === 'verified' ? '#e7f4e4' : 
-                                                      order.paymentProof.status === 'waiting_verification' ? '#fff3cd' : 
-                                                      '#f8d7da'}; 
-                                         padding: 0.8rem; border-radius: 6px; margin: 0.8rem 0; 
-                                         border-left: 4px solid ${order.paymentProof.status === 'verified' ? '#28a745' : 
-                                                                 order.paymentProof.status === 'waiting_verification' ? '#ffc107' : 
-                                                                 '#dc3545'};">
-                                <p style="margin: 0; font-size: 0.9rem; 
-                                          color: ${order.paymentProof.status === 'verified' ? '#155724' : 
-                                                  order.paymentProof.status === 'waiting_verification' ? '#856404' : 
-                                                  '#721c24'};">
-                                    <i class="fas ${order.paymentProof.status === 'verified' ? 'fa-check-circle' : 
-                                                     order.paymentProof.status === 'waiting_verification' ? 'fa-clock' : 
-                                                     'fa-exclamation-circle'}"></i> 
-                                    <strong>Bukti transfer dikirim via WhatsApp</strong><br>
-                                    <small>
-                                        Status: ${order.paymentProof.status === 'verified' ? 'Terverifikasi' : 
-                                                 order.paymentProof.status === 'waiting_verification' ? 'Menunggu verifikasi admin' : 
-                                                 'Ditolak'} <br>
-                                        ${order.paymentProof.verified_at ? 
-                                            `Diverifikasi: ${new Date(order.paymentProof.verified_at).toLocaleDateString('id-ID')}` : 
-                                            order.paymentProof.status === 'waiting_verification' ? 
-                                            'Admin akan memverifikasi bukti transfer Anda' : ''}
-                                    </small>
-                                </p>
-                            </div>
-                        ` : ''}
-                        ${hasReservation ? `
-                            <div class="order-details">
-                                <div class="detail-item">
-                                    <strong><i class="fas fa-chair"></i> Meja:</strong> No. ${order.reservation.tableNumber}
-                                </div>
-                                <div class="detail-item">
-                                    <strong><i class="fas fa-calendar"></i> Tanggal:</strong> ${new Date(order.reservation.date).toLocaleDateString('id-ID')}
-                                </div>
-                                <div class="detail-item">
-                                    <strong><i class="fas fa-clock"></i> Waktu:</strong> ${order.reservation.time}
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Status:</strong> 
-                                    <span class="${order.reservation.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}" 
-                                          style="padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
-                                        ${order.reservation.status === 'confirmed' ? 'Terkonfirmasi' : 'Menunggu Konfirmasi'}
-                                    </span>
-                                </div>
-                            </div>
-                        ` : ''}
-                        <div class="order-items">
-                            <h4>Items Pesanan:</h4>
-                            ${order.items.map(item => `
-                                <div class="order-item">
-                                    <span>${item.name} (${item.quantity}x)</span>
-                                    <span>Rp ${(item.price * item.quantity).toLocaleString()}</span>
-                                </div>
-                            `).join('')}
-                            <div class="order-total">
-                                Total: Rp ${order.total.toLocaleString()}
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 0.8rem; margin-top: 1rem; flex-wrap: wrap;">
-                            ${!hasPaymentProof && canUploadProof ? `
-                                <button class="btn-primary" onclick="openWhatsAppForPayment('${order.orderNumber}', ${order.total})" style="padding: 0.6rem 1.2rem; background: #25D366;">
-                                    <i class="fab fa-whatsapp"></i> Kirim Bukti via WhatsApp
-                                </button>
-                            ` : ''}
-                            ${canReserve ? `
-                                <button class="btn-primary" onclick="openReservationModal('${order.orderNumber}')" style="padding: 0.6rem 1.2rem;">
-                                    <i class="fas fa-calendar-plus"></i> Reservasi Meja
-                                </button>
-                            ` : ''}
-                        </div>
-                        ${!hasPaymentProof && canUploadProof ? `
-                            <p style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;">
-                                <i class="fas fa-info-circle"></i> Kirim bukti transfer QRIS via WhatsApp untuk mempercepat proses verifikasi pesanan Anda.
-                            </p>
-                        ` : ''}
+                    ` : ''}
+                </div>
+                
+                ${order.status === 'pending' ? `
+                    <div style="background: #fff3cd; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
+                        <small style="color: #856404;">
+                            <i class="fas fa-info-circle"></i> 
+                            Kirim bukti transfer QRIS via WhatsApp untuk mempercepat konfirmasi pesanan.
+                        </small>
                     </div>
-                `;
-            }).join('');
+                ` : ''}
+                
+                ${order.status === 'confirmed' && order.orderType === 'dine_in' && !order.reservation ? `
+                    <div style="background: #d1ecf1; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
+                        <small style="color: #0c5460;">
+                            <i class="fas fa-info-circle"></i> 
+                            Pesanan Anda sudah dikonfirmasi! Anda bisa melakukan reservasi meja untuk makan di tempat.
+                        </small>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+// Tambahkan fungsi ini di CustomerSystem class
+async function loadOrdersFromLocalStorage() {
+    try {
+        console.log('📥 Loading orders from localStorage...');
+        
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        
+        // Jika ada customerPhone, coba sync dengan Supabase
+        if (this.customerPhone && this.isOnline) {
+            const syncedOrders = await this.syncOrdersWithSupabase();
+            if (syncedOrders && syncedOrders.length > 0) {
+                window.customerOrders = syncedOrders;
+                localStorage.setItem('customer_orders', JSON.stringify(syncedOrders));
+                console.log('✅ Synced orders from Supabase:', syncedOrders.length);
+                return syncedOrders;
+            }
         }
+        
+        window.customerOrders = orders;
+        console.log('✅ Loaded orders from localStorage:', orders.length);
+        return orders;
+        
+    } catch (error) {
+        console.error('❌ Error loading orders:', error);
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        window.customerOrders = orders;
+        return orders;
+    }
+}
 
+// Tambahkan fungsi syncOrdersWithSupabase
+async function syncOrdersWithSupabase() {
+    try {
+        if (!this.customerPhone || !this.isOnline) return null;
+        
+        console.log('🔄 Syncing orders with Supabase for:', this.customerPhone);
+        
+        const { data: orders, error } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('customer_phone', this.customerPhone)
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('Supabase sync error:', error);
+            return null;
+        }
+        
+        if (orders && orders.length > 0) {
+            const formattedOrders = orders.map(order => ({
+                id: order.id,
+                orderNumber: order.order_number,
+                customer: {
+                    name: order.customer_name,
+                    phone: order.customer_phone
+                },
+                orderType: order.order_type || 'dine_in',
+                items: order.items || [],
+                total: order.total_amount || 0,
+                status: order.status || 'pending',
+                paymentMethod: order.payment_method || 'qris',
+                paymentStatus: order.payment_status || 'waiting_payment',
+                createdAt: order.created_at,
+                supabase_id: order.id
+            }));
+            
+            return formattedOrders;
+        }
+        
+        return null;
+        
+    } catch (error) {
+        console.error('❌ Sync error:', error);
+        return null;
+    }
+}
+
+function displayOrders(ordersList, container, filter) {
+    container.innerHTML = ordersList.map(order => {
+        const statusText = {
+            'pending': 'Menunggu Konfirmasi',
+            'confirmed': 'Dikonfirmasi',
+            'completed': 'Selesai',
+            'cancelled': 'Dibatalkan'
+        };
+        
+        const statusClass = {
+            'pending': 'status-pending',
+            'confirmed': 'status-confirmed',
+            'completed': 'status-completed',
+            'cancelled': 'status-cancelled'
+        };
+        
+        const canReserve = order.status === 'confirmed' && 
+                         order.orderType === 'dine_in' && 
+                         !order.reservation;
+        
+        // Format WhatsApp message
+        const whatsappMessage = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${order.orderNumber} sebesar Rp ${order.total.toLocaleString()}.%0A%0ANama: ${order.customer?.name || 'Pelanggan'}%0ANo. HP: ${order.customer?.phone || '-'}%0A%0ABerikut bukti transfer saya:`;
+        const whatsappUrl = `https://wa.me/6283832184173?text=${encodeURIComponent(whatsappMessage)}`;
+        
+        return `
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-number">${order.orderNumber}</div>
+                    <span class="order-status ${statusClass[order.status]}">
+                        ${statusText[order.status] || order.status}
+                    </span>
+                </div>
+                
+                <div class="order-details">
+                    <div class="detail-item">
+                        <strong>Nama:</strong> ${order.customer?.name || 'Pelanggan'}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Tanggal:</strong> ${new Date(order.createdAt).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Total:</strong> Rp ${order.total.toLocaleString()}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Tipe:</strong> ${order.orderType === 'dine_in' ? 'Makan di Tempat' : 'Bawa Pulang'}
+                    </div>
+                </div>
+                
+                <div class="order-items">
+                    <h4>Items Pesanan:</h4>
+                    ${(order.items || []).map(item => `
+                        <div class="order-item">
+                            <span>${item.name} (${item.quantity}x)</span>
+                            <span>Rp ${((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
+                        </div>
+                    `).join('')}
+                    <div class="order-total">
+                        Total: Rp ${order.total.toLocaleString()}
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+                    ${order.status === 'pending' ? `
+                        <!-- TOMBOL WHATSAPP LANGSUNG -->
+                        <a href="${whatsappUrl}" 
+                           target="_blank" 
+                           class="btn-primary" 
+                           style="background: #25D366; color: white; padding: 0.5rem 1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <i class="fab fa-whatsapp"></i> Kirim Bukti WhatsApp
+                        </a>
+                        
+                        <!-- TOMBOL SALIN INFO -->
+                        <button class="btn-secondary" onclick="copyOrderInfo('${order.orderNumber}')" 
+                                style="background: #6c757d; color: white; border: none; padding: 0.5rem 1rem;">
+                            <i class="fas fa-copy"></i> Salin Info
+                        </button>
+                    ` : ''}
+                    
+                    ${canReserve ? `
+                        <button class="btn-primary" onclick="openReservationModal('${order.orderNumber}')" 
+                                style="padding: 0.5rem 1rem;">
+                            <i class="fas fa-calendar-plus"></i> Reservasi
+                        </button>
+                    ` : ''}
+                </div>
+                
+                ${order.status === 'pending' ? `
+                    <div style="background: #fff3cd; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
+                        <small style="color: #856404;">
+                            <i class="fas fa-info-circle"></i> 
+                            Kirim bukti transfer QRIS via WhatsApp untuk mempercepat konfirmasi pesanan.
+                        </small>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// GANTI fungsi ini di PELANGGAN:
+function openWhatsAppDirectly(orderNumber) {
+    try {
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        const order = orders.find(o => o.orderNumber === orderNumber);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        // Format pesan WhatsApp
+        const message = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${order.orderNumber} sebesar Rp ${order.total.toLocaleString()}.%0A%0ANama: ${order.customer?.name || 'Pelanggan'}%0ANo. HP: ${order.customer?.phone || '-'}%0A%0ABerikut bukti transfer saya:`;
+        
+        // Buka WhatsApp langsung
+        const whatsappUrl = `https://wa.me/6283832184173?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+        
+        showToast('Membuka WhatsApp untuk mengirim bukti', 'info');
+        
+    } catch (error) {
+        console.error('Error opening WhatsApp:', error);
+        showToast('Gagal membuka WhatsApp', 'error');
+    }
+}
+
+// TAMBAHKAN fungsi ini di PELANGGAN:
+// Hapus fungsi copyWhatsAppInfo dan ganti dengan:
+function openWhatsAppForProof(orderNumber) {
+    try {
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        const order = orders.find(o => o.orderNumber === orderNumber);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        const customerName = order.customer?.name || 'Pelanggan';
+        const customerPhone = order.customer?.phone || '';
+        const total = order.total || 0;
+        
+        // Format pesan WhatsApp
+        const message = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${orderNumber} sebesar Rp ${total.toLocaleString()}.%0A%0ANama: ${customerName}%0ANo. HP: ${customerPhone}%0A%0ABerikut bukti transfer saya:`;
+        
+        // Buka WhatsApp langsung
+        const whatsappUrl = `https://wa.me/6283832184173?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        
+        showToast('Membuka WhatsApp untuk mengirim bukti transfer', 'info');
+        
+    } catch (error) {
+        console.error('Error opening WhatsApp:', error);
+        showToast('Gagal membuka WhatsApp', 'error');
+    }
+}
         function updateOrdersDisplay() {
             if (window.location.hash === '#my-orders' && currentFilter) {
                 showOrders(currentFilter);
@@ -3369,81 +4006,318 @@ setTimeout(() => {
             });
         }
 
-        async function processCheckout() {
-            if (!customerSystem) return;
-            
-            const submitBtn = document.getElementById('submitOrderBtn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-            
-            try {
-                const customerName = document.getElementById('customerName').value;
-                const customerPhone = document.getElementById('customerPhone').value;
-                const orderType = document.getElementById('orderType').value;
-                
-                if (!customerName || !customerPhone || !orderType || orderType === '') {
-                    showToast('Harap isi semua field yang wajib', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                    return;
-                }
-                
-                if (customerSystem.cart.length === 0) {
-                    showToast("Keranjang masih kosong", "error");
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                    return;
-                }
-                
-                const hasEnoughStock = validateStockBeforeCheckout();
-                if (!hasEnoughStock) {
-                    showToast('Stok tidak mencukupi untuk beberapa item. Silakan perbarui keranjang.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                    return;
-                }
-                
-                const orderData = {
-                    customer: {
-                        name: customerName,
-                        phone: customerPhone,
-                        address: '-'
-                    },
-                    orderType: orderType,
-                    items: customerSystem.cart.map(item => ({
-                        id: item.id,
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity
-                    })),
-                    total: customerSystem.getCartTotal()
-                };
-                
-                const order = await customerSystem.createOrder(orderData);
-                
-                customerSystem.clearCart();
-                updateCartDisplay();
-                updateCartCount();
-                
-                closeModal('checkoutModal');
-                
-                showTransferSuccessModal(order);
-                
-                await customerSystem.loadCustomerOrders();
-                updateOrdersDisplay();
-                updateOrdersCount();
-                
-                console.log('✅ Checkout successful:', order.orderNumber);
-                
-            } catch (error) {
-                console.error('❌ Checkout error:', error);
-                showToast("Gagal memproses pesanan: " + error.message, "error");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
+       // GANTI fungsi processCheckout() dengan ini:
+async function processCheckout() {
+    if (!customerSystem) return;
+    
+    const submitBtn = document.getElementById('submitOrderBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    
+    try {
+        // 1. VALIDASI INPUT
+        const customerName = document.getElementById('customerName').value.trim();
+        const customerPhone = document.getElementById('customerPhone').value.trim();
+        const orderType = document.getElementById('orderType').value;
+        
+        if (!customerName || !customerPhone || !orderType) {
+            showToast('Harap isi semua field yang wajib', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            return;
         }
+        
+        // Format nomor telepon
+        let formattedPhone = customerPhone.replace(/\D/g, '');
+        if (formattedPhone.startsWith('0')) {
+            formattedPhone = '62' + formattedPhone.substring(1);
+        }
+        
+        // 2. GENERATE ORDER NUMBER
+        const timestamp = Date.now().toString();
+        const orderNumber = 'ORD-' + timestamp.slice(-8);
+        const totalAmount = customerSystem.getCartTotal();
+        
+        // 3. BUAT ITEMS DENGAN MENYERTAKAN NAMA PELANGGAN DI SETIAP ITEM
+        const orderItems = customerSystem.cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            // PERBAIKAN: Tambahkan nama pelanggan di setiap item untuk backup
+            customerName: customerName,
+            customerPhone: formattedPhone
+        }));
+        
+        // 4. BUAT ORDER OBJECT
+        // Di fungsi processCheckout() di pelanggan, pastikan ini ada:
+const orderObject = {
+    id: Date.now(),
+    orderNumber: orderNumber,
+    customer: {
+        name: customerName,
+        phone: formattedPhone
+    },
+    orderType: orderType, // <-- INI HARUS ADA DAN BENAR
+    items: orderItems,
+    total: totalAmount,
+    status: 'pending',
+    paymentMethod: 'qris',
+    paymentStatus: 'waiting_payment',
+    createdAt: new Date().toISOString(),
+    supabase_id: null,
+    admin_seen: false
+};
+        
+        console.log('📝 Order Object:', orderObject);
+        
+        // 5. SIMPAN KE LOCALSTORAGE PELANGGAN
+        console.log('💾 Saving to customer localStorage...');
+        
+        let customerOrders = [];
+        try {
+            customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        } catch (e) {
+            console.warn('⚠️ Error reading customer_orders, resetting');
+            customerOrders = [];
+        }
+        
+        customerOrders.unshift(orderObject);
+        localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+        window.customerOrders = customerOrders;
+        
+        // 6. SIMPAN KE ADMIN SYSTEM
+        console.log('🔄 Syncing to admin...');
+        
+        const adminOrderData = {
+            id: orderObject.id,
+            orderNumber: orderNumber,
+            customer: {
+                name: customerName,
+                phone: formattedPhone
+            },
+            items: orderItems,
+            total: totalAmount,
+            status: 'pending',
+            paymentMethod: 'qris',
+            whatsappProofReceived: false,
+            whatsappProofVerified: false,
+            createdAt: new Date().toISOString(),
+            adminSeen: false,
+            supabase_id: null
+        };
+        
+        // Simpan ke pending_orders admin
+        let pendingOrders = [];
+        try {
+            pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        } catch (e) {
+            console.warn('⚠️ Error reading pending_orders');
+            pendingOrders = [];
+        }
+        
+        pendingOrders.unshift(adminOrderData);
+        localStorage.setItem('pending_orders', JSON.stringify(pendingOrders));
+        
+        // Simpan ke all_orders admin
+        let allAdminOrders = [];
+        try {
+            allAdminOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
+        } catch (e) {
+            console.warn('⚠️ Error reading all_orders');
+            allAdminOrders = [];
+        }
+        
+        allAdminOrders.unshift(adminOrderData);
+        localStorage.setItem('all_orders', JSON.stringify(allAdminOrders));
+        
+        // 7. SIMPAN CUSTOMER PHONE
+        localStorage.setItem('customer_phone', formattedPhone);
+        customerSystem.customerPhone = formattedPhone;
+        
+        console.log('✅ Data saved successfully');
+        console.log('- Customer orders:', customerOrders.length);
+        console.log('- Admin pending orders:', pendingOrders.length);
+        
+        // 8. KOSONGKAN KERANJANG
+        customerSystem.clearCart();
+        updateCartDisplay();
+        updateCartCount();
+        
+        // 9. TUTUP MODAL CHECKOUT
+        closeModal('checkoutModal');
+        
+        // 10. TAMPILKAN MODAL SUCCESS
+        const modal = document.getElementById('transferSuccessModal');
+        const whatsappLink = document.getElementById('whatsapp-link');
+        const successQrisAmount = document.getElementById('success-qris-amount');
+        
+        if (successQrisAmount) {
+            successQrisAmount.textContent = `Rp ${totalAmount.toLocaleString()}`;
+        }
+        
+        if (whatsappLink) {
+            const whatsappMessage = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${orderNumber} sebesar Rp ${totalAmount.toLocaleString()}.%0A%0ANama: ${customerName}%0ANo. HP: ${formattedPhone}%0A%0ABerikut bukti transfer saya:`;
+            whatsappLink.href = `https://wa.me/6283832184173?text=${encodeURIComponent(whatsappMessage)}`;
+        }
+        
+        modal.style.display = 'flex';
+        
+        // 11. UPDATE UI PELANGGAN
+        updateOrdersDisplay();
+        updateOrdersCount();
+        
+        // 12. SHOW SUCCESS MESSAGE
+        showToast(`Pesanan ${orderNumber} berhasil dibuat! Silakan kirim bukti transfer.`, 'success');
+        
+        // 13. OTOMATIS BUKA HALAMAN PESANAN
+        setTimeout(() => {
+            window.location.hash = '#my-orders';
+            showOrders('pending');
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ Checkout failed:', error);
+        showToast(`Gagal memproses pesanan: ${error.message}`, 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+// Fungsi debug untuk melihat struktur data order
+window.debugOrderData = function() {
+    console.clear();
+    console.log('🔍 DEBUG ORDER DATA 🔍');
+    console.log('=======================');
+    
+    // 1. Data dari localStorage
+    console.log('1. LOCALSTORAGE DATA:');
+    
+    const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+    console.log('Pending Orders:', pendingOrders.length);
+    
+    pendingOrders.forEach((order, index) => {
+        console.log(`\n[${index}] Order ${order.orderNumber}:`);
+        console.log('  Customer:', order.customer);
+        console.log('  Items:', order.items?.length || 0);
+        
+        if (order.items && order.items.length > 0) {
+            console.log('  First item:', order.items[0]);
+        }
+    });
+    
+    // 2. Data dari adminSystem
+    console.log('\n2. ADMIN SYSTEM DATA:');
+    console.log('Orders in adminSystem:', adminSystem?.orders?.length || 0);
+    
+    if (adminSystem?.orders && adminSystem.orders.length > 0) {
+        adminSystem.orders.forEach((order, index) => {
+            console.log(`\n[${index}] ${order.orderNumber}:`);
+            console.log('  Customer name:', order.customer?.name);
+            console.log('  Items:', order.items?.length || 0);
+        });
+    }
+    
+    // 3. Check apakah data disimpan dengan benar
+    console.log('\n3. DATA VALIDATION:');
+    
+    // Cek struktur data yang diharapkan
+    const expectedStructure = {
+        orderNumber: 'string',
+        customer: {
+            name: 'string',
+            phone: 'string'
+        },
+        items: 'array',
+        total: 'number'
+    };
+    
+    console.log('Expected structure:', expectedStructure);
+    
+    showToast('Debug data ditampilkan di console', 'info');
+};
+
+// Di file PELANGGAN, setelah checkout berhasil
+// Tambahkan fungsi ini di file PELANGGAN, sebelum processCheckout()
+async function syncOrderToAdmin(orderData) {
+    try {
+        console.log('🔄 Syncing order to admin:', orderData.orderNumber);
+        
+        // 1. Simpan ke localStorage admin
+        const adminOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        adminOrders.unshift(orderData);
+        localStorage.setItem('pending_orders', JSON.stringify(adminOrders));
+        
+        // 2. Simpan ke semua pesanan admin
+        const allAdminOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
+        allAdminOrders.unshift(orderData);
+        localStorage.setItem('all_orders', JSON.stringify(allAdminOrders));
+        
+        // 3. Set flag notifikasi untuk admin
+        localStorage.setItem('new_order_notification', Date.now().toString());
+        
+        // 4. Tambahkan ke customer_orders_admin (backup)
+        const customerOrdersAdmin = JSON.parse(localStorage.getItem('customer_orders_admin') || '[]');
+        customerOrdersAdmin.unshift(orderData);
+        localStorage.setItem('customer_orders_admin', JSON.stringify(customerOrdersAdmin));
+        
+        console.log('✅ Order synced to admin localStorage');
+        
+    } catch (error) {
+        console.error('❌ Error syncing to admin:', error);
+    }
+}
+// Fungsi untuk menyalin info order ke clipboard
+function copyOrderInfo(orderNumber) {
+    try {
+        // Cari order dari localStorage
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        const order = orders.find(o => o.orderNumber === orderNumber);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
+        }
+        
+        // Format teks untuk disalin
+        const orderText = `
+📋 INFO PESANAN MAN CAFE
+
+🆔 Nomor Pesanan: ${order.orderNumber}
+👤 Nama: ${order.customer?.name || 'Pelanggan'}
+📞 Telepon: ${order.customer?.phone || '-'}
+📅 Tanggal: ${new Date(order.createdAt).toLocaleDateString('id-ID')}
+💰 Total: Rp ${order.total.toLocaleString()}
+📦 Status: ${order.status === 'pending' ? 'Menunggu Konfirmasi' : 
+              order.status === 'confirmed' ? 'Dikonfirmasi' : 
+              order.status}
+💳 Metode: QRIS
+        `.trim();
+        
+        // Salin ke clipboard
+        navigator.clipboard.writeText(orderText)
+            .then(() => {
+                showToast('Info pesanan berhasil disalin ke clipboard!', 'success');
+            })
+            .catch(err => {
+                console.error('Gagal menyalin:', err);
+                // Fallback untuk browser lama
+                const textArea = document.createElement('textarea');
+                textArea.value = orderText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Info pesanan disalin!', 'success');
+            });
+        
+    } catch (error) {
+        console.error('Error copying order info:', error);
+        showToast('Gagal menyalin info pesanan', 'error');
+    }
+}
 
         function showTransferSuccessModal(order) {
             const modal = document.getElementById('transferSuccessModal');
@@ -3476,332 +4350,432 @@ setTimeout(() => {
 
         // ==================== FUNGSI WHATSAPP UNTUK BUKTI TRANSFER ====================
         function openWhatsAppForPayment(orderNumber, totalAmount) {
-            const whatsappMessage = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${orderNumber} sebesar Rp ${totalAmount.toLocaleString()}. Berikut bukti transfer saya:`;
-            const whatsappUrl = `https://wa.me/6283832184173?text=${encodeURIComponent(whatsappMessage)}`;
-            window.open(whatsappUrl, '_blank');
-            
-            showToast('Buka WhatsApp dan kirim bukti transfer', 'info');
-            
-            // Update status payment proof di database jika online
-            if (customerSystem && customerSystem.isOnline) {
-                setTimeout(async () => {
-                    try {
-                        const { data: order } = await supabaseClient
-                            .from('orders')
-                            .select('id')
-                            .eq('order_number', orderNumber)
-                            .single();
-                        
-                        if (order) {
-                            await supabaseClient
-                                .from('payment_proofs')
-                                .insert([{
-                                    order_id: order.id,
-                                    whatsapp_message: whatsappMessage,
-                                    status: 'waiting_verification',
-                                    created_at: new Date().toISOString()
-                                }]);
-                            
-                            await supabaseClient
-                                .from('orders')
-                                .update({ payment_status: 'waiting_verification' })
-                                .eq('id', order.id);
-                            
-                            await customerSystem.loadCustomerOrders();
-                            updateOrdersDisplay();
-                            showToast('Status pembayaran diperbarui. Admin akan memverifikasi bukti transfer Anda.', 'success');
-                        }
-                    } catch (error) {
-                        console.error('Error updating payment proof status:', error);
-                    }
-                }, 1000);
-            }
+    try {
+        // Cari order untuk mendapatkan info pelanggan
+        const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        const order = orders.find(o => o.orderNumber === orderNumber);
+        
+        if (!order) {
+            showToast('Pesanan tidak ditemukan', 'error');
+            return;
         }
+        
+        // Format pesan WhatsApp
+        const customerName = order.customer?.name || 'Pelanggan';
+        const customerPhone = order.customer?.phone || '';
+        
+        const message = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${orderNumber} sebesar Rp ${totalAmount.toLocaleString()}.%0A%0ANama: ${customerName}%0ANo. HP: ${customerPhone}%0A%0ABerikut bukti transfer saya:`;
+        
+        // Buka WhatsApp
+        const whatsappUrl = `https://wa.me/6283832184173?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Update status payment proof jika online
+        if (customerSystem && customerSystem.isOnline && order.supabase_id) {
+            setTimeout(async () => {
+                try {
+                    await supabaseClient
+                        .from('orders')
+                        .update({
+                            payment_status: 'waiting_verification',
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', order.supabase_id);
+                    
+                    console.log('✅ Payment status updated to waiting_verification');
+                } catch (error) {
+                    console.error('Error updating payment status:', error);
+                }
+            }, 1000);
+        }
+        
+        showToast('WhatsApp dibuka, kirim bukti transfer Anda', 'info');
+        
+    } catch (error) {
+        console.error('Error opening WhatsApp:', error);
+        showToast('Gagal membuka WhatsApp', 'error');
+    }
+}
 
         // ==================== RESERVATION FUNCTIONS ====================
-        async function openReservationModal(orderNumber) {
-            console.log('openReservationModal called with:', orderNumber);
+       async function openReservationModal(orderNumber) {
+    console.log('🔍 openReservationModal called with:', orderNumber);
+    
+    if (!customerSystem) {
+        showToast('Sistem tidak siap', 'error');
+        return;
+    }
+    
+    try {
+        // DEBUG: Tampilkan semua orders
+        console.log('All customer orders:', window.customerOrders);
+        
+        // Cari order dengan berbagai cara
+        let order = null;
+        
+        // Cara 1: Cari di window.customerOrders
+        order = window.customerOrders?.find(o => o.orderNumber === orderNumber);
+        
+        // Cara 2: Cari di localStorage
+        if (!order) {
+            const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            order = orders.find(o => o.orderNumber === orderNumber);
+        }
+        
+        // Cara 3: Cari dengan partial match
+        if (!order) {
+            const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            order = orders.find(o => o.orderNumber.includes(orderNumber) || orderNumber.includes(o.orderNumber));
+        }
+        
+        if (!order) {
+            console.error('Order not found:', orderNumber);
+            showToast(`Pesanan ${orderNumber} tidak ditemukan`, 'error');
+            return;
+        }
+        
+        console.log('Found order:', {
+            orderNumber: order.orderNumber,
+            status: order.status,
+            orderType: order.orderType,
+            hasReservation: !!order.reservation
+        });
+        
+        // Validasi: cek apakah bisa reservasi
+        if (order.status !== 'confirmed') {
+            showToast('Hanya pesanan yang sudah dikonfirmasi yang dapat reservasi meja', 'error');
+            return;
+        }
+        
+        if (order.orderType !== 'dine_in') {
+            showToast('Hanya pesanan "Makan di Tempat" yang dapat reservasi meja', 'error');
+            return;
+        }
+        
+        if (order.reservation) {
+            showToast('Order ini sudah memiliki reservasi meja', 'info');
+            return;
+        }
+        
+        // Set order untuk reservasi
+        customerSystem.selectedOrderForReservation = order;
+        
+        // Lanjutkan dengan modal reservasi...
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const defaultDate = tomorrow.toISOString().split('T')[0];
+        
+        const modal = document.getElementById('reservationModal');
+        const content = document.getElementById('reservation-content');
+        
+        // Generate time slots hanya untuk jam 16:00 - 22:00
+        const timeSlots = [];
+        for (let hour = 16; hour <= 22; hour++) {
+            timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+            if (hour < 22) timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
+        }
+        
+        content.innerHTML = `
+            <div style="background: #e7f4e4; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--success-color);">
+                <p style="margin: 0; color: #155724;">
+                    <i class="fas fa-info-circle"></i> Anda akan melakukan reservasi untuk pesanan: <strong>${orderNumber}</strong>
+                    <br><small>Nama: ${order.customer?.name || 'Pelanggan'} | Total: Rp ${order.total?.toLocaleString() || '0'}</small>
+                </p>
+            </div>
             
-            if (!customerSystem) {
-                showToast('Sistem tidak siap', 'error');
-                return;
-            }
-            
-            try {
-                let order = null;
+            <form id="reservationForm">
+                <div class="form-group">
+                    <label for="reservationDate">Tanggal Reservasi *</label>
+                    <input type="date" id="reservationDate" required 
+                           min="${new Date().toISOString().split('T')[0]}" 
+                           value="${defaultDate}"
+                           onchange="loadTablesForDate(this.value)">
+                </div>
                 
-                order = window.customerOrders?.find(o => o.orderNumber === orderNumber);
-                
-                if (!order && !orderNumber.startsWith('ORD-')) {
-                    order = window.customerOrders?.find(o => o.orderNumber === `ORD-${orderNumber}`);
-                }
-                
-                if (!order) {
-                    order = window.customerOrders?.find(o => 
-                        o.supabase_id && o.supabase_id.toString() === orderNumber
-                    );
-                }
-                
-                console.log('Found order:', order);
-                
-                if (!order) {
-                    showToast(`Order ${orderNumber} tidak ditemukan`, 'error');
-                    return;
-                }
-                
-                if (order.status !== 'confirmed') {
-                    showToast('Hanya pesanan yang sudah dikonfirmasi yang dapat reservasi meja', 'error');
-                    return;
-                }
-                
-                if (order.reservation) {
-                    showToast('Order ini sudah memiliki reservasi meja', 'info');
-                    return;
-                }
-                
-                customerSystem.selectedOrderForReservation = order;
-                
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                const defaultDate = tomorrow.toISOString().split('T')[0];
-                
-                const modal = document.getElementById('reservationModal');
-                const content = document.getElementById('reservation-content');
-                
-                const timeSlots = [];
-                for (let hour = 11; hour <= 22; hour++) {
-                    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-                    if (hour < 22) timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
-                }
-                
-                content.innerHTML = `
-                    <div style="background: #e7f4e4; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--success-color);">
-                        <p style="margin: 0; color: #155724;">
-                            <i class="fas fa-info-circle"></i> Anda akan melakukan reservasi untuk pesanan: <strong>${orderNumber}</strong>
-                            <br><small>Nama: ${order.customer.name} | Total: Rp ${order.total.toLocaleString()}</small>
-                        </p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reservationDate">Tanggal Reservasi *</label>
-                        <input type="date" id="reservationDate" required 
-                               min="${new Date().toISOString().split('T')[0]}" 
-                               value="${defaultDate}"
-                               onchange="loadTablesForDate(this.value)">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Pilih Waktu *</label>
-                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
-                            <i class="fas fa-clock"></i> Pilih waktu kunjungan Anda (16:00 - 22:00)
-                        </p>
-                        <div class="time-slot-grid" id="time-slots">
-                            ${timeSlots.map(time => `
-                                <div class="time-slot" onclick="selectTimeSlot(this, '${time}')">
-                                    ${time}
-                                </div>
-                            `).join('')}
-                        </div>
-                        <input type="hidden" id="selectedTime" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Pilih Meja *</label>
-                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
-                            <i class="fas fa-info-circle"></i> 
-                            <span style="color: var(--success-color);">Hijau</span>: Tersedia • 
-                            <span style="color: #856404;">Kuning</span>: Terisi • 
-                            <span style="color: #721c24;">Merah</span>: Dipesan • 
-                            <span style="color: #6c757d;">Abu-abu</span>: Perbaikan
-                        </p>
-                        <div class="table-grid" id="table-selection">
-                            <!-- Tables will be loaded here -->
-                        </div>
-                        <input type="hidden" id="selectedTable" required>
-                    </div>
-                    
-                    <div id="reservation-summary" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none;">
-                        <h4 style="margin-top: 0;"><i class="fas fa-calendar-check"></i> Ringkasan Reservasi:</h4>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
-                            <div>
-                                <strong>Meja:</strong><br>
-                                <span id="summary-table" style="font-size: 1.2rem; font-weight: bold; color: var(--primary-color);">-</span>
-                            </div>
-                            <div>
-                                <strong>Tanggal:</strong><br>
-                                <span id="summary-date">-</span>
-                            </div>
-                            <div>
-                                <strong>Waktu:</strong><br>
-                                <span id="summary-time">-</span>
-                            </div>
-                            <div>
-                                <strong>Status:</strong><br>
-                                <span style="color: var(--warning-color); font-weight: bold;">Menunggu Konfirmasi</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button type="button" class="modal-submit-btn" id="submitReservationBtn" onclick="submitReservation()" disabled>
-                        <i class="fas fa-calendar-check"></i> Konfirmasi Reservasi
-                    </button>
-                    
-                    <p style="font-size: 0.8rem; color: #666; text-align: center; margin-top: 1rem;">
-                        <i class="fas fa-exclamation-triangle"></i> Pastikan Anda datang tepat waktu sesuai reservasi. Reservasi akan dikonfirmasi oleh admin.
+                <div class="form-group">
+                    <label>Pilih Waktu *</label>
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+                        <i class="fas fa-clock"></i> Pilih waktu kunjungan Anda (16:00 - 22:00)
                     </p>
-                `;
+                    <div class="time-slot-grid" id="time-slots">
+                        ${timeSlots.map(time => `
+                            <div class="time-slot" onclick="selectTimeSlot(this, '${time}')">
+                                ${time}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <input type="hidden" id="selectedTime" required>
+                </div>
                 
-                modal.style.display = 'flex';
+                <div class="form-group">
+                    <label>Pilih Meja *</label>
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+                        <i class="fas fa-info-circle"></i> 
+                        <span style="color: var(--success-color);">Hijau</span>: Tersedia • 
+                        <span style="color: #856404;">Kuning</span>: Terisi • 
+                        <span style="color: #721c24;">Merah</span>: Dipesan • 
+                        <span style="color: #6c757d;">Abu-abu</span>: Perbaikan
+                    </p>
+                    <div class="table-grid" id="table-selection">
+                        <!-- Tables will be loaded here -->
+                        <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
+                            <div class="loading"></div>
+                            <p>Memuat daftar meja...</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedTable" required>
+                </div>
                 
-                await loadTablesForDate(defaultDate);
+                <div class="form-group">
+                    <label for="guestsCount">Jumlah Tamu</label>
+                    <input type="number" id="guestsCount" min="1" max="20" value="2" 
+                           onchange="validateGuestsCount()">
+                    <small style="color: #666;">Maksimal 20 orang per meja</small>
+                </div>
                 
-            } catch (error) {
-                console.error('Error in openReservationModal:', error);
-                showToast('Gagal memuat halaman reservasi: ' + error.message, 'error');
-            }
-        }
-
+                <div class="form-group">
+                    <label for="reservationNotes">Catatan Khusus (opsional)</label>
+                    <textarea id="reservationNotes" rows="2" placeholder="Contoh: ada anak kecil, ulang tahun, dll."></textarea>
+                </div>
+                
+                <div id="reservation-summary" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none;">
+                    <h4 style="margin-top: 0;"><i class="fas fa-calendar-check"></i> Ringkasan Reservasi:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
+                        <div>
+                            <strong>Meja:</strong><br>
+                            <span id="summary-table" style="font-size: 1.2rem; font-weight: bold; color: var(--primary-color);">-</span>
+                        </div>
+                        <div>
+                            <strong>Tanggal:</strong><br>
+                            <span id="summary-date">-</span>
+                        </div>
+                        <div>
+                            <strong>Waktu:</strong><br>
+                            <span id="summary-time">-</span>
+                        </div>
+                        <div>
+                            <strong>Status:</strong><br>
+                            <span style="color: var(--warning-color); font-weight: bold;">Menunggu Konfirmasi</span>
+                        </div>
+                        <div>
+                            <strong>Jumlah Tamu:</strong><br>
+                            <span id="summary-guests">2 orang</span>
+                        </div>
+                        <div>
+                            <strong>Pesanan:</strong><br>
+                            <span>${orderNumber}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" class="modal-submit-btn" id="submitReservationBtn" onclick="submitReservation()" disabled>
+                    <i class="fas fa-calendar-check"></i> Konfirmasi Reservasi
+                </button>
+                
+                <p style="font-size: 0.8rem; color: #666; text-align: center; margin-top: 1rem;">
+                    <i class="fas fa-exclamation-triangle"></i> Pastikan Anda datang tepat waktu sesuai reservasi. Reservasi akan dikonfirmasi oleh admin.
+                </p>
+            </form>
+        `;
+        
+        modal.style.display = 'flex';
+        
+        // Load tables untuk tanggal default
+        await loadTablesForDate(defaultDate);
+        
+    } catch (error) {
+        console.error('Error in openReservationModal:', error);
+        showToast('Gagal memuat halaman reservasi: ' + error.message, 'error');
+    }
+}
         function selectTimeSlot(element, time) {
-            console.log('selectTimeSlot called with:', element, time);
-            
-            try {
-                document.querySelectorAll('.time-slot').forEach(slot => {
-                    slot.classList.remove('selected');
-                });
-                
-                element.classList.add('selected');
-                
-                const selectedTimeInput = document.getElementById('selectedTime');
-                if (selectedTimeInput) {
-                    selectedTimeInput.value = time;
-                } else {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.id = 'selectedTime';
-                    input.value = time;
-                    element.closest('.modal-content').appendChild(input);
-                }
-                
-                updateReservationSummary();
-                
-            } catch (error) {
-                console.error('Error in selectTimeSlot:', error);
-                showToast('Gagal memilih waktu', 'error');
-            }
-        }
+    console.log('selectTimeSlot called with:', time);
+    
+    try {
+        // Hapus seleksi sebelumnya
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.classList.remove('selected');
+        });
+        
+        // Tambah seleksi ke elemen yang diklik
+        element.classList.add('selected');
+        
+        // Simpan nilai waktu yang dipilih
+        document.getElementById('selectedTime').value = time;
+        
+        // Update summary
+        updateReservationSummary();
+        
+    } catch (error) {
+        console.error('Error in selectTimeSlot:', error);
+        showToast('Gagal memilih waktu', 'error');
+    }
+}
 
         function selectTable(element, tableNumber) {
-            console.log('selectTable called with:', element, tableNumber);
-            
-            try {
-                document.querySelectorAll('.table-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                
-                element.classList.add('selected');
-                
-                const selectedTableInput = document.getElementById('selectedTable');
-                if (selectedTableInput) {
-                    selectedTableInput.value = tableNumber;
-                } else {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.id = 'selectedTable';
-                    input.value = tableNumber;
-                    element.closest('.modal-content').appendChild(input);
-                }
-                
-                updateReservationSummary();
-                
-            } catch (error) {
-                console.error('Error in selectTable:', error);
-                showToast('Gag memilih meja', 'error');
-            }
+    console.log('selectTable called with:', tableNumber);
+    
+    try {
+        // Hapus seleksi sebelumnya
+        document.querySelectorAll('.table-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Tambah seleksi ke elemen yang diklik
+        element.classList.add('selected');
+        
+        // Simpan nilai tabel yang dipilih
+        document.getElementById('selectedTable').value = tableNumber;
+        
+        // Update summary
+        updateReservationSummary();
+        
+    } catch (error) {
+        console.error('Error in selectTable:', error);
+        showToast('Gagal memilih meja', 'error');
+    }
+}
+       // Fungsi untuk memuat tabel yang tersedia
+async function loadTablesForDate(date) {
+    console.log('loadTablesForDate called with:', date);
+    
+    try {
+        // Ambil tabel dari localStorage atau buat default
+        let tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+        
+        // Jika tidak ada tabel di localStorage, buat default tables
+        if (tables.length === 0) {
+            tables = [
+                { id: 1, number: '1', capacity: 4, location: 'indoor', status: 'available', description: 'Meja dekat jendela' },
+                { id: 2, number: '2', capacity: 2, location: 'indoor', status: 'available', description: 'Meja romantis' },
+                { id: 3, number: '3', capacity: 6, location: 'outdoor', status: 'available', description: 'Meja keluarga' },
+                { id: 4, number: '4', capacity: 4, location: 'indoor', status: 'available', description: 'Meja tengah' },
+                { id: 5, number: '5', capacity: 2, location: 'outdoor', status: 'available', description: 'Meja taman' },
+                { id: 6, number: '6', capacity: 8, location: 'indoor', status: 'available', description: 'Meja besar' },
+                { id: 7, number: '7', capacity: 4, location: 'indoor', status: 'available', description: 'Meja sudut' },
+                { id: 8, number: '8', capacity: 2, location: 'outdoor', status: 'available', description: 'Meja depan' },
+                { id: 9, number: '9', capacity: 6, location: 'indoor', status: 'available', description: 'Meja grup' },
+                { id: 10, number: '10', capacity: 4, location: 'outdoor', status: 'available', description: 'Meja belakang' }
+            ];
+            localStorage.setItem('cafe_tables', JSON.stringify(tables));
         }
-
-        async function loadTablesForDate(date) {
-            console.log('loadTablesForDate called with:', date);
+        
+        // Ambil reservasi yang sudah ada untuk tanggal ini
+        let existingReservations = [];
+        try {
+            const reservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+            existingReservations = reservations.filter(res => res.date === date);
+        } catch (error) {
+            console.log('No existing reservations found');
+        }
+        
+        // Update status tabel berdasarkan reservasi yang ada
+        const updatedTables = tables.map(table => {
+            const tableReservation = existingReservations.find(res => res.tableNumber === table.number);
             
-            if (!customerSystem) {
-                showToast('Sistem tidak siap', 'error');
-                return;
+            if (tableReservation) {
+                return {
+                    ...table,
+                    status: 'reserved',
+                    reservationTime: tableReservation.time,
+                    reservationId: tableReservation.id
+                };
             }
             
-            try {
-                const tables = await customerSystem.loadAvailableTables(date);
-                const tableSelection = document.getElementById('table-selection');
-                const selectedTime = document.getElementById('selectedTime')?.value;
-                
-                if (document.getElementById('selectedTable')) {
-                    document.getElementById('selectedTable').value = '';
-                }
-                if (document.getElementById('selectedTime')) {
-                    document.getElementById('selectedTime').value = selectedTime || '';
-                }
-                if (document.getElementById('submitReservationBtn')) {
-                    document.getElementById('submitReservationBtn').disabled = true;
-                }
-                if (document.getElementById('reservation-summary')) {
-                    document.getElementById('reservation-summary').style.display = 'none';
-                }
-                
-                tableSelection.innerHTML = tables.map(table => {
-                    let statusClass = '';
-                    let statusText = '';
-                    
-                    switch(table.status) {
-                        case 'available':
-                            statusClass = '';
-                            statusText = '<i class="fas fa-check"></i> Tersedia';
-                            break;
-                        case 'occupied':
-                            statusClass = 'occupied';
-                            statusText = '<i class="fas fa-user-clock"></i> Terisi';
-                            break;
-                        case 'reserved':
-                            statusClass = 'reserved';
-                            statusText = '<i class="fas fa-calendar-check"></i> Dipesan';
-                            break;
-                        case 'maintenance':
-                            statusClass = 'maintenance';
-                            statusText = '<i class="fas fa-tools"></i> Perbaikan';
-                            break;
-                        default:
-                            statusClass = '';
-                            statusText = '<i class="fas fa-check"></i> Tersedia';
+            return table;
+        });
+        
+        // Render tabel
+        const tableSelection = document.getElementById('table-selection');
+        const selectedTime = document.getElementById('selectedTime')?.value;
+        
+        if (document.getElementById('selectedTable')) {
+            document.getElementById('selectedTable').value = '';
+        }
+        if (document.getElementById('selectedTime')) {
+            document.getElementById('selectedTime').value = selectedTime || '';
+        }
+        if (document.getElementById('submitReservationBtn')) {
+            document.getElementById('submitReservationBtn').disabled = true;
+        }
+        
+        tableSelection.innerHTML = updatedTables.map(table => {
+            let statusClass = '';
+            let statusText = '';
+            let isClickable = false;
+            
+            switch(table.status) {
+                case 'available':
+                    statusClass = '';
+                    statusText = '<i class="fas fa-check"></i> Tersedia';
+                    isClickable = true;
+                    break;
+                case 'occupied':
+                    statusClass = 'occupied';
+                    statusText = '<i class="fas fa-user-clock"></i> Terisi';
+                    isClickable = false;
+                    break;
+                case 'reserved':
+                    statusClass = 'reserved';
+                    statusText = '<i class="fas fa-calendar-check"></i> Dipesan';
+                    isClickable = false;
+                    break;
+                case 'maintenance':
+                    statusClass = 'maintenance';
+                    statusText = '<i class="fas fa-tools"></i> Perbaikan';
+                    isClickable = false;
+                    break;
+                default:
+                    statusClass = '';
+                    statusText = '<i class="fas fa-check"></i> Tersedia';
+                    isClickable = true;
+            }
+            
+            return `
+                <div class="table-item ${statusClass} ${isClickable ? 'selectable' : 'disabled'}" 
+                     ${isClickable ? `onclick="selectTable(this, '${table.number}')"` : ''}
+                     style="cursor: ${isClickable ? 'pointer' : 'not-allowed'};">
+                    <div class="table-number">${table.number}</div>
+                    <div class="table-status">
+                        ${statusText}
+                    </div>
+                    <div class="table-details">
+                        <i class="fas fa-users"></i> ${table.capacity} orang<br>
+                        <i class="fas fa-map-marker-alt"></i> ${getTableLocationText(table.location)}
+                        ${table.description ? `<br><small>${table.description}</small>` : ''}
+                    </div>
+                    ${table.status === 'reserved' && table.reservationTime ? 
+                        `<div style="margin-top: 0.3rem; padding: 0.2rem 0.4rem; background: #f8d7da; border-radius: 4px; font-size: 0.7rem;">
+                            <i class="fas fa-clock"></i> ${table.reservationTime}
+                        </div>` : ''
                     }
-                    
-                    const isClickable = table.status === 'available';
-                    
-                    return `
-                        <div class="table-item ${statusClass}" 
-                             ${isClickable ? `onclick="selectTable(this, '${table.number}')"` : ''}>
-                            <div class="table-number">${table.number}</div>
-                            <div class="table-status">
-                                ${statusText}
-                            </div>
-                            <div class="table-details">
-                                <i class="fas fa-user"></i> ${table.capacity} orang<br>
-                                <i class="fas fa-map-marker-alt"></i> ${getTableLocationText(table.location)}
-                            </div>
-                            ${table.status === 'reserved' ? 
-                                `<small style="color: #dc3545; display: block; margin-top: 0.3rem; font-size: 0.7rem;">
-                                    <i class="fas fa-clock"></i> ${table.reservationTime || ''}
-                                </small>` : ''
-                            }
-                        </div>
-                    `;
-                }).join('');
-                
-                document.querySelectorAll('.time-slot').forEach(slot => {
-                    slot.classList.remove('selected');
-                });
-                
-            } catch (error) {
-                console.error('Error in loadTablesForDate:', error);
-                showToast('Gagal memuat daftar meja: ' + error.message, 'error');
-            }
-        }
+                </div>
+            `;
+        }).join('');
+        
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.classList.remove('selected');
+        });
+        
+        console.log('Tables loaded:', updatedTables.length);
+        
+    } catch (error) {
+        console.error('Error in loadTablesForDate:', error);
+        showToast('Gagal memuat daftar meja', 'error');
+        
+        // Fallback: tampilkan pesan error
+        const tableSelection = document.getElementById('table-selection');
+        tableSelection.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <p>Gagal memuat data meja</p>
+                <button onclick="loadTablesForDate('${date}')" class="btn-primary" style="margin-top: 1rem;">
+                    <i class="fas fa-redo"></i> Coba Lagi
+                </button>
+            </div>
+        `;
+    }
+}
 
         function getTableLocationText(location) {
             const locations = {
@@ -3814,131 +4788,209 @@ setTimeout(() => {
         }
 
         function updateReservationSummary() {
-            const table = document.getElementById('selectedTable')?.value;
-            const date = document.getElementById('reservationDate')?.value;
-            const time = document.getElementById('selectedTime')?.value;
+    const table = document.getElementById('selectedTable')?.value;
+    const date = document.getElementById('reservationDate')?.value;
+    const time = document.getElementById('selectedTime')?.value;
+    const guests = document.getElementById('guestsCount')?.value || 2;
+    
+    if (table && date && time) {
+        // Update summary table
+        document.getElementById('summary-table').textContent = `Meja ${table}`;
+        document.getElementById('summary-date').textContent = new Date(date).toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('summary-time').textContent = time;
+        document.getElementById('summary-guests').textContent = `${guests} orang`;
+        
+        // Update table capacity warning
+        const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+        const selectedTable = tables.find(t => t.number === table);
+        
+        if (selectedTable) {
+            const maxCapacity = selectedTable.capacity;
+            const guestsCount = parseInt(guests);
             
-            console.log('updateReservationSummary called with:', { table, date, time });
-            
-            if (table && date && time) {
-                document.getElementById('summary-table').textContent = `Meja ${table}`;
-                document.getElementById('summary-date').textContent = new Date(date).toLocaleDateString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                document.getElementById('summary-time').textContent = time;
-                document.getElementById('reservation-summary').style.display = 'block';
-                document.getElementById('submitReservationBtn').disabled = false;
+            if (guestsCount > maxCapacity) {
+                document.getElementById('summary-guests').innerHTML = 
+                    `${guests} orang <span style="color: #dc3545; font-size: 0.8rem;">(melebihi kapasitas ${maxCapacity})</span>`;
             }
         }
+        
+        document.getElementById('reservation-summary').style.display = 'block';
+        document.getElementById('submitReservationBtn').disabled = false;
+    }
+}
+
+// Fungsi untuk inisialisasi tabel default
+function initializeDefaultTables() {
+    try {
+        const existingTables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+        if (existingTables.length === 0) {
+            const defaultTables = [
+                { id: 1, number: '1', capacity: 4, location: 'indoor', status: 'available', description: 'Meja dekat jendela' },
+                { id: 2, number: '2', capacity: 2, location: 'indoor', status: 'available', description: 'Meja romantis' },
+                { id: 3, number: '3', capacity: 6, location: 'outdoor', status: 'available', description: 'Meja keluarga' },
+                { id: 4, number: '4', capacity: 4, location: 'indoor', status: 'available', description: 'Meja tengah' },
+                { id: 5, number: '5', capacity: 2, location: 'outdoor', status: 'available', description: 'Meja taman' },
+                { id: 6, number: '6', capacity: 8, location: 'indoor', status: 'available', description: 'Meja besar' },
+                { id: 7, number: '7', capacity: 4, location: 'indoor', status: 'available', description: 'Meja sudut' },
+                { id: 8, number: '8', capacity: 2, location: 'outdoor', status: 'available', description: 'Meja depan' },
+                { id: 9, number: '9', capacity: 6, location: 'indoor', status: 'available', description: 'Meja grup' },
+                { id: 10, number: '10', capacity: 4, location: 'outdoor', status: 'available', description: 'Meja belakang' }
+            ];
+            localStorage.setItem('cafe_tables', JSON.stringify(defaultTables));
+            console.log('✅ Default tables initialized');
+        }
+    } catch (error) {
+        console.error('Error initializing tables:', error);
+    }
+}
+
+// Panggil saat inisialisasi sistem
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDefaultTables();
+});
 
         async function submitReservation() {
-            console.log('submitReservation called');
-            
-            if (!customerSystem) {
-                showToast('Sistem tidak siap', 'error');
-                return;
-            }
-            
-            const submitBtn = document.getElementById('submitReservationBtn');
-            if (!submitBtn) {
-                showToast('Tombol tidak ditemukan', 'error');
-                return;
-            }
-            
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-            
-            try {
-                console.log('Submitting reservation with values:');
-                console.log('Table:', document.getElementById('selectedTable')?.value);
-                console.log('Date:', document.getElementById('reservationDate')?.value);
-                console.log('Time:', document.getElementById('selectedTime')?.value);
-                console.log('Order:', customerSystem.selectedOrderForReservation);
-                
-                const tableNumber = document.getElementById('selectedTable')?.value;
-                const reservationDate = document.getElementById('reservationDate')?.value;
-                const reservationTime = document.getElementById('selectedTime')?.value;
-                const order = customerSystem.selectedOrderForReservation;
-                
-                if (!tableNumber) {
-                    throw new Error('Meja belum dipilih');
-                }
-                
-                if (!reservationDate) {
-                    throw new Error('Tanggal belum dipilih');
-                }
-                
-                if (!reservationTime) {
-                    throw new Error('Waktu belum dipilih');
-                }
-                
-                if (!order) {
-                    throw new Error('Data pesanan tidak ditemukan. Silakan refresh halaman.');
-                }
-                
-                if (!order.orderNumber) {
-                    throw new Error('Nomor pesanan tidak valid');
-                }
-                
-                if (!order.customer?.name || !order.customer?.phone) {
-                    throw new Error('Data pelanggan tidak lengkap');
-                }
-                
-                const confirmationMessage = 
-                    `Konfirmasi reservasi:\n\n` +
-                    `Meja: ${tableNumber}\n` +
-                    `Tanggal: ${new Date(reservationDate).toLocaleDateString('id-ID')}\n` +
-                    `Waktu: ${reservationTime}\n` +
-                    `Pesanan: ${order.orderNumber}\n\n` +
-                    `Apakah data sudah benar?`;
-                
-                if (!confirm(confirmationMessage)) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                    return;
-                }
-                
-                console.log(`Submitting reservation for order ${order.orderNumber}...`);
-                
-                const success = await customerSystem.createReservation(
-                    order.orderNumber,
-                    tableNumber,
-                    reservationDate,
-                    reservationTime,
-                    order.customer.name,
-                    order.customer.phone
-                );
-                
-                if (success) {
-                    showToast('Reservasi berhasil dibuat! Menunggu konfirmasi admin.', 'success');
-                    closeModal('reservationModal');
-                    
-                    customerSystem.selectedOrderForReservation = null;
-                    
-                    await customerSystem.loadCustomerOrders();
-                    updateOrdersDisplay();
-                    updateOrdersCount();
-                    
-                    setTimeout(() => {
-                        showOrders('reservations');
-                        window.location.hash = '#my-orders';
-                    }, 500);
-                    
-                } else {
-                    throw new Error('Gagal membuat reservasi');
-                }
-                
-            } catch (error) {
-                console.error('Error in submitReservation:', error);
-                showToast(`Gagal membuat reservasi: ${error.message}`, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
+    console.log('submitReservation called');
+    
+    if (!customerSystem) {
+        showToast('Sistem tidak siap', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitReservationBtn');
+    if (!submitBtn) {
+        showToast('Tombol tidak ditemukan', 'error');
+        return;
+    }
+    
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    
+    try {
+        const tableNumber = document.getElementById('selectedTable')?.value;
+        const reservationDate = document.getElementById('reservationDate')?.value;
+        const reservationTime = document.getElementById('selectedTime')?.value;
+        const guestsCount = document.getElementById('guestsCount')?.value || 2;
+        const notes = document.getElementById('reservationNotes')?.value || '';
+        const order = customerSystem.selectedOrderForReservation;
+        
+        // Validasi
+        if (!tableNumber) throw new Error('Meja belum dipilih');
+        if (!reservationDate) throw new Error('Tanggal belum dipilih');
+        if (!reservationTime) throw new Error('Waktu belum dipilih');
+        if (!order) throw new Error('Data pesanan tidak ditemukan');
+        
+        // Validasi jumlah tamu
+        const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+        const selectedTable = tables.find(t => t.number === tableNumber);
+        if (selectedTable && guestsCount > selectedTable.capacity) {
+            throw new Error(`Jumlah tamu melebihi kapasitas meja (maksimal ${selectedTable.capacity} orang)`);
         }
+        
+        // Konfirmasi
+        const confirmationMessage = 
+            `Konfirmasi reservasi:\n\n` +
+            `Meja: ${tableNumber}\n` +
+            `Tanggal: ${new Date(reservationDate).toLocaleDateString('id-ID')}\n` +
+            `Waktu: ${reservationTime}\n` +
+            `Jumlah Tamu: ${guestsCount} orang\n` +
+            `Pesanan: ${order.orderNumber}\n\n` +
+            `Apakah data sudah benar?`;
+        
+        if (!confirm(confirmationMessage)) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            return;
+        }
+        
+        // Buat data reservasi
+        const reservationData = {
+            id: Date.now(),
+            orderNumber: order.orderNumber,
+            tableNumber: tableNumber,
+            date: reservationDate,
+            time: reservationTime,
+            guests: parseInt(guestsCount),
+            notes: notes,
+            status: 'pending',
+            customerName: order.customer?.name || 'Pelanggan',
+            customerPhone: order.customer?.phone || '',
+            createdAt: new Date().toISOString()
+        };
+        
+        // Simpan ke localStorage
+        let reservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+        reservations.push(reservationData);
+        localStorage.setItem('customer_reservations', JSON.stringify(reservations));
+        
+        // Update order dengan data reservasi
+        let orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        const orderIndex = orders.findIndex(o => o.orderNumber === order.orderNumber);
+        if (orderIndex !== -1) {
+            orders[orderIndex].reservation = reservationData;
+            localStorage.setItem('customer_orders', JSON.stringify(orders));
+            window.customerOrders = orders;
+        }
+        
+        // Simpan ke admin reservations juga
+        let adminReservations = JSON.parse(localStorage.getItem('pending_reservations') || '[]');
+        adminReservations.push({
+            ...reservationData,
+            adminSeen: false
+        });
+        localStorage.setItem('pending_reservations', JSON.stringify(adminReservations));
+        
+        // Update tabel status menjadi reserved
+        let tablesData = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+        const tableIndex = tablesData.findIndex(t => t.number === tableNumber);
+        if (tableIndex !== -1) {
+            tablesData[tableIndex].status = 'reserved';
+            tablesData[tableIndex].reservationTime = reservationTime;
+            localStorage.setItem('cafe_tables', JSON.stringify(tablesData));
+        }
+        
+        showToast('Reservasi berhasil dibuat! Menunggu konfirmasi admin.', 'success');
+        closeModal('reservationModal');
+        
+        // Refresh data
+        setTimeout(() => {
+            showOrders('reservations');
+            window.location.hash = '#my-orders';
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error in submitReservation:', error);
+        showToast(`Gagal membuat reservasi: ${error.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+function validateGuestsCount() {
+    const guestsCount = document.getElementById('guestsCount');
+    const tableNumber = document.getElementById('selectedTable')?.value;
+    
+    if (!tableNumber) return;
+    
+    const tables = JSON.parse(localStorage.getItem('cafe_tables') || '[]');
+    const selectedTable = tables.find(t => t.number === tableNumber);
+    
+    if (selectedTable) {
+        const maxCapacity = selectedTable.capacity;
+        if (parseInt(guestsCount.value) > maxCapacity) {
+            showToast(`Maksimal ${maxCapacity} orang untuk meja ini`, 'warning');
+            guestsCount.value = maxCapacity;
+        }
+    }
+    
+    updateReservationSummary();
+}
 
         // ==================== UTILITY FUNCTIONS ====================
         function showToast(message, type = 'success') {
@@ -4122,6 +5174,77 @@ setTimeout(() => {
         setupNavigation();
     }
 });
+
+// Di file PELANGGAN, tambahkan fungsi debug
+window.debugSystem = async function() {
+    console.clear();
+    console.log('🔧 SYSTEM DEBUG 🔧');
+    console.log('====================');
+    
+    // 1. Customer System
+    console.log('1. CUSTOMER SYSTEM:');
+    console.log('- isOnline:', customerSystem?.isOnline);
+    console.log('- Customer Phone:', customerSystem?.customerPhone);
+    console.log('- Cart items:', customerSystem?.cart?.length || 0);
+    
+    // 2. LocalStorage
+    console.log('\n2. LOCALSTORAGE:');
+    console.log('- customer_orders:', JSON.parse(localStorage.getItem('customer_orders') || '[]').length);
+    console.log('- customer_phone:', localStorage.getItem('customer_phone'));
+    console.log('- customer_cart:', JSON.parse(localStorage.getItem('customer_cart') || '[]').length);
+    
+    // 3. Orders Data
+    const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+    console.log('\n3. ORDERS DETAIL:');
+    if (orders.length > 0) {
+        orders.forEach((order, i) => {
+            console.log(`   [${i}] ${order.orderNumber} - ${order.status} - Rp ${order.total} - ${order.createdAt}`);
+        });
+    } else {
+        console.log('   No orders found');
+    }
+    
+    // 4. Supabase Test
+    console.log('\n4. SUPABASE TEST:');
+    try {
+        const { data, error } = await supabaseClient
+            .from('orders')
+            .select('count', { count: 'exact' });
+        
+        if (error) {
+            console.log('   ❌ Connection error:', error.message);
+        } else {
+            console.log(`   ✅ Connected! Total orders in DB: ${data[0].count}`);
+        }
+    } catch (e) {
+        console.log('   ❌ Connection failed:', e.message);
+    }
+    
+    // 5. Force Refresh
+    console.log('\n5. REFRESHING UI...');
+    updateCartDisplay();
+    updateCartCount();
+    updateOrdersCount();
+    showOrders(currentFilter || 'all');
+    
+    showToast('Debug info di console', 'info');
+};
+
+// Di file ADMIN, tambahkan juga
+window.debugAdmin = function() {
+    console.log('🔧 ADMIN DEBUG');
+    console.log('Orders in system:', adminSystem?.allOrders?.length || 0);
+    console.log('Pending orders:', adminSystem?.orders?.length || 0);
+    
+    // Test Supabase connection
+    supabaseClient
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .then(({ count, error }) => {
+            console.log('Total orders in DB:', count);
+            if (error) console.error('Error:', error);
+        });
+};
     </script>
 </body>
 </html>
