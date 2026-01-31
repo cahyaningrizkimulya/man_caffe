@@ -3215,12 +3215,13 @@ setTimeout(addAdminDebugButton, 2000);
                 !res.adminSeen && res.status === 'pending'
             );
             
-            // Simpan ke localStorage
-            localStorage.setItem('all_reservations', JSON.stringify(adminSystem.allReservations));
+            // SIMPAN KE LOKASI YANG BENAR
+            localStorage.setItem('all_reservations', JSON.stringify(formattedReservations));
             localStorage.setItem('pending_reservations', JSON.stringify(adminSystem.reservations));
-            
-            // Simpan ke customer_reservations juga
             localStorage.setItem('customer_reservations', JSON.stringify(formattedReservations));
+            
+            // SIMPAN KE ADMIN SYSTEM LOKAL JUGA
+            saveLocalData();
             
             console.log(`✅ Synced: ${adminSystem.reservations.length} pending, ${adminSystem.allReservations.length} total`);
             
@@ -3232,6 +3233,32 @@ setTimeout(addAdminDebugButton, 2000);
         console.error('❌ Error syncing reservations:', error);
     }
 }
+
+// Fungsi debug untuk melihat data reservasi
+function debugReservations() {
+    console.clear();
+    console.log('🔧 DEBUG RESERVATIONS 🔧');
+    console.log('========================');
+    
+    console.log('1. LOCALSTORAGE:');
+    console.log('- all_reservations:', JSON.parse(localStorage.getItem('all_reservations') || '[]').length);
+    console.log('- pending_reservations:', JSON.parse(localStorage.getItem('pending_reservations') || '[]').length);
+    console.log('- customer_reservations:', JSON.parse(localStorage.getItem('customer_reservations') || '[]').length);
+    
+    console.log('\n2. ADMIN SYSTEM:');
+    console.log('- allReservations:', adminSystem?.allReservations?.length || 0);
+    console.log('- reservations:', adminSystem?.reservations?.length || 0);
+    
+    // Tampilkan detail
+    const allRes = JSON.parse(localStorage.getItem('all_reservations') || '[]');
+    console.log('\n3. DETAIL RESERVATIONS:');
+    allRes.forEach((res, i) => {
+        console.log(`   [${i}] ID: ${res.id}, Nama: ${res.name}, Status: ${res.status}, Date: ${res.date}`);
+    });
+    
+    showToast('Debug info ditampilkan di console', 'info');
+}
+
         // Di fungsi save menu di admin, tambahkan:
 async function syncMenuToCustomerCache(menuData) {
     try {
@@ -3334,20 +3361,64 @@ async function syncMenuToCustomerCache(menuData) {
         }
 
         function updateStats() {
-            try {
-                const todayOrders = getTodayOrders();
-                const newCustomers = getNewCustomersToday();
-                const todayRevenue = getTodayRevenue();
-                const pendingOrders = getPendingOrders();
-                
-                document.getElementById('todayOrders').textContent = todayOrders.length;
-                document.getElementById('newCustomers').textContent = newCustomers;
-                document.getElementById('todayRevenue').textContent = 'Rp ' + todayRevenue.toLocaleString();
-                document.getElementById('pendingOrders').textContent = pendingOrders.length;
-            } catch (error) {
-                console.error('Error updating stats:', error);
+    try {
+        const todayOrders = getTodayOrders();
+        const newCustomers = getNewCustomersToday();
+        const todayRevenue = getTodayRevenue();
+        const pendingOrders = getPendingOrders();
+        
+        document.getElementById('todayOrders').textContent = todayOrders.length;
+        document.getElementById('newCustomers').textContent = newCustomers;
+        document.getElementById('todayRevenue').textContent = 'Rp ' + todayRevenue.toLocaleString();
+        document.getElementById('pendingOrders').textContent = pendingOrders.length;
+        
+        // TAMBAHKAN STYLE PERINGATAN JIKA ADA PESANAN MENUNGGU
+        const pendingOrdersElement = document.getElementById('pendingOrders');
+        const parentCard = pendingOrdersElement.closest('.stat-card');
+        
+        if (pendingOrders.length > 0) {
+            // Tambahkan efek peringatan
+            parentCard.style.animation = 'none';
+            setTimeout(() => {
+                parentCard.style.animation = 'pulse 2s infinite';
+                parentCard.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+            }, 10);
+            
+            // Update text dengan icon warning
+            const warningText = parentCard.querySelector('.stat-change');
+            if (warningText) {
+                warningText.innerHTML = `
+                    <i class="fas fa-exclamation-circle" style="color: var(--danger-color);"></i> 
+                    ${pendingOrders.length} pesanan menunggu
+                `;
+                warningText.className = 'stat-change negative';
+            }
+        } else {
+            // Hapus efek peringatan jika tidak ada pesanan menunggu
+            parentCard.style.animation = '';
+            parentCard.style.boxShadow = '';
+            
+            const warningText = parentCard.querySelector('.stat-change');
+            if (warningText) {
+                warningText.innerHTML = '<i class="fas fa-check"></i> Tidak ada pesanan menunggu';
+                warningText.className = 'stat-change positive';
             }
         }
+    } catch (error) {
+        console.error('Error updating stats:', error);
+    }
+}
+
+// Tambahkan style untuk animasi pulse
+const style = document.createElement('style');
+style.textContent = `
+@keyframes pulse {
+    0% { box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); }
+    50% { box-shadow: 0 4px 20px rgba(220, 53, 69, 0.5); }
+    100% { box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); }
+}
+`;
+document.head.appendChild(style);
 
         function updateProfileStats() {
             try {
@@ -3417,11 +3488,45 @@ async function syncMenuToCustomerCache(menuData) {
         }
 
         function getPendingOrders() {
-            return adminSystem.allOrders.filter(order => 
-                order.status === 'pending' || order.status === 'waiting_payment'
-            );
-        }
-
+    if (!adminSystem) return [];
+    
+    try {
+        // Gabungkan dari semua sumber
+        let pendingOrders = [];
+        
+        // 1. Dari adminSystem.orders (yang belum dilihat admin)
+        const newOrders = adminSystem.orders.filter(order => 
+            (order.status === 'pending' || order.status === 'waiting_payment') && 
+            !order.adminSeen
+        );
+        
+        // 2. Dari adminSystem.allOrders (semua yang masih pending)
+        const allPending = adminSystem.allOrders.filter(order => 
+            order.status === 'pending' || order.status === 'waiting_payment'
+        );
+        
+        // Gabungkan dan hapus duplikat
+        const allOrdersMap = new Map();
+        [...newOrders, ...allPending].forEach(order => {
+            if (order.id && !allOrdersMap.has(order.id)) {
+                allOrdersMap.set(order.id, order);
+            }
+        });
+        
+        pendingOrders = Array.from(allOrdersMap.values());
+        
+        console.log('📊 Pending orders calculation:', {
+            newOrders: newOrders.length,
+            allPending: allPending.length,
+            totalPending: pendingOrders.length
+        });
+        
+        return pendingOrders;
+    } catch (error) {
+        console.error('Error getting pending orders:', error);
+        return [];
+    }
+}
        function updateNotifications() {
     try {
         if (!adminSystem) return;
@@ -4177,54 +4282,200 @@ async function setupAdminRealtimeForOrders() {
             }
         }
 
-        function loadAllReservations() {
-            if (!adminSystem) return;
-            
-            try {
-                const table = document.getElementById('allReservationsTable');
+       async function loadAllReservations() {
+    if (!adminSystem) return;
+    
+    try {
+        console.log('Loading all reservations...');
+        
+        // 1. Ambil data dari semua sumber
+        let allReservations = [];
+        
+        // Dari admin system
+        if (adminSystem.allReservations && adminSystem.allReservations.length > 0) {
+            allReservations = [...adminSystem.allReservations];
+        }
+        
+        // Dari localStorage customer_reservations
+        try {
+            const customerReservations = JSON.parse(localStorage.getItem('customer_reservations') || '[]');
+            if (customerReservations.length > 0) {
+                console.log('Found customer reservations:', customerReservations.length);
                 
-                if (adminSystem.allReservations.length === 0) {
-                    table.innerHTML = `
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                                Belum ada reservasi
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    table.innerHTML = adminSystem.allReservations.map(res => `
-                        <tr>
-                            <td>#${res.id.toString().slice(-6)}</td>
-                            <td>${res.name}</td>
-                            <td>${res.date ? new Date(res.date).toLocaleDateString('id-ID') : '-'}</td>
-                            <td>${res.time || '-'}</td>
-                            <td>${res.tableNumber || '-'}</td>
-                            <td>
-                                <span class="status-badge ${res.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
-                                    ${res.status === 'confirmed' ? 'Dikonfirmasi' : 'Menunggu'}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-primary btn-sm" onclick="viewReservationDetail('${res.id}')">
-                                        <i class="fas fa-eye"></i> Detail
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
+                // Gabungkan dan hapus duplikat
+                customerReservations.forEach(res => {
+                    if (!allReservations.some(r => r.id == res.id)) {
+                        allReservations.push(res);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error reading customer_reservations:', e);
+        }
+        
+        // Jika masih kosong, coba ambil dari pending_reservations
+        if (allReservations.length === 0) {
+            const pendingReservations = JSON.parse(localStorage.getItem('pending_reservations') || '[]');
+            if (pendingReservations.length > 0) {
+                allReservations = [...pendingReservations];
+            }
+        }
+        
+        console.log('Total reservations to display:', allReservations.length);
+        
+        // 2. Update tabel
+        const table = document.getElementById('allReservationsTable');
+        
+        if (allReservations.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                        <i class="fas fa-calendar-alt" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>Belum ada riwayat reservasi</p>
+                        <small>Semua reservasi akan muncul di sini</small>
+                    </td>
+                </tr>
+            `;
+        } else {
+            // Urutkan berdasarkan tanggal terbaru
+            allReservations.sort((a, b) => {
+                const dateA = new Date(a.createdAt || a.date || 0);
+                const dateB = new Date(b.createdAt || b.date || 0);
+                return dateB - dateA;
+            });
+            
+            table.innerHTML = allReservations.map(res => {
+                // Format tanggal
+                let formattedDate = '-';
+                try {
+                    if (res.date) {
+                        const dateObj = new Date(res.date);
+                        formattedDate = dateObj.toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Error formatting date:', e);
                 }
-            } catch (error) {
-                console.error('Error loading all reservations:', error);
-                document.getElementById('allReservationsTable').innerHTML = `
+                
+                // Format status
+                let statusBadge = '';
+                let statusText = '';
+                
+                switch(res.status) {
+                    case 'confirmed':
+                        statusBadge = 'status-confirmed';
+                        statusText = 'Dikonfirmasi';
+                        break;
+                    case 'cancelled':
+                        statusBadge = 'status-cancelled';
+                        statusText = 'Dibatalkan';
+                        break;
+                    case 'completed':
+                        statusBadge = 'status-completed';
+                        statusText = 'Selesai';
+                        break;
+                    default:
+                        statusBadge = 'status-pending';
+                        statusText = 'Menunggu';
+                }
+                
+                // Tentukan apakah tombol action ditampilkan
+                const shouldShowActions = res.status === 'pending';
+                
+                return `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                            Gagal memuat reservasi
+                        <td>#${(res.id || '').toString().slice(-6)}</td>
+                        <td>
+                            <div style="display: flex; flex-direction: column;">
+                                <strong>${res.customerName || res.name || 'Pelanggan'}</strong>
+                                ${res.customerPhone || res.phone ? 
+                                    `<small style="color: #666; font-size: 0.8rem;">
+                                        <i class="fas fa-phone"></i> ${res.customerPhone || res.phone}
+                                    </small>` : ''
+                                }
+                            </div>
+                        </td>
+                        <td>${formattedDate}</td>
+                        <td>${res.time || '-'}</td>
+                        <td>${res.tableNumber || '-'}</td>
+                        <td>
+                            <span class="status-badge ${statusBadge}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="viewReservationDetail('${res.id}')" title="Lihat detail reservasi">
+                                    <i class="fas fa-eye"></i> Detail
+                                </button>
+                                ${shouldShowActions ? `
+                                <button class="btn btn-success btn-sm" onclick="confirmReservation('${res.id}')" title="Konfirmasi reservasi">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectReservation('${res.id}')" title="Tolak reservasi">
+                                    <i class="fas fa-times"></i>
+                                </button>` : ''}
+                                ${res.status === 'cancelled' ? `
+                                <button class="btn btn-warning btn-sm" onclick="reopenReservation('${res.id}')" title="Buka kembali reservasi">
+                                    <i class="fas fa-redo"></i>
+                                </button>` : ''}
+                                
+                            </div>
                         </td>
                     </tr>
                 `;
-            }
+            }).join('');
         }
+        
+        // Update notification count
+        updateNotifications();
+        
+    } catch (error) {
+        console.error('Error loading all reservations:', error);
+        document.getElementById('allReservationsTable').innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-exclamation-triangle"></i> Gagal memuat reservasi
+                    <br><small>${error.message}</small>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function startAutoRefresh() {
+    if (adminSystem.autoRefreshInterval) {
+        clearInterval(adminSystem.autoRefreshInterval);
+    }
+    
+    adminSystem.autoRefreshInterval = setInterval(async () => {
+        try {
+            console.log('🔄 Auto-refresh dashboard...');
+            
+            // Refresh data
+            if (adminSystem.isOnline) {
+                await syncFromSupabase();
+            }
+            
+            // Update stats dengan efek visual
+            updateStats();
+            updateNotifications();
+            
+            // Refresh section yang sedang aktif
+            if (currentSection) {
+                loadSectionData(currentSection);
+            }
+            
+        } catch (error) {
+            console.error('Auto-refresh error:', error);
+        }
+    }, 10000); // Refresh setiap 10 detik
+}
+
+// Call ini di initializeAdminSystem() setelah semua data dimuat
 
         function loadMenuManagement() {
             if (!adminSystem) return;
@@ -7032,19 +7283,21 @@ async function toggleMenuStatus(menuId) {
         }
 
         async function refreshAllReservations() {
-            if (!adminSystem) return;
-            
-            try {
-                await syncReservationsFromSupabase();
-                loadAllReservations();
-                updateProfileStats();
-                showToast('Semua reservasi berhasil direfresh', 'success');
-            } catch (error) {
-                console.error('Error refreshing all reservations:', error);
-                showToast('Gagal merefresh semua reservasi', 'error');
-            }
-        }
-
+    if (!adminSystem) return;
+    
+    try {
+        showToast('Memperbarui data reservasi...', 'info');
+        
+        await syncReservationsFromSupabase();
+        loadAllReservations();
+        updateProfileStats();
+        
+        showToast('Semua reservasi berhasil direfresh', 'success');
+    } catch (error) {
+        console.error('Error refreshing all reservations:', error);
+        showToast('Gagal merefresh semua reservasi', 'error');
+    }
+}
         function filterAllOrders(status) {
             try {
                 const rows = document.querySelectorAll('#allOrdersTable tr');
