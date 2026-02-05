@@ -7868,179 +7868,143 @@ function quickCheckWhatsAppStatus(orderId) {
         // ============================
         // FORM HANDLERS
         // ============================
-        // ==================== REVISI FUNGSI SAVE MENU ====================
-document.getElementById('menuForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (!adminSystem) {
-        showToast('Sistem admin belum siap', 'error');
-        return;
-    }
-    
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-    
-    try {
-        const menuId = document.getElementById('menuId').value;
-        const isDailyStock = document.getElementById('stockManagement').value === 'daily';
-        const dailyStock = isDailyStock ? parseInt(document.getElementById('dailyStock').value) || 0 : null;
-        const isPromo = document.getElementById('menuIsPromo').checked;
-        const originalPrice = isPromo ? parseInt(document.getElementById('menuOriginalPrice').value) || null : null;
-        
-        const menuData = {
-            name: document.getElementById('menuName').value,
-            price: parseInt(document.getElementById('menuPrice').value),
-            stock: parseInt(document.getElementById('menuStock').value) || 0,
-            dailyStock: dailyStock,
-            currentDailyStock: dailyStock,
-            isDailyStock: isDailyStock,
-            category: document.getElementById('menuCategory').value,
-            description: document.getElementById('menuDescription').value,
-            image: currentImageBase64 || null,
-            isPromo: isPromo,
-            originalPrice: originalPrice,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-        
-        let supabaseId = null;
-        
-        // 1. SIMPAN KE SUPABASE JIKA ONLINE
-        if (adminSystem.isOnline) {
+        document.getElementById('menuForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!adminSystem) {
+                showToast('Sistem admin belum siap', 'error');
+                return;
+            }
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            
             try {
-                const menuToInsert = {
-                    name: menuData.name,
-                    price: menuData.price,
-                    stock: menuData.stock || 0,
-                    daily_stock: menuData.dailyStock || null,
-                    current_daily_stock: menuData.dailyStock || null,
-                    is_daily_stock: menuData.isDailyStock || false,
-                    category: menuData.category,
-                    description: menuData.description || '',
-                    image_url: menuData.image || '',
-                    is_promo: menuData.isPromo || false,
-                    original_price: menuData.originalPrice || null,
-                    is_active: true,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                const menuId = document.getElementById('menuId').value;
+                const isDailyStock = document.getElementById('stockManagement').value === 'daily';
+                const dailyStock = isDailyStock ? parseInt(document.getElementById('dailyStock').value) || 0 : null;
+                const isPromo = document.getElementById('menuIsPromo').checked;
+                const originalPrice = isPromo ? parseInt(document.getElementById('menuOriginalPrice').value) || null : null;
+                
+                const menuData = {
+                    name: document.getElementById('menuName').value,
+                    price: parseInt(document.getElementById('menuPrice').value),
+                    stock: parseInt(document.getElementById('menuStock').value) || 0,
+                    dailyStock: dailyStock,
+                    currentDailyStock: dailyStock,
+                    isDailyStock: isDailyStock,
+                    category: document.getElementById('menuCategory').value,
+                    description: document.getElementById('menuDescription').value,
+                    image: currentImageBase64 || null,
+                    isPromo: isPromo,
+                    originalPrice: originalPrice
                 };
                 
                 if (menuId) {
-                    // UPDATE EXISTING
-                    const { error } = await supabaseClient
-                        .from('menu_items')
-                        .update(menuToInsert)
-                        .eq('id', menuId);
+                    // Update existing menu
+                    if (adminSystem.isOnline) {
+                        try {
+                            const updateData = {
+                                name: menuData.name,
+                                price: menuData.price,
+                                stock: menuData.stock || 0,
+                                daily_stock: menuData.dailyStock || null,
+                                current_daily_stock: menuData.currentDailyStock || null,
+                                is_daily_stock: menuData.isDailyStock || false,
+                                category: menuData.category,
+                                description: menuData.description || '',
+                                image_url: menuData.image || '',
+                                is_promo: menuData.isPromo || false,
+                                original_price: menuData.originalPrice || null,
+                                updated_at: new Date().toISOString()
+                            };
+                            
+                            const { error } = await supabaseClient
+                                .from('menu_items')
+                                .update(updateData)
+                                .eq('id', menuId);
+                            
+                            if (error) throw error;
+                        } catch (error) {
+                            console.warn('Error updating menu in Supabase:', error.message);
+                        }
+                    }
                     
-                    if (error) throw error;
-                    supabaseId = menuId;
+                    const menuIndex = adminSystem.menus.findIndex(m => m.id == menuId);
+                    if (menuIndex !== -1) {
+                        adminSystem.menus[menuIndex] = { ...adminSystem.menus[menuIndex], ...menuData };
+                        saveLocalData();
+                        
+                        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+                        addActivity(`Menu "${menuData.name}" diperbarui`);
+                        updateProfileStats();
+                        
+                        showToast('Menu berhasil diperbarui', 'success');
+                    }
                 } else {
-                    // INSERT NEW
-                    const { data, error } = await supabaseClient
-                        .from('menu_items')
-                        .insert([menuToInsert])
-                        .select()
-                        .single();
+                    // Add new menu
+                    let supabaseId = null;
                     
-                    if (error) throw error;
-                    supabaseId = data.id;
+                    if (adminSystem.isOnline) {
+                        try {
+                            const menuToInsert = {
+                                name: menuData.name,
+                                price: menuData.price,
+                                stock: menuData.stock || 0,
+                                daily_stock: menuData.dailyStock || null,
+                                current_daily_stock: menuData.dailyStock || null,
+                                is_daily_stock: menuData.isDailyStock || false,
+                                category: menuData.category,
+                                description: menuData.description || '',
+                                image_url: menuData.image || '',
+                                is_promo: menuData.isPromo || false,
+                                original_price: menuData.originalPrice || null,
+                                is_active: true
+                            };
+                            
+                            const { data, error } = await supabaseClient
+                                .from('menu_items')
+                                .insert([menuToInsert])
+                                .select()
+                                .single();
+                            
+                            if (error) throw error;
+                            
+                            supabaseId = data.id;
+                            console.log('✅ Menu inserted to Supabase with ID:', supabaseId);
+                        } catch (error) {
+                            console.warn('Error adding menu to Supabase, saving locally:', error.message);
+                        }
+                    }
+                    
+                    const menu = {
+                        id: supabaseId || Date.now(),
+                        ...menuData,
+                        isActive: true
+                    };
+                    
+                    adminSystem.menus.push(menu);
+                    saveLocalData();
+                    localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+                    updateProfileStats();
+                    
+                    addActivity(`Menu "${menuData.name}" ditambahkan (Stok: ${menuData.stock})`);
+                    showToast('Menu berhasil ditambahkan', 'success');
                 }
                 
-                console.log('✅ Menu saved to Supabase:', supabaseId);
+                closeModal('menuModal');
+                loadMenuManagement();
                 
             } catch (error) {
-                console.warn('Error saving to Supabase:', error.message);
+                console.error('Error saving menu:', error);
+                showToast('Gagal menyimpan menu: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
-        }
-        
-        // 2. UPDATE DATA LOKAL ADMIN
-        if (menuId) {
-            // Update existing
-            const menuIndex = adminSystem.menus.findIndex(m => m.id == menuId);
-            if (menuIndex !== -1) {
-                adminSystem.menus[menuIndex] = { 
-                    ...adminSystem.menus[menuIndex], 
-                    ...menuData,
-                    id: supabaseId || adminSystem.menus[menuIndex].id
-                };
-            }
-        } else {
-            // Add new
-            const newMenu = {
-                id: supabaseId || Date.now(),
-                ...menuData
-            };
-            adminSystem.menus.push(newMenu);
-        }
-        
-        // 3. SIMPAN KE SEMUA CACHE
-        // Cache untuk admin
-        localStorage.setItem('admin_menus_fresh', JSON.stringify(adminSystem.menus));
-        localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-        
-        // Cache untuk pelanggan (PENTING!)
-        localStorage.setItem('cafe_menus_fresh', JSON.stringify(adminSystem.menus));
-        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-        
-        // Cache utama
-        localStorage.setItem('menu_cache', JSON.stringify(adminSystem.menus));
-        
-        // 4. SET FLAG UNTUK FORCE REFRESH PELANGGAN
-        const refreshFlag = {
-            action: menuId ? 'update' : 'create',
-            menuId: supabaseId || menuId || Date.now(),
-            menuName: menuData.name,
-            timestamp: Date.now(),
-            forceRefresh: true
-        };
-        
-        localStorage.setItem('force_menu_refresh', JSON.stringify(refreshFlag));
-        localStorage.setItem('last_menu_update', Date.now().toString());
-        
-        // 5. KIRIM NOTIFIKASI REALTIME KE PELANGGAN
-        if (adminSystem.isOnline) {
-            try {
-                // Kirim event ke channel realtime
-                await supabaseClient
-                    .channel('menu-updates')
-                    .send({
-                        type: 'broadcast',
-                        event: 'menu-change',
-                        payload: refreshFlag
-                    });
-            } catch (error) {
-                console.warn('Error sending realtime notification:', error);
-            }
-        }
-        
-        // 6. LOG AKTIVITAS
-        addActivity(`Menu "${menuData.name}" ${menuId ? 'diperbarui' : 'ditambahkan'}`);
-        updateProfileStats();
-        
-        // 7. TAMPILKAN PESAN SUKSES
-        showToast(`Menu "${menuData.name}" berhasil disimpan`, 'success');
-        
-        // 8. TUTUP MODAL & REFRESH
-        closeModal('menuModal');
-        loadMenuManagement();
-        
-        console.log('✅ Menu saved successfully:', {
-            id: supabaseId || menuId,
-            name: menuData.name,
-            cachedForCustomer: true
         });
-        
-    } catch (error) {
-        console.error('❌ Error saving menu:', error);
-        showToast('Gagal menyimpan menu: ' + error.message, 'error');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    }
-});
 
         document.getElementById('tableForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -8245,61 +8209,7 @@ document.getElementById('menuForm')?.addEventListener('submit', async function(e
                 }
             }
         }
-        
-        // ==================== FUNGSI SYNC INSTAN KE PELANGGAN ====================
-async function forceSyncToCustomer() {
-    try {
-        console.log('🔄 Force syncing menus to customer...');
-        
-        // 1. Ambil menu terbaru dari admin
-        const adminMenus = JSON.parse(localStorage.getItem('admin_menus_fresh') || '[]');
-        
-        // 2. Simpan ke cache pelanggan
-        localStorage.setItem('cafe_menus_fresh', JSON.stringify(adminMenus));
-        localStorage.setItem('cafe_menus', JSON.stringify(adminMenus));
-        
-        // 3. Set flag force refresh
-        const refreshFlag = {
-            action: 'force_sync',
-            timestamp: Date.now(),
-            menuCount: adminMenus.length
-        };
-        
-        localStorage.setItem('force_menu_refresh', JSON.stringify(refreshFlag));
-        localStorage.setItem('last_menu_update', Date.now().toString());
-        
-        // 4. Kirim notifikasi realtime
-        if (adminSystem.isOnline) {
-            await supabaseClient
-                .channel('menu-updates')
-                .send({
-                    type: 'broadcast',
-                    event: 'menu-sync',
-                    payload: refreshFlag
-                });
-        }
-        
-        console.log('✅ Force sync completed');
-        showToast('Menu telah disinkronisasi ke pelanggan', 'success');
-        
-    } catch (error) {
-        console.error('❌ Error force syncing:', error);
-    }
-}
 
-// Tambahkan tombol di admin untuk manual sync
-function addSyncButtonToAdmin() {
-    const syncBtn = document.createElement('button');
-    syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync ke Pelanggan';
-    syncBtn.className = 'btn btn-info';
-    syncBtn.style.marginLeft = '10px';
-    syncBtn.onclick = forceSyncToCustomer;
-    
-    const menuHeader = document.querySelector('#menu-section .table-header');
-    if (menuHeader) {
-        menuHeader.appendChild(syncBtn);
-    }
-}
         
 
         // ============================

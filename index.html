@@ -2386,93 +2386,80 @@ async init() {
     }
 }
     // ==================== MENU FUNCTIONS ====================
-    // ==================== FUNGSI LOAD MENU (PELANGGAN) ====================
-async loadMenus() {
+    async loadMenus() {
     try {
-        console.log('🔄 Loading menus for customer...');
+        console.log('🔄 Loading menus...');
         
-        // 1. CEK CACHE TERBARU DULU
         let menus = [];
-        const forceRefresh = localStorage.getItem('force_menu_refresh');
         
-        if (forceRefresh) {
-            console.log('🔄 Force refresh menu from cache');
-            menus = JSON.parse(localStorage.getItem('cafe_menus_fresh') || '[]');
-        } else {
-            // Coba dari berbagai cache
-            menus = JSON.parse(localStorage.getItem('cafe_menus_fresh') || '[]');
-            if (menus.length === 0) {
-                menus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
+        // 1. Coba dari cache dulu
+        const cached = localStorage.getItem('cafe_menus_fresh') || 
+                       localStorage.getItem('cafe_menus');
+        
+        if (cached) {
+            menus = JSON.parse(cached);
+            console.log(`📦 Loaded ${menus.length} menus from cache`);
+        }
+        
+        // 2. Jika cache kosong atau ingin sync dengan database
+        if ((menus.length === 0 || this.isOnline) && this.isOnline) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('menu_items')
+                    .select('*')
+                    .order('name');
+                
+                if (!error && data && data.length > 0) {
+                    menus = data.map(item => this.formatMenuFromSupabase(item));
+                    console.log(`✅ Fetched ${menus.length} menus from Supabase`);
+                    
+                    // Simpan ke cache (simpan semua, termasuk yang tidak aktif untuk admin)
+                    localStorage.setItem('cafe_menus_fresh', JSON.stringify(menus));
+                }
+            } catch (error) {
+                console.warn('⚠️ Error fetching from Supabase:', error);
             }
         }
         
-        // 2. JIKA CACHE KOSONG, AMBIL DARI SUPABASE
-        if (menus.length === 0) {
-            console.log('📡 Fetching menus from Supabase...');
-            menus = await fetchMenusFromSupabase();
-            
-            if (menus.length > 0) {
-                // Simpan ke cache
-                localStorage.setItem('cafe_menus_fresh', JSON.stringify(menus));
-                localStorage.setItem('cafe_menus', JSON.stringify(menus));
-            }
-        }
-        
-        // 3. FILTER HANYA MENU AKTIF
+        // 3. Filter hanya menu aktif untuk ditampilkan di pelanggan
         const activeMenus = menus.filter(menu => menu.isActive !== false);
+        console.log(`🎯 Active menus: ${activeMenus.length} of ${menus.length} total`);
         
-        console.log(`✅ Loaded ${activeMenus.length} active menus`);
+        // 4. Simpan dan render
+        window.currentMenus = activeMenus;
+        this.renderMenus(activeMenus);
         
-        // 4. UPDATE TAMPILAN
-        updateMenuDisplay(activeMenus);
+        return activeMenus;
         
     } catch (error) {
         console.error('❌ Error loading menus:', error);
-        // Fallback ke default menus
-        const defaultMenus = getDefaultMenus();
-        updateMenuDisplay(defaultMenus);
+        
+        // Fallback
+        const defaultMenus = this.getDefaultMenus();
+        window.currentMenus = defaultMenus.filter(m => m.isActive !== false);
+        this.renderMenus(window.currentMenus);
+        
+        return window.currentMenus;
     }
 }
-
-// Fungsi fetch dari Supabase
-async fetchMenusFromSupabase() {
-    try {
-        let { data: menus, error } = await supabaseClient
-            .from('menu_items')
-            .select('*')
-            .eq('is_active', true)
-            .order('category')
-            .order('name');
-        
-        if (error) throw error;
-        
-        if (menus && menus.length > 0) {
-            return menus.map(menu => ({
-                id: menu.id,
-                name: menu.name || 'Unnamed Menu',
-                price: menu.price || 0,
-                stock: menu.stock || 0,
-                dailyStock: menu.daily_stock || null,
-                currentDailyStock: menu.current_daily_stock || null,
-                isDailyStock: menu.is_daily_stock || false,
-                category: menu.category || 'minuman',
-                image: menu.image_url || menu.image || '',
-                description: menu.description || '',
-                isPromo: menu.is_promo || false,
-                originalPrice: menu.original_price || null,
-                isActive: menu.is_active !== false,
-                createdAt: menu.created_at,
-                updatedAt: menu.updated_at
-            }));
-        }
-        
-        return [];
-        
-    } catch (error) {
-        console.error('❌ Error fetching menus from Supabase:', error);
-        return [];
+    formatMenuFromSupabase(menu) {
+        return {
+            id: menu.id,
+            name: menu.name || 'Menu',
+            description: menu.description || '',
+            price: Number(menu.price) || 0,
+            originalPrice: Number(menu.original_price) || null,
+            image: menu.image_url || menu.image || '',
+            image_url: menu.image_url || menu.image || '',
+            category: menu.category || 'minuman',
+            isPromo: Boolean(menu.is_promo) || false,
+            isActive: menu.is_active !== false,
+            stock: Number(menu.stock) || 0,
+            isDailyStock: Boolean(menu.is_daily_stock) || false,
+            dailyStock: Number(menu.daily_stock) || 0,
+            currentDailyStock: Number(menu.current_daily_stock) || 0
+        };
     }
-}
 
     getDefaultMenus() {
         return [
@@ -3083,94 +3070,6 @@ async function syncOrdersRealtime() {
         console.error('❌ Error in syncOrdersRealtime:', error);
     }
 }
-// ==================== REALTIME MENU UPDATES ====================
-async function setupMenuRealtimeListener() {
-    try {
-        // Subscribe ke perubahan menu dari Supabase
-        supabaseClient
-            .channel('public:menu_items')
-            .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'menu_items' 
-                }, 
-                async (payload) => {
-                    console.log('🔄 Menu update received from Supabase:', payload);
-                    
-                    // Refresh menu dari Supabase
-                    await refreshMenusFromSupabase();
-                    
-                    // Update tampilan
-                    loadMenus();
-                    
-                    // Tampilkan notifikasi
-                    if (payload.eventType === 'INSERT') {
-                        showNotification(`Menu baru: ${payload.new.name}`);
-                    } else if (payload.eventType === 'UPDATE') {
-                        showNotification(`Menu diperbarui: ${payload.new.name}`);
-                    }
-                }
-            )
-            .subscribe();
-        
-        // Listen untuk broadcast dari admin
-        supabaseClient
-            .channel('menu-updates')
-            .on('broadcast', { event: 'menu-change' }, (payload) => {
-                console.log('📢 Menu update from admin:', payload);
-                
-                // Force refresh menu
-                refreshMenusFromSupabase();
-                loadMenus();
-                
-                // Tampilkan toast
-                const message = payload.action === 'create' 
-                    ? `Menu baru: ${payload.menuName}`
-                    : `Menu diperbarui: ${payload.menuName}`;
-                
-                showToast(message, 'info');
-            })
-            .subscribe();
-            
-    } catch (error) {
-        console.error('❌ Error setting up menu realtime:', error);
-    }
-}
-
-// Fungsi untuk cek update dari admin
-function checkForMenuUpdates() {
-    try {
-        const lastUpdate = localStorage.getItem('last_menu_update');
-        const currentTime = Date.now();
-        
-        // Cek apakah ada flag force refresh
-        const forceRefresh = localStorage.getItem('force_menu_refresh');
-        if (forceRefresh) {
-            const refreshData = JSON.parse(forceRefresh);
-            console.log('🔄 Force refresh detected:', refreshData);
-            
-            // Refresh menu
-            refreshMenusFromSupabase();
-            loadMenus();
-            
-            // Hapus flag
-            localStorage.removeItem('force_menu_refresh');
-        }
-        
-        // Auto refresh setiap 30 detik jika ada update
-        if (lastUpdate && (currentTime - parseInt(lastUpdate)) < 30000) {
-            refreshMenusFromSupabase();
-            loadMenus();
-        }
-        
-    } catch (error) {
-        console.error('Error checking menu updates:', error);
-    }
-}
-
-// Jalankan setiap 5 detik
-setInterval(checkForMenuUpdates, 5000);
 
 // Tambahkan realtime subscription untuk orders
 function setupOrdersRealtimeSubscription() {
@@ -3955,7 +3854,7 @@ function openWhatsAppForProof(orderNumber) {
         const total = order.total || 0;
         
         // Format pesan WhatsApp
-        const message = `Halo MAN CAFE, saya sudah transfer untuk pesanan Berikut bukti transfer saya:`;
+        const message = `Halo MAN CAFE, saya sudah transfer untuk pesanan ${orderNumber} sebesar Rp ${total.toLocaleString()}.%0A%0ANama: ${customerName}%0ANo. HP: ${customerPhone}%0A%0ABerikut bukti transfer saya:`;
         
         // Buka WhatsApp langsung
         const whatsappUrl = `https://wa.me/6283832184173?text=${encodeURIComponent(message)}`;
@@ -4160,7 +4059,7 @@ const orderObject = {
         name: customerName,
         phone: formattedPhone
     },
-    orderType: orderType, 
+    orderType: orderType, // <-- INI HARUS ADA DAN BENAR
     items: orderItems,
     total: totalAmount,
     status: 'pending',
@@ -5071,22 +4970,6 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     }
-}
-
-// Di initCustomerApp() atau fungsi initialize
-async function initializeCustomerApp() {
-    console.log('🚀 Initializing customer app...');
-    
-    // Setup realtime listener
-    await setupMenuRealtimeListener();
-    
-    // Load menus pertama kali
-    await loadMenus();
-    
-    // Start auto-check untuk updates
-    setInterval(checkForMenuUpdates, 5000);
-    
-    console.log('✅ Customer app ready!');
 }
 
 function validateGuestsCount() {
