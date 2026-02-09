@@ -2789,52 +2789,78 @@ async init() {
     
 
     // ==================== CART FUNCTIONS ====================
-    addToCart(menuId) {
-        const menu = window.currentMenus.find(item => item.id == menuId);
-        if (!menu) return false;
-        
-        if (!menu.isActive) {
-            showToast('Menu tidak tersedia', 'error');
-            return false;
-        }
-        
-        let availableStock = menu.stock;
-        if (menu.isDailyStock) {
-            availableStock = menu.currentDailyStock || 0;
-        }
-        
-        if (availableStock <= 0) {
-            showToast('Stok menu habis', 'error');
-            return false;
-        }
-        
-        const existingItem = this.cart.find(item => item.id == menuId);
-        
-        if (existingItem) {
-            const newQuantity = existingItem.quantity + 1;
-            if (newQuantity > availableStock) {
-                showToast(`Stok tersedia: ${availableStock}`, 'error');
-                return false;
-            }
-            existingItem.quantity = newQuantity;
-        } else {
-            if (1 > availableStock) {
-                showToast(`Stok tersedia: ${availableStock}`, 'error');
-                return false;
-            }
-            this.cart.push({
-                id: menu.id,
-                name: menu.name,
-                price: menu.price,
-                quantity: 1,
-                image: menu.image || menu.image_url
-            });
-        }
-        
-        this.saveCart();
-        return true;
+    // GANTI fungsi addToCart() di CustomerSystem class dengan ini:
+addToCart(menuId) {
+    console.log('🛒 addToCart called with menuId:', menuId);
+    
+    const menu = window.currentMenus?.find(item => item.id == menuId);
+    if (!menu) {
+        console.error('Menu not found:', menuId);
+        showToast('Menu tidak ditemukan', 'error');
+        return false;
     }
-
+    
+    console.log('Menu found:', menu.name);
+    
+    // Cek ketersediaan
+    if (!menu.isActive) {
+        showToast('Menu tidak tersedia', 'error');
+        return false;
+    }
+    
+    // Hitung stok tersedia
+    let availableStock = menu.stock;
+    if (menu.isDailyStock) {
+        availableStock = menu.currentDailyStock || 0;
+    }
+    
+    console.log('Available stock:', availableStock);
+    
+    if (availableStock <= 0) {
+        showToast('Stok menu habis', 'error');
+        return false;
+    }
+    
+    // Cek apakah item sudah ada di keranjang
+    const existingItem = this.cart.find(item => item.id == menuId);
+    
+    if (existingItem) {
+        // Jika sudah ada, tambah quantity
+        const newQuantity = existingItem.quantity + 1;
+        
+        if (newQuantity > availableStock) {
+            showToast(`Stok tersedia: ${availableStock}`, 'error');
+            return false;
+        }
+        
+        existingItem.quantity = newQuantity;
+        console.log(`Updated quantity for ${menu.name}: ${newQuantity}`);
+    } else {
+        // Jika belum ada, tambah item baru
+        if (1 > availableStock) {
+            showToast(`Stok tersedia: ${availableStock}`, 'error');
+            return false;
+        }
+        
+        this.cart.push({
+            id: menu.id,
+            name: menu.name,
+            price: menu.price,
+            quantity: 1,
+            image: menu.image || menu.image_url
+        });
+        console.log(`Added new item: ${menu.name}`);
+    }
+    
+    // Simpan ke localStorage
+    this.saveCart();
+    
+    // Debug: tampilkan isi keranjang
+    console.log('Cart after update:', this.cart);
+    console.log('Cart total items:', this.cart.reduce((sum, item) => sum + item.quantity, 0));
+    
+    return true;
+}
     removeFromCart(itemId) {
         this.cart = this.cart.filter(item => item.id != itemId);
         this.saveCart();
@@ -3269,82 +3295,195 @@ setTimeout(() => {
         }
 
         // ==================== CART FUNCTIONS ====================
-       function addToCartFromMenu(menuId) {
+    // GANTI fungsi addToCartFromMenu() dengan ini:
+function addToCartFromMenu(menuId) {
+    console.log('🛒 addToCartFromMenu called with menuId:', menuId);
+    
     if (!customerSystem) {
+        console.error('Customer system not initialized');
         showToast('Sistem belum siap', 'error');
         return false;
     }
     
-    if (customerSystem.addToCart(menuId)) {
+    // Panggil fungsi addToCart dari customerSystem
+    const success = customerSystem.addToCart(menuId);
+    
+    if (success) {
+        // Update UI
         updateCartDisplay();
         updateCartCount();
-        showToast('Item ditambahkan ke keranjang', 'success');
+        
+        // Ambil nama menu untuk pesan toast
+        const menu = window.currentMenus?.find(item => item.id == menuId);
+        if (menu) {
+            const cartItem = customerSystem.cart.find(item => item.id == menuId);
+            const quantity = cartItem ? cartItem.quantity : 1;
+            showToast(`${menu.name} (${quantity}x) ditambahkan ke keranjang`, 'success');
+        }
+        
         return true;
     }
+    
     return false;
 }
 
-        function updateCartDisplay() {
-            if (!customerSystem) return;
-            
-            const container = document.getElementById('cart-items-container');
-            const emptyMessage = document.getElementById('empty-cart-message');
-            const totalDiv = document.getElementById('cart-total');
-            const checkoutButtons = document.getElementById('checkout-buttons');
-            
-            if (customerSystem.cart.length === 0) {
-                container.innerHTML = '';
-                emptyMessage.style.display = 'block';
-                totalDiv.style.display = 'none';
-                checkoutButtons.style.display = 'none';
-                return;
-            }
-            
-            emptyMessage.style.display = 'none';
-            container.innerHTML = '';
-            
-            customerSystem.cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                container.innerHTML += `
-                    <div class="cart-item">
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0 0 0.3rem 0; font-size: 0.95rem;">${item.name}</h4>
-                            <p style="margin: 0; font-size: 0.85rem; color: #666;">Rp ${item.price.toLocaleString()}</p>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div class="quantity-control">
-                                <button class="quantity-btn" onclick="updateCartItemQuantity(${item.id}, ${item.quantity - 1})">-</button>
-                                <span style="min-width: 20px; text-align: center;">${item.quantity}</span>
-                                <button class="quantity-btn" onclick="updateCartItemQuantity(${item.id}, ${item.quantity + 1})">+</button>
-                            </div>
-                            <p style="font-weight: bold; font-size: 0.95rem;">Rp ${itemTotal.toLocaleString()}</p>
-                            <button onclick="removeCartItem(${item.id})" style="color: #dc3545; background: none; border: none; cursor: pointer; padding: 0.3rem;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+       // Dalam fungsi updateCartDisplay() - perbaiki tampilan:
+// GANTI fungsi updateCartDisplay() dengan ini:
+function updateCartDisplay() {
+    console.log('🔄 updateCartDisplay called');
+    
+    if (!customerSystem) {
+        console.error('Customer system not initialized');
+        return;
+    }
+    
+    const container = document.getElementById('cart-items-container');
+    const emptyMessage = document.getElementById('empty-cart-message');
+    const totalDiv = document.getElementById('cart-total');
+    const checkoutButtons = document.getElementById('checkout-buttons');
+    
+    console.log('Cart length:', customerSystem.cart.length);
+    
+    if (customerSystem.cart.length === 0) {
+        console.log('Cart is empty');
+        container.innerHTML = '';
+        emptyMessage.style.display = 'block';
+        totalDiv.style.display = 'none';
+        checkoutButtons.style.display = 'none';
+        return;
+    }
+    
+    console.log('Cart has items, updating display...');
+    emptyMessage.style.display = 'none';
+    
+    let cartHTML = '';
+    
+    customerSystem.cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        cartHTML += `
+            <div class="cart-item" data-id="${item.id}" data-index="${index}">
+                <div style="flex: 1; min-width: 0;">
+                    <h4 style="margin: 0 0 0.3rem 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${item.name}
+                    </h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #666;">
+                        Rp ${item.price.toLocaleString()}
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: nowrap;">
+                    <div class="quantity-control" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button class="quantity-btn" 
+                                onclick="updateCartItemQuantity(${item.id}, ${item.quantity - 1})"
+                                style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #f0f0f0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="fas fa-minus" style="font-size: 0.7rem;"></i>
+                        </button>
+                        <span style="min-width: 30px; text-align: center; font-weight: bold; font-size: 0.9rem;">
+                            ${item.quantity}
+                        </span>
+                        <button class="quantity-btn" 
+                                onclick="updateCartItemQuantity(${item.id}, ${item.quantity + 1})"
+                                style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #f0f0f0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="fas fa-plus" style="font-size: 0.7rem;"></i>
+                        </button>
                     </div>
-                `;
-            });
-            
-            document.getElementById('total-amount').textContent = customerSystem.getCartTotal().toLocaleString();
-            totalDiv.style.display = 'block';
-            checkoutButtons.style.display = 'flex';
+                    <p style="font-weight: bold; font-size: 0.95rem; min-width: 100px; text-align: right;">
+                        Rp ${itemTotal.toLocaleString()}
+                    </p>
+                    <button onclick="removeCartItem(${item.id})" 
+                            style="color: #dc3545; background: none; border: none; cursor: pointer; padding: 0.3rem; font-size: 1rem; flex-shrink: 0;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = cartHTML;
+    
+    // Update total
+    const total = customerSystem.getCartTotal();
+    document.getElementById('total-amount').textContent = total.toLocaleString();
+    totalDiv.style.display = 'block';
+    checkoutButtons.style.display = 'flex';
+    
+    console.log('Cart display updated, total items:', customerSystem.cart.reduce((sum, item) => sum + item.quantity, 0));
+}
+      // GANTI fungsi updateCartItemQuantity() dengan ini:
+function updateCartItemQuantity(itemId, quantity) {
+    console.log('📝 updateCartItemQuantity called - itemId:', itemId, 'quantity:', quantity);
+    
+    if (!customerSystem) {
+        console.error('Customer system not initialized');
+        return;
+    }
+    
+    // Cari item di keranjang
+    const item = customerSystem.cart.find(item => item.id == itemId);
+    if (!item) {
+        console.error('Item not found in cart:', itemId);
+        return;
+    }
+    
+    // Jika quantity kurang dari 1, hapus item
+    if (quantity < 1) {
+        removeCartItem(itemId);
+        return;
+    }
+    
+    // Cari menu untuk cek stok
+    const menu = window.currentMenus?.find(m => m.id == itemId);
+    if (menu) {
+        let availableStock = menu.stock;
+        if (menu.isDailyStock) {
+            availableStock = menu.currentDailyStock || 0;
         }
+        
+        // Cek apakah quantity baru melebihi stok
+        if (quantity > availableStock) {
+            showToast(`Stok tersedia: ${availableStock}`, 'error');
+            return;
+        }
+    }
+    
+    // Update quantity
+    console.log(`Updating ${item.name} quantity from ${item.quantity} to ${quantity}`);
+    item.quantity = quantity;
+    
+    // Simpan perubahan
+    customerSystem.saveCart();
+    
+    // Update UI
+    updateCartDisplay();
+    updateCartCount();
+}
 
-        function updateCartItemQuantity(itemId, quantity) {
-            if (!customerSystem) return;
-            customerSystem.updateCartQuantity(itemId, quantity);
-            updateCartDisplay();
-            updateCartCount();
-        }
+function removeCartItem(itemId) {
+    if (!customerSystem) return;
+    
+    const item = customerSystem.cart.find(item => item.id == itemId);
+    if (!item) return;
+    
+    customerSystem.removeFromCart(itemId);
+    updateCartDisplay();
+    updateCartCount();
+    showToast(`${item.name} dihapus dari keranjang`, 'info');
+}
 
-        function removeCartItem(itemId) {
-            if (!customerSystem) return;
-            customerSystem.removeFromCart(itemId);
-            updateCartDisplay();
-            updateCartCount();
-            showToast('Item dihapus dari keranjang', 'info');
-        }
+function clearCart() {
+    if (!customerSystem) return;
+    
+    if (customerSystem.cart.length === 0) {
+        showToast('Keranjang sudah kosong', 'info');
+        return;
+    }
+    
+    if (confirm('Yakin ingin mengosongkan keranjang?')) {
+        customerSystem.clearCart();
+        updateCartDisplay();
+        updateCartCount();
+        showToast('Keranjang dikosongkan', 'info');
+    }
+}
 
         function updateCartCount() {
             if (!customerSystem) return;
@@ -5119,59 +5258,34 @@ function validateGuestsCount() {
         }
 
         // ==================== INITIALIZATION ====================
-     document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 Starting MAN CAFE Customer System...');
-    
-    // Debug: cek localStorage
-    console.log('🔍 Checking localStorage...');
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        console.log(`  ${key}: ${localStorage.getItem(key).length} chars`);
-    }
+     // Di bagian DOMContentLoaded, pastikan:
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Initializing MAN CAFE...');
     
     try {
         customerSystem = new CustomerSystem();
-        await customerSystem.init();
         
+        // Pastikan currentMenus sudah terload
+        window.currentMenus = await customerSystem.loadMenus();
+        console.log('✅ Menus loaded:', window.currentMenus?.length || 0);
+        
+        // Initialize cart
+        customerSystem.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
+        console.log('✅ Cart loaded:', customerSystem.cart.length, 'items');
+        
+        // Update UI
         updateCartDisplay();
         updateCartCount();
-        updateOrdersCount();
         
-        if (window.customerOrders) {
-            showOrders('all');
-        }
-        
+        // Setup navigation
         setupNavigation();
         
         console.log('✅ MAN CAFE ready!');
-        console.log('📊 Current menus:', window.currentMenus?.length || 0);
+        console.log('🛒 Cart on load:', customerSystem.cart);
         
     } catch (error) {
-        console.error('❌ Error initializing system:', error);
-        
-        // Fallback sederhana
-        customerSystem = new CustomerSystem();
-        customerSystem.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
-        
-        // Coba load menus secara manual
-        const cached = localStorage.getItem('cafe_menus_fresh') || 
-                       localStorage.getItem('cafe_menus');
-        if (cached) {
-            window.currentMenus = JSON.parse(cached);
-            console.log('📦 Loaded menus from cache:', window.currentMenus.length);
-            
-            // Render manual
-            const allMenuGrid = document.getElementById('all-menu-items');
-            if (allMenuGrid && window.currentMenus.length > 0) {
-                allMenuGrid.innerHTML = window.currentMenus.map(menu => 
-                    customerSystem.createMenuCard(menu, true)
-                ).join('');
-            }
-        }
-        
-        updateCartDisplay();
-        updateCartCount();
-        setupNavigation();
+        console.error('❌ Initialization error:', error);
+        showToast('Gagal memuat sistem', 'error');
     }
 });
 

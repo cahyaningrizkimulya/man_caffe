@@ -3963,22 +3963,51 @@ async function setupAdminRealtimeUpdates() {
             }
             
             // PERBAIKAN: Ambil nama dari customer atau dari items
-            let customerName = order.customer?.name || 'Pelanggan';
-            
-            // Jika tidak ada nama di customer, coba ambil dari items pertama
-            if (!order.customer?.name && order.items && order.items.length > 0) {
-                // Coba beberapa kemungkinan field untuk nama
-                const firstItem = order.items[0];
-                if (firstItem.customerName) {
-                    customerName = firstItem.customerName;
-                } else if (firstItem.name && firstItem.name.includes(' - ')) {
-                    // Jika format "Nama - Menu", ambil bagian nama
-                    const parts = firstItem.name.split(' - ');
-                    if (parts.length > 1) {
-                        customerName = parts[0].trim();
-                    }
-                }
+            // Di dalam map function loadNewOrders(), perbaiki:
+let customerName = order.customer?.name || 'Pelanggan';
+let customerPhone = order.customer?.phone || '';
+
+// Jika tidak ada, extract dari items
+if (!customerPhone && order.items && order.items.length > 0) {
+    const firstItem = order.items[0];
+    
+    // Pattern matching untuk nomor
+    if (firstItem.customerPhone) {
+        customerPhone = firstItem.customerPhone;
+    } else if (firstItem.phone) {
+        customerPhone = firstItem.phone;
+    } else if (firstItem.whatsapp) {
+        customerPhone = firstItem.whatsapp;
+    } else if (firstItem.name && firstItem.name.includes('No:')) {
+        // Extract dari string "Nama: John - No: 081234567890 - Menu: ..."
+        const phoneMatch = firstItem.name.match(/No:\s*([0-9+\s]+)/i);
+        if (phoneMatch && phoneMatch[1]) {
+            customerPhone = phoneMatch[1].trim();
+        }
+    }
+    
+    // Extract nama juga
+    if (customerName === 'Pelanggan' && firstItem.name) {
+        if (firstItem.customerName) {
+            customerName = firstItem.customerName;
+        } else if (firstItem.name.includes('Nama:')) {
+            const nameMatch = firstItem.name.match(/Nama:\s*(.+?)(?:\s*-|$)/i);
+            if (nameMatch && nameMatch[1]) {
+                customerName = nameMatch[1].trim();
             }
+        } else if (firstItem.name.includes(' - ')) {
+            const parts = firstItem.name.split(' - ');
+            if (parts.length > 1) {
+                customerName = parts[0].trim();
+            }
+        }
+    }
+}
+
+// Simpan nomor yang ditemukan kembali ke order
+order.customer = order.customer || {};
+order.customer.phone = customerPhone;
+order.customer.name = customerName;
             
             // Format WhatsApp status
             let whatsappStatusHTML = '';
@@ -5737,7 +5766,7 @@ function startAutoRefresh() {
                     closeModal('confirmWhatsAppModal');
                     loadNewOrders();
                     loadAllOrders();
-                    loadDashboardSection();
+                    loadDashboardSection(a);
                     
                     // Tampilkan detail untuk verifikasi
                     viewWhatsAppProofDetail(orderId);
@@ -7403,6 +7432,7 @@ function viewOrderDetail(orderId) {
         let customerName = order.customer?.name || 'Pelanggan';
         let customerPhone = order.customer?.phone || '';
         
+        
         // Cek apakah data nama ada di items
         if (!order.customer?.name && order.items && order.items.length > 0) {
             const firstItem = order.items[0];
@@ -7572,16 +7602,30 @@ function viewOrderDetail(orderId) {
         }
         
         // Tombol WhatsApp jika pelanggan memiliki nomor
-        if (customerPhone) {
-            const formattedPhone = customerPhone.replace(/\D/g, '');
-            const whatsappNumber = formattedPhone.startsWith('0') ? '62' + formattedPhone.substring(1) : formattedPhone;
+
+if (customerPhone) {
+    // Format nomor untuk WhatsApp
+    let formattedPhone = customerPhone.replace(/\D/g, '');
+    if (formattedPhone.startsWith('0')) {
+        formattedPhone = '62' + formattedPhone.substring(1);
+    }
+    
+    // Pesan default yang lebih baik
+    const defaultMessage = `Halo ${customerName},%0A%0A` +
+                          `Mengenai pesanan Anda di MAN CAFE:%0A` +
+                          `• No. Order: ${order.orderNumber || ''}%0A` +
+                          `• Total: Rp ${order.total?.toLocaleString() || '0'}%0A%0A` +
+                          `Pesanan Anda sedang kami proses.%0A` +
+                          `Terima kasih sudah memesan di MAN Cafe!%0A` +
+                          `Ingin reservasi meja? Hubungi kami.%0A%0A` +
+                          `Salam,%0AMAN CAFE Team`;
             
             html += `
-                <button class="btn" style="background: #25D366; color: white; flex: 1; min-width: 120px;" 
-                        onclick="openWhatsAppMessageModal('${whatsappNumber}', 'Halo ${customerName}, mengenai pesanan ${order.orderNumber || ''} di MAN CAFE akan segera kami konfirmasi... Terimakasih sudah memesan di MAN cafe, silahkan jika ingin melakukan reservasi meja setelah kami konfirmasi')">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </button>
-            `;
+        <button class="btn" style="background: #25D366; color: white; flex: 1; min-width: 120px;" 
+                onclick="openWhatsAppMessageModal('${formattedPhone}', '${defaultMessage}')">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+        </button>
+    `;
         }
         
         // Tombol khusus WhatsApp transfer
