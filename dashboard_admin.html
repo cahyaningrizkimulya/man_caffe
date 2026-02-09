@@ -2795,71 +2795,6 @@ async function initializeAdminSystem() {
     } catch (error) {
         console.error('❌ Error initializing admin system:', error);
     }
-
-    // DI DALAM initializeAdminSystem() - setelah setupAdminRealtime()
-function startAggressiveAutoRefresh() {
-    // Refresh setiap 3 detik untuk data real-time
-    setInterval(async () => {
-        if (adminSystem && adminSystem.isOnline) {
-            try {
-                // Force check new orders
-                await checkForNewOrdersImmediate();
-                
-                // Update UI
-                if (currentSection === 'orders' || currentSection === 'dashboard') {
-                    loadSectionData(currentSection);
-                }
-            } catch (error) {
-                console.error('Auto-refresh error:', error);
-            }
-        }
-    }, 3000); // Setiap 3 detik
-    
-    // Deep sync setiap 30 detik
-    setInterval(async () => {
-        if (adminSystem && adminSystem.isOnline) {
-            await syncOrdersFromSupabase();
-            await syncReservationsFromSupabase();
-        }
-    }, 30000);
-}
-
-async function checkForNewOrdersImmediate() {
-    try {
-        // Cek flag dari localStorage (dari pelanggan)
-        const hasNewOrder = localStorage.getItem('new_order_flag') === 'true';
-        const newOrderData = localStorage.getItem('new_order_data');
-        
-        if (hasNewOrder && newOrderData) {
-            console.log('🆕 Immediate new order detected!');
-            
-            const order = JSON.parse(newOrderData);
-            
-            // Tambahkan ke admin system
-            if (!adminSystem.allOrders.some(o => o.id === order.id)) {
-                adminSystem.allOrders.unshift(order);
-            }
-            
-            if ((order.status === 'pending' || order.status === 'waiting_payment') &&
-                !adminSystem.orders.some(o => o.id === order.id)) {
-                adminSystem.orders.unshift(order);
-            }
-            
-            // Clear flag
-            localStorage.removeItem('new_order_flag');
-            localStorage.removeItem('new_order_data');
-            
-            // Update UI
-            updateNotifications();
-            updateStats();
-            
-            // Tampilkan notifikasi
-            showToast(`🆕 Pesanan baru langsung: ${order.orderNumber}`, 'success');
-        }
-    } catch (error) {
-        console.error('Immediate check error:', error);
-    }
-}
 }
 
 function checkForNewOrders() {
@@ -2931,75 +2866,64 @@ function checkForNewOrders() {
     console.log('📥 Loading local data for admin...');
     
     try {
-        // 1. LOAD PENDING ORDERS DARI SEMUA SUMBER
+        // 1. LOAD PENDING ORDERS DARI LOCALSTORAGE
+        const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        console.log('📊 Pending orders found:', pendingOrders.length);
         
-        // Sumber utama: pending_orders
-        let pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-        console.log('📊 Pending orders:', pendingOrders.length);
-        
-        // Sumber backup: customer_orders yang pending
-        let customerPendingOrders = [];
-        try {
-            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-            customerPendingOrders = customerOrders.filter(order => 
-                order.status === 'pending' || order.status === 'waiting_payment'
-            );
-            console.log('📊 Customer pending orders:', customerPendingOrders.length);
-        } catch (e) {
-            console.warn('Error reading customer_orders:', e);
+        // Debug: tampilkan semua pending orders
+        if (pendingOrders.length > 0) {
+            console.log('📋 Pending orders list:');
+            pendingOrders.forEach((order, i) => {
+                console.log(`  [${i}] ${order.orderNumber} - ${order.customer?.name} - Rp ${order.total}`);
+            });
         }
         
-        // Gabungkan dan hapus duplikat
-        const allPendingMap = new Map();
+        // 2. UPDATE ADMIN SYSTEM
+        adminSystem.orders = pendingOrders;
         
-        [...pendingOrders, ...customerPendingOrders].forEach(order => {
-            if (order.id && !allPendingMap.has(order.id)) {
-                allPendingMap.set(order.id, order);
-            }
-        });
+        // 3. LOAD ALL ORDERS
+        adminSystem.allOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
         
-        adminSystem.orders = Array.from(allPendingMap.values());
-        
-        // 2. LOAD ALL ORDERS
-        // Gabungkan dari pending_orders, all_orders, dan customer_orders
-        let allOrders = [];
-        const allOrdersMap = new Map();
-        
-        // Dari all_orders
-        const storedAllOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
-        storedAllOrders.forEach(order => {
-            if (order.id && !allOrdersMap.has(order.id)) {
-                allOrdersMap.set(order.id, order);
-            }
-        });
-        
-        // Dari customer_orders
-        const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-        customerOrders.forEach(order => {
-            if (order.id && !allOrdersMap.has(order.id)) {
-                allOrdersMap.set(order.id, order);
-            }
-        });
-        
-        adminSystem.allOrders = Array.from(allOrdersMap.values());
-        
-        // 3. LOAD DATA LAINNYA
+        // 4. LOAD DATA LAINNYA
         adminSystem.reservations = JSON.parse(localStorage.getItem('pending_reservations') || '[]');
         adminSystem.allReservations = JSON.parse(localStorage.getItem('all_reservations') || '[]');
-        adminSystem.menus = JSON.parse(localStorage.getItem('admin_menus_fresh') || '[]');
+        adminSystem.menus = JSON.parse(localStorage.getItem('admin_menus') || '[]');
         adminSystem.activities = JSON.parse(localStorage.getItem('admin_activities') || '[]');
+        
+        // 5. LOAD CUSTOMER MENUS JIKA PERLU
+        const customerMenus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
+        if (customerMenus.length > 0 && adminSystem.menus.length === 0) {
+            adminSystem.menus = customerMenus;
+            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+        }
+        
+        if (adminSystem.menus.length === 0) {
+            adminSystem.menus = getDefaultMenus();
+            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+            localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+        }
+        
+        if (adminSystem.activities.length === 0) {
+            adminSystem.activities = getDefaultActivities();
+            localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
+        }
         
         console.log(`✅ Loaded: ${adminSystem.orders.length} pending orders, ${adminSystem.allOrders.length} all orders`);
         
     } catch (error) {
         console.error('❌ Error loading local data:', error);
-        // Reset ke default
         adminSystem.menus = getDefaultMenus();
         adminSystem.activities = getDefaultActivities();
         adminSystem.orders = [];
         adminSystem.allOrders = [];
         adminSystem.reservations = [];
         adminSystem.allReservations = [];
+        
+        localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
+        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
+        localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
+        localStorage.setItem('pending_orders', '[]');
+        localStorage.setItem('all_orders', '[]');
     }
 }
 
@@ -3128,67 +3052,96 @@ async function syncMenusFromSupabase() {
 // Di ADMIN, perbaiki fungsi syncOrdersFromSupabase
 async function syncOrdersFromSupabase() {
     try {
-        console.log('🔄 Syncing orders from Supabase...');
+        console.log('🔄 Syncing orders from Supabase (Admin)...');
         
-        // Ambil data terbaru
-        const { data: orders, error } = await supabaseClient
+        // Ambil data dari Supabase dengan semua kolom
+        let { data: orders, error } = await supabaseClient
             .from('orders')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100); // Batasi untuk performa
+            .select(`
+                id,
+                order_number,
+                customer_name,
+                customer_phone,
+                customer_address,
+                order_type,
+                total_amount,
+                items,
+                status,
+                payment_method,
+                payment_status,
+                payment_proof_url,
+                whatsapp_proof_received,
+                whatsapp_proof_verified,
+                whatsapp_proof_notes,
+                admin_seen,
+                created_at,
+                updated_at
+            `)
+            .order('created_at', { ascending: false });
         
         if (error) {
-            console.error('❌ Error fetching orders:', error);
+            console.error('❌ Error fetching orders from Supabase:', error);
             return;
         }
         
+        console.log(`📊 Fetched ${orders?.length || 0} orders from Supabase`);
+        
         if (orders && orders.length > 0) {
-            console.log(`✅ Fetched ${orders.length} orders from Supabase`);
+            // Format data untuk admin system dengan benar
+            adminSystem.allOrders = orders.map(order => {
+                // Parse items jika berupa string
+                let items = [];
+                try {
+                    if (typeof order.items === 'string') {
+                        items = JSON.parse(order.items);
+                    } else {
+                        items = order.items || [];
+                    }
+                } catch (e) {
+                    console.warn('Error parsing items:', e);
+                    items = [];
+                }
+                
+                return {
+                    id: order.id,
+                    orderNumber: order.order_number || `ORD-${order.id.toString().slice(-6)}`,
+                    customer: {
+                        name: order.customer_name || 'Pelanggan',
+                        phone: order.customer_phone || '',
+                        address: order.customer_address || '',
+                        whatsapp: order.customer_phone || ''
+                    },
+                    total: order.total_amount || 0,
+                    status: order.status || 'pending',
+                    paymentProof: order.payment_proof_url || '',
+                    paymentMethod: order.payment_method || 'qris',
+                    paymentStatus: order.payment_status || 'waiting_payment',
+                    whatsappProofReceived: order.whatsapp_proof_received || false,
+                    whatsappProofVerified: order.whatsapp_proof_verified || false,
+                    whatsappProofNotes: order.whatsapp_proof_notes || '',
+                    createdAt: order.created_at || new Date().toISOString(),
+                    adminSeen: order.admin_seen || false,
+                    items: items,
+                    orderType: order.order_type || 'dine_in'
+                };
+            });
             
-            // Format data
-            const formattedOrders = orders.map(order => ({
-                id: order.id,
-                orderNumber: order.order_number,
-                customer: {
-                    name: order.customer_name,
-                    phone: order.customer_phone
-                },
-                total: order.total_amount,
-                status: order.status,
-                paymentMethod: order.payment_method,
-                paymentStatus: order.payment_status,
-                whatsappProofReceived: order.whatsapp_proof_received || false,
-                whatsappProofVerified: order.whatsapp_proof_verified || false,
-                createdAt: order.created_at,
-                adminSeen: false,
-                supabase_id: order.id
-            }));
-            
-            // SIMPAN KE SEMUA TEMPAT
-            // 1. Admin system
-            adminSystem.allOrders = formattedOrders;
-            adminSystem.orders = formattedOrders.filter(o => 
-                o.status === 'pending' || o.status === 'waiting_payment'
+            // Filter pesanan baru (pending dan waiting_payment)
+            adminSystem.orders = adminSystem.allOrders.filter(order => 
+                (order.status === 'pending' || order.status === 'waiting_payment') && 
+                !order.adminSeen
             );
             
-            // 2. LocalStorage admin
+            // Simpan ke localStorage
             localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
             localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
             
-            // 3. LocalStorage pelanggan (jika ada customer phone)
-            const customerPhone = localStorage.getItem('customer_phone');
-            if (customerPhone) {
-                const customerOrders = formattedOrders.filter(o => 
-                    o.customer.phone === customerPhone
-                );
-                localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
-            }
+            console.log(`✅ Admin: ${adminSystem.orders.length} pending, ${adminSystem.allOrders.length} total orders`);
             
-            console.log(`📊 Admin: ${adminSystem.orders.length} pending, ${adminSystem.allOrders.length} total`);
-            
-            // Update UI
+            // Update UI admin
+            loadNewOrders();
+            loadAllOrders();
             updateNotifications();
-            updateStats();
             
         } else {
             console.log('⚠️ No orders found in Supabase');
@@ -3903,110 +3856,84 @@ document.head.appendChild(style);
         }
 
         // ==================== REALTIME UPDATES UNTUK ADMIN ====================
-// DI ADMIN SYSTEM - SETUP REALTIME UNTUK SEMUA PERANGKAT
-async function setupAdminRealtimeForAllDevices() {
+async function setupAdminRealtimeUpdates() {
     try {
-        console.log('📡 Setting up admin real-time for all devices...');
-        
-        // Subscribe ke INSERT events (pesanan baru dari perangkat manapun)
+        // Subscribe ke perubahan di semua tabel
         supabaseClient
-            .channel('admin-all-orders')
+            .channel('admin-updates')
             .on('postgres_changes', 
                 { 
-                    event: 'INSERT', 
+                    event: '*', 
                     schema: 'public', 
-                    table: 'orders' 
+                    table: 'menu_items' 
                 }, 
                 async (payload) => {
-                    console.log('🆕 NEW ORDER FROM ANY DEVICE:', payload.new);
+                    console.log('🔄 Admin: Menu update received:', payload);
                     
-                    // Tambahkan ke sistem admin
-                    const newOrder = this.formatOrderFromSupabase(payload.new);
+                    // Refresh menu di admin
+                    await syncMenusFromSupabase();
                     
-                    // Tambahkan ke admin system
-                    if (!adminSystem.allOrders.some(o => o.id === newOrder.id)) {
-                        adminSystem.allOrders.unshift(newOrder);
+                    // Update tampilan jika sedang di section menu
+                    if (currentSection === 'menu') {
+                        loadMenuManagement();
                     }
                     
-                    // Tambahkan ke pending orders jika status pending
-                    if ((newOrder.status === 'pending' || newOrder.status === 'waiting_payment') && 
-                        !adminSystem.orders.some(o => o.id === newOrder.id)) {
-                        adminSystem.orders.unshift(newOrder);
-                    }
-                    
-                    // Simpan ke localStorage admin
-                    localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
-                    localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
-                    
-                    // Update UI admin
-                    updateNotifications();
+                    // Update stats
                     updateStats();
-                    
-                    // Tampilkan notifikasi
-                    showToast(`📢 Pesanan baru dari ${newOrder.customer?.name || 'pelanggan'}: ${newOrder.orderNumber}`, 'success');
-                    
-                    // Refresh tampilan jika sedang di halaman orders/dashboard
-                    if (currentSection === 'orders' || currentSection === 'dashboard') {
-                        loadSectionData(currentSection);
-                    }
+                    updateProfileStats();
                 }
             )
             .on('postgres_changes',
-                { 
-                    event: 'UPDATE', 
-                    schema: 'public', 
-                    table: 'orders' 
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'orders'
                 },
                 async (payload) => {
-                    console.log('🔄 Order updated from any device:', payload.new);
+                    console.log('🔄 Admin: Orders update received:', payload);
                     
-                    // Update order di admin system
-                    const orderIndex = adminSystem.allOrders.findIndex(o => o.id === payload.new.id);
-                    if (orderIndex !== -1) {
-                        adminSystem.allOrders[orderIndex] = {
-                            ...adminSystem.allOrders[orderIndex],
-                            ...this.formatOrderFromSupabase(payload.new)
-                        };
-                    }
+                    await syncOrdersFromSupabase();
                     
-                    // Update pending orders
-                    const pendingIndex = adminSystem.orders.findIndex(o => o.id === payload.new.id);
-                    if (pendingIndex !== -1) {
-                        if (payload.new.status === 'pending' || payload.new.status === 'waiting_payment') {
-                            adminSystem.orders[pendingIndex] = {
-                                ...adminSystem.orders[pendingIndex],
-                                ...this.formatOrderFromSupabase(payload.new)
-                            };
-                        } else {
-                            // Hapus dari pending jika status berubah
-                            adminSystem.orders.splice(pendingIndex, 1);
-                        }
-                    }
-                    
-                    // Simpan ke localStorage
-                    localStorage.setItem('all_orders', JSON.stringify(adminSystem.allOrders));
-                    localStorage.setItem('pending_orders', JSON.stringify(adminSystem.orders));
-                    
-                    // Update UI
-                    updateNotifications();
-                    updateStats();
-                    
-                    // Refresh tampilan
+                    // Update tampilan order
                     if (currentSection === 'orders' || 
-                        currentSection === 'all-orders' || 
+                        currentSection === 'all-orders' ||
                         currentSection === 'dashboard') {
                         loadSectionData(currentSection);
                     }
-          }
+                    
+                    updateNotifications();
+                    updateStats();
+                }
+            )
+            .on('postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'reservations'
+                },
+                async (payload) => {
+                    console.log('🔄 Admin: Reservations update received:', payload);
+                    
+                    await syncReservationsFromSupabase();
+                    
+                    if (currentSection === 'reservations' || 
+                        currentSection === 'all-reservations') {
+                        loadSectionData(currentSection);
+                    }
+                    
+                    updateNotifications();
+                }
             )
             .subscribe((status) => {
-                console.log('📡 Admin real-time status:', status);
+                console.log('📡 Admin realtime subscription status:', status);
             });
             
     } catch (error) {
-        console.error('❌ Error setting up admin real-time:', error);
+        console.error('❌ Error setting up admin realtime:', error);
     }
-  }
+}
+
+
 
     function loadNewOrders() {
     if (!adminSystem) {
@@ -4165,176 +4092,6 @@ async function setupAdminRealtimeForAllDevices() {
                 </td>
             </tr>
         `;
-    }
-}
-
-// DI ADMIN SYSTEM - AUTO REFRESH YANG LEBIH AGGRESIF
-function startAggressiveAutoRefresh() {
-    if (adminSystem.autoRefreshInterval) {
-        clearInterval(adminSystem.autoRefreshInterval);
-    }
-    
-    adminSystem.autoRefreshInterval = setInterval(async () => {
-        try {
-            console.log('🔄 Aggressive auto-refresh...');
-            
-            // 1. Refresh dari Supabase
-            if (adminSystem.isOnline) {
-                await syncOrdersFromSupabase();
-                await syncReservationsFromSupabase();
-            }
-            
-            // 2. Update stats dan notifications
-            updateStats();
-            updateNotifications();
-            
-            // 3. Refresh section yang aktif
-            if (currentSection) {
-                loadSectionData(currentSection);
-            }
-            
-            // 4. Check untuk pesanan baru (manual sync)
-            await checkForManualSync();
-            
-        } catch (error) {
-            console.error('Auto-refresh error:', error);
-        }
-    }, 5000); // Refresh setiap 5 detik (bukan 30 detik)
-}
-
-// Check manual sync
-async function checkForManualSync() {
-    try {
-        // Cek timestamp terakhir sync
-        const lastSync = localStorage.getItem('last_admin_sync') || '0';
-        const currentTime = Date.now();
-        
-        // Jika lebih dari 10 detik sejak sync terakhir
-        if (currentTime - parseInt(lastSync) > 10000) {
-            console.log('🔄 Manual sync check...');
-            
-            // Force sync dari semua sumber
-            await Promise.all([
-                syncOrdersFromSupabase(),
-                syncReservationsFromSupabase()
-            ]);
-            
-            localStorage.setItem('last_admin_sync', currentTime.toString());
-        }
-    } catch (error) {
-        console.error('Manual sync error:', error);
-    }
-}
-
-// Fungsi untuk memeriksa pesanan baru secara otomatis
-function setupOrderChecker() {
-    // Periksa setiap 3 detik
-    setInterval(() => {
-        if (adminSystem && adminSystem.initialized) {
-            checkForNewOrders();
-        }
-    }, 3000);
-}
-
-async function checkForNewOrders() {
-    try {
-        // Cek flag dari pelanggan
-        const hasNewOrder = localStorage.getItem('new_order_flag') === 'true';
-        const lastCheckTime = localStorage.getItem('last_admin_check') || '0';
-        const currentTime = Date.now();
-        
-        // Jika ada pesanan baru atau belum dicek dalam 10 detik terakhir
-        if (hasNewOrder || (currentTime - parseInt(lastCheckTime) > 10000)) {
-            console.log('🔄 Checking for new orders...');
-            
-            // Refresh data orders
-            await refreshOrders();
-            
-            // Clear flag jika ada
-            if (hasNewOrder) {
-                localStorage.removeItem('new_order_flag');
-                
-                // Tampilkan notifikasi
-                const orderNumber = localStorage.getItem('new_order_number');
-                if (orderNumber) {
-                    showToast(`Pesanan baru: ${orderNumber}`, 'success');
-                    localStorage.removeItem('new_order_number');
-                }
-            }
-            
-            // Update timestamp
-            localStorage.setItem('last_admin_check', currentTime.toString());
-        }
-    } catch (error) {
-        console.error('Error checking for new orders:', error);
-    }
-}
-
-// Panggil di initializeAdminSystem()
-async function initializeAdminSystem() {
-    console.log('🚀 Initializing admin system...');
-    
-    adminSystem = {
-        orders: [],
-        reservations: [],
-        allReservations: [],
-        allOrders: [],
-        menus: [],
-        activities: [],
-        isOnline: true,
-        autoRefreshInterval: null,
-        initialized: false
-    };
-
-    try {
-        // Check connection
-        adminSystem.isOnline = await checkSupabaseConnection();
-        console.log(adminSystem.isOnline ? '✅ Online mode' : '⚠️ Offline mode');
-        
-        // LOAD DATA DARI LOCALSTORAGE
-        loadLocalData();
-        
-        // SETUP AUTO-CHECK UNTUK PESANAN BARU
-        setupOrderChecker();
-        
-        // Setup auto-refresh
-        startAutoRefresh();
-        
-        adminSystem.initialized = true;
-        console.log('✅ Admin System initialized');
-        
-        // Load data pertama kali
-        loadNewOrders();
-        loadAllOrders();
-        updateNotifications();
-        
-    } catch (error) {
-        console.error('❌ Error initializing admin system:', error);
-    }
-}
-
-async function refreshOrders() {
-    if (!adminSystem) return;
-    
-    try {
-        console.log('🔄 Manual refresh orders...');
-        
-        // 1. Load dari semua sumber
-        loadLocalData();
-        
-        // 2. Update tampilan
-        loadNewOrders();
-        loadAllOrders();
-        
-        // 3. Update notifikasi
-        updateNotifications();
-        updateStats();
-        
-        showToast('Pesanan berhasil direfresh', 'success');
-        
-    } catch (error) {
-        console.error('Error refreshing orders:', error);
-        showToast('Gagal merefresh pesanan', 'error');
     }
 }
     
