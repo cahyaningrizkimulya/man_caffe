@@ -2631,23 +2631,28 @@ async init() {
     }
 
     // ==================== ORDER FUNCTIONS ====================
-    async createOrder(orderData) {
-        try {
-            console.log('📝 Creating order:', orderData);
-            
-            let supabaseOrderId = null;
-            const orderNumber = 'ORD-' + Date.now().toString().slice(-8);
-            
-            if (this.isOnline) {
+    // DI CUSTOMER SYSTEM - FUNGSI CREATE ORDER YANG DIPERBAIKI
+async createOrder(orderData) {
+    try {
+        console.log('📝 Creating order for customer...');
+        
+        // 1. SIMPAN KE SUPABASE TERLEBIH DAHULU
+        let supabaseOrderId = null;
+        let supabaseOrder = null;
+        
+        if (this.isOnline) {
+            try {
+                // Insert ke Supabase
                 const { data, error } = await supabaseClient
                     .from('orders')
                     .insert([{
-                        order_number: orderNumber,
+                        order_number: `ORD-${Date.now().toString().slice(-8)}`,
                         customer_name: orderData.customer.name,
                         customer_phone: orderData.customer.phone,
                         customer_address: '-',
                         order_type: orderData.orderType,
                         total_amount: orderData.total,
+                        items: JSON.stringify(orderData.items),
                         status: 'pending',
                         payment_method: 'qris',
                         payment_status: 'waiting_payment',
@@ -2660,78 +2665,104 @@ async init() {
                 if (error) throw error;
                 
                 supabaseOrderId = data.id;
+                supabaseOrder = data;
                 
-                const orderItems = orderData.items.map(item => ({
-                    order_id: data.id,
-                    menu_item_id: item.id,
-                    menu_item_name: item.name,
-                    quantity: item.quantity,
-                    price: item.price,
-                    total_price: item.price * item.quantity
-                }));
+                console.log('✅ Order saved to Supabase with ID:', supabaseOrderId);
                 
-                await supabaseClient
-                    .from('order_items')
-                    .insert(orderItems);
-                
-                console.log('✅ Order saved to Supabase');
+            } catch (error) {
+                console.error('❌ Error saving to Supabase:', error);
+                throw new Error('Gagal menyimpan pesanan ke database');
             }
-            
-            const order = {
-                id: supabaseOrderId || Date.now(),
-                orderNumber: orderNumber,
-                customer: orderData.customer,
-                orderType: orderData.orderType,
-                items: orderData.items,
-                total: orderData.total,
-                status: 'pending',
-                paymentMethod: 'qris',
-                paymentStatus: 'waiting_payment',
-                createdAt: new Date().toISOString(),
-                supabase_id: supabaseOrderId
-            };
-            
-            this.customerPhone = orderData.customer.phone;
-            localStorage.setItem('customer_phone', this.customerPhone);
-            
-            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-            customerOrders.unshift(order);
-            localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
-            
-            window.customerOrders = customerOrders;
-            
-            console.log('✅ Order created:', orderNumber);
-            return order;
-            
-        } catch (error) {
-            console.error('❌ Error creating order:', error);
-            
-            const orderNumber = 'ORD-OFFLINE-' + Date.now().toString().slice(-8);
-            const order = {
-                id: Date.now(),
-                orderNumber: orderNumber,
-                customer: orderData.customer,
-                orderType: orderData.orderType,
-                items: orderData.items,
-                total: orderData.total,
-                status: 'pending',
-                paymentMethod: 'qris',
-                paymentStatus: 'waiting_payment',
-                createdAt: new Date().toISOString(),
-                supabase_id: null
-            };
-            
-            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-            customerOrders.unshift(order);
-            localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
-            
-            window.customerOrders = customerOrders;
-            
-            console.log('✅ Order saved locally (offline):', orderNumber);
-            return order;
         }
+        
+        // 2. FORMAT ORDER OBJECT
+        const order = {
+            id: supabaseOrderId || Date.now(),
+            orderNumber: supabaseOrder?.order_number || `ORD-OFFLINE-${Date.now().toString().slice(-8)}`,
+            customer: orderData.customer,
+            orderType: orderData.orderType,
+            items: orderData.items,
+            total: orderData.total,
+            status: 'pending',
+            paymentMethod: 'qris',
+            paymentStatus: 'waiting_payment',
+            whatsappProofReceived: false,
+            whatsappProofVerified: false,
+            adminSeen: false,
+            createdAt: new Date().toISOString(),
+            supabase_id: supabaseOrderId,
+            // Tambahkan field untuk identifikasi
+            from_device: 'customer_' + navigator.userAgent.slice(0, 50)
+        };
+        
+        // 3. SIMPAN KE LOCALSTORAGE PELANGGAN
+        this.customerPhone = orderData.customer.phone;
+        localStorage.setItem('customer_phone', this.customerPhone);
+        
+        let customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        customerOrders.unshift(order);
+        localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+        window.customerOrders = customerOrders;
+        
+        console.log('✅ Order saved to customer localStorage:', order.orderNumber);
+        
+        // 4. KIRIM NOTIFIKASI KE ADMIN (jika online)
+        if (this.isOnline && supabaseOrderId) {
+            await this.notifyAdminNewOrder(order);
+        }
+        
+        return order;
+        
+    } catch (error) {
+        console.error('❌ Error in createOrder:', error);
+        
+        // Fallback: simpan lokal saja
+        const order = {
+            id: Date.now(),
+            orderNumber: `ORD-OFFLINE-${Date.now().toString().slice(-8)}`,
+            customer: orderData.customer,
+            orderType: orderData.orderType,
+            items: orderData.items,
+            total: orderData.total,
+            status: 'pending',
+            paymentMethod: 'qris',
+            paymentStatus: 'waiting_payment',
+            createdAt: new Date().toISOString(),
+            supabase_id: null,
+            from_device: 'customer_offline'
+        };
+        
+        let customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        customerOrders.unshift(order);
+        localStorage.setItem('customer_orders', JSON.stringify(customerOrders));
+        window.customerOrders = customerOrders;
+        
+        return order;
     }
+}
 
+// Fungsi untuk notify admin
+async notifyAdminNewOrder(order) {
+    try {
+        // Gunakan table khusus untuk notifications
+        await supabaseClient
+            .from('admin_notifications')
+            .insert([{
+                order_id: order.supabase_id,
+                order_number: order.orderNumber,
+                customer_name: order.customer.name,
+                customer_phone: order.customer.phone,
+                total_amount: order.total,
+                status: 'pending',
+                created_at: new Date().toISOString(),
+                admin_seen: false
+            }]);
+            
+        console.log('📢 Notification sent to admin');
+    } catch (error) {
+        console.warn('⚠️ Could not send notification:', error);
+    }
+}
     async loadCustomerOrders() {
     try {
         console.log('📥 Loading customer orders...');
@@ -2913,7 +2944,47 @@ async init() {
             }
         }, 30000);
     }
-
+    
+    // DI CUSTOMER SYSTEM - SETUP REAL-TIME SYNC
+async setupRealTimeSync() {
+    try {
+        console.log('🔄 Setting up real-time sync for customer...');
+        
+        // Subscribe ke perubahan di orders table
+        const subscription = supabaseClient
+            .channel('customer-orders-sync')
+            .on('postgres_changes', 
+                { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'orders',
+                    filter: `customer_phone=eq.${this.customerPhone}`
+                }, 
+                (payload) => {
+                    console.log('🔄 New order received from other device:', payload);
+                    
+                    // Tambahkan ke localStorage pelanggan
+                    let orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+                    orders.unshift(this.formatOrderFromSupabase(payload.new));
+                    localStorage.setItem('customer_orders', JSON.stringify(orders));
+                    window.customerOrders = orders;
+                    
+                    // Update UI
+                    updateOrdersCount();
+                    if (window.location.hash === '#my-orders') {
+                        showOrders('all');
+                    }
+                }
+            )
+            .subscribe();
+            
+        console.log('✅ Real-time sync active');
+        return subscription;
+        
+    } catch (error) {
+        console.error('❌ Error setting up real-time sync:', error);
+    }
+}
     
 }
         // ============================
