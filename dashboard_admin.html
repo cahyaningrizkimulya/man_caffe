@@ -2866,64 +2866,75 @@ function checkForNewOrders() {
     console.log('📥 Loading local data for admin...');
     
     try {
-        // 1. LOAD PENDING ORDERS DARI LOCALSTORAGE
-        const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-        console.log('📊 Pending orders found:', pendingOrders.length);
+        // 1. LOAD PENDING ORDERS DARI SEMUA SUMBER
         
-        // Debug: tampilkan semua pending orders
-        if (pendingOrders.length > 0) {
-            console.log('📋 Pending orders list:');
-            pendingOrders.forEach((order, i) => {
-                console.log(`  [${i}] ${order.orderNumber} - ${order.customer?.name} - Rp ${order.total}`);
-            });
+        // Sumber utama: pending_orders
+        let pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        console.log('📊 Pending orders:', pendingOrders.length);
+        
+        // Sumber backup: customer_orders yang pending
+        let customerPendingOrders = [];
+        try {
+            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            customerPendingOrders = customerOrders.filter(order => 
+                order.status === 'pending' || order.status === 'waiting_payment'
+            );
+            console.log('📊 Customer pending orders:', customerPendingOrders.length);
+        } catch (e) {
+            console.warn('Error reading customer_orders:', e);
         }
         
-        // 2. UPDATE ADMIN SYSTEM
-        adminSystem.orders = pendingOrders;
+        // Gabungkan dan hapus duplikat
+        const allPendingMap = new Map();
         
-        // 3. LOAD ALL ORDERS
-        adminSystem.allOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
+        [...pendingOrders, ...customerPendingOrders].forEach(order => {
+            if (order.id && !allPendingMap.has(order.id)) {
+                allPendingMap.set(order.id, order);
+            }
+        });
         
-        // 4. LOAD DATA LAINNYA
+        adminSystem.orders = Array.from(allPendingMap.values());
+        
+        // 2. LOAD ALL ORDERS
+        // Gabungkan dari pending_orders, all_orders, dan customer_orders
+        let allOrders = [];
+        const allOrdersMap = new Map();
+        
+        // Dari all_orders
+        const storedAllOrders = JSON.parse(localStorage.getItem('all_orders') || '[]');
+        storedAllOrders.forEach(order => {
+            if (order.id && !allOrdersMap.has(order.id)) {
+                allOrdersMap.set(order.id, order);
+            }
+        });
+        
+        // Dari customer_orders
+        const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        customerOrders.forEach(order => {
+            if (order.id && !allOrdersMap.has(order.id)) {
+                allOrdersMap.set(order.id, order);
+            }
+        });
+        
+        adminSystem.allOrders = Array.from(allOrdersMap.values());
+        
+        // 3. LOAD DATA LAINNYA
         adminSystem.reservations = JSON.parse(localStorage.getItem('pending_reservations') || '[]');
         adminSystem.allReservations = JSON.parse(localStorage.getItem('all_reservations') || '[]');
-        adminSystem.menus = JSON.parse(localStorage.getItem('admin_menus') || '[]');
+        adminSystem.menus = JSON.parse(localStorage.getItem('admin_menus_fresh') || '[]');
         adminSystem.activities = JSON.parse(localStorage.getItem('admin_activities') || '[]');
-        
-        // 5. LOAD CUSTOMER MENUS JIKA PERLU
-        const customerMenus = JSON.parse(localStorage.getItem('cafe_menus') || '[]');
-        if (customerMenus.length > 0 && adminSystem.menus.length === 0) {
-            adminSystem.menus = customerMenus;
-            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-        }
-        
-        if (adminSystem.menus.length === 0) {
-            adminSystem.menus = getDefaultMenus();
-            localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-            localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-        }
-        
-        if (adminSystem.activities.length === 0) {
-            adminSystem.activities = getDefaultActivities();
-            localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
-        }
         
         console.log(`✅ Loaded: ${adminSystem.orders.length} pending orders, ${adminSystem.allOrders.length} all orders`);
         
     } catch (error) {
         console.error('❌ Error loading local data:', error);
+        // Reset ke default
         adminSystem.menus = getDefaultMenus();
         adminSystem.activities = getDefaultActivities();
         adminSystem.orders = [];
         adminSystem.allOrders = [];
         adminSystem.reservations = [];
         adminSystem.allReservations = [];
-        
-        localStorage.setItem('admin_menus', JSON.stringify(adminSystem.menus));
-        localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
-        localStorage.setItem('admin_activities', JSON.stringify(adminSystem.activities));
-        localStorage.setItem('pending_orders', '[]');
-        localStorage.setItem('all_orders', '[]');
     }
 }
 
@@ -3943,161 +3954,268 @@ async function setupAdminRealtimeUpdates() {
     
     console.log('📥 Loading new orders for admin...');
     
-    // 1. AMBIL DATA DARI LOCALSTORAGE ADMIN
-    let pendingOrders = [];
     try {
-        pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-        console.log('📊 Pending orders from localStorage:', pendingOrders.length);
+        // 1. CEK SEMUA SUMBER DATA
         
-        // Debug: tampilkan detail setiap order
-        pendingOrders.forEach((order, index) => {
-            console.log(`  [${index}] Order ${order.orderNumber}:`, {
-                name: order.customer?.name,
-                items: order.items?.length,
-                total: order.total
-            });
+        // Sumber 1: pending_orders (utama)
+        let pendingOrders = [];
+        pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        console.log('📊 Pending orders:', pendingOrders.length);
+        
+        // Sumber 2: customer_orders (backup)
+        let customerOrders = [];
+        try {
+            customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]')
+                .filter(order => order.status === 'pending' || order.status === 'waiting_payment');
+            console.log('📊 Customer orders (pending):', customerOrders.length);
+        } catch (e) {
+            console.warn('Error reading customer_orders:', e);
+        }
+        
+        // 2. GABUNGKAN DAN HAPUS DUPLIKAT
+        let allPendingOrders = [];
+        const orderMap = new Map();
+        
+        // Tambahkan dari pending_orders
+        pendingOrders.forEach(order => {
+            if (order.id && !orderMap.has(order.id)) {
+                orderMap.set(order.id, order);
+            }
         });
         
-    } catch (error) {
-        console.error('Error reading pending_orders:', error);
-        pendingOrders = [];
-    }
-    
-    // 2. UPDATE ADMIN SYSTEM
-    adminSystem.orders = pendingOrders;
-    
-    // 3. UPDATE TABLE
-    const table = document.getElementById('newOrdersTable');
-    if (!table) {
-        console.error('❌ Table element not found');
-        return;
-    }
-    
-    if (pendingOrders.length === 0) {
-        table.innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
-                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745; margin-bottom: 1rem;"></i>
-                    <p>Tidak ada pesanan baru</p>
-                    <small>Semua pesanan sudah diproses</small>
-                </td>
-            </tr>
-        `;
-    } else {
-        table.innerHTML = pendingOrders.map(order => {
-            // Format waktu
-            let formattedTime = '--:--';
-            try {
-                if (order.createdAt) {
-                    const orderTime = new Date(order.createdAt);
-                    formattedTime = orderTime.toLocaleTimeString('id-ID', { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: false
-                    });
-                }
-            } catch (e) {
-                console.warn('Error formatting time:', e);
+        // Tambahkan dari customer_orders yang belum ada
+        customerOrders.forEach(order => {
+            if (order.id && !orderMap.has(order.id)) {
+                orderMap.set(order.id, order);
             }
-            
-            // PERBAIKAN: Ambil nama dari customer atau dari items
-            let customerName = order.customer?.name || 'Pelanggan';
-            
-            // Jika tidak ada nama di customer, coba ambil dari items pertama
-            if (!order.customer?.name && order.items && order.items.length > 0) {
-                // Coba beberapa kemungkinan field untuk nama
-                const firstItem = order.items[0];
-                if (firstItem.customerName) {
-                    customerName = firstItem.customerName;
-                } else if (firstItem.name && firstItem.name.includes(' - ')) {
-                    // Jika format "Nama - Menu", ambil bagian nama
-                    const parts = firstItem.name.split(' - ');
-                    if (parts.length > 1) {
-                        customerName = parts[0].trim();
-                    }
-                }
-            }
-            
-            // Format WhatsApp status
-            let whatsappStatusHTML = '';
-            if (order.paymentMethod === 'whatsapp') {
-                if (order.whatsappProofVerified) {
-                    whatsappStatusHTML = `
-                        <span class="whatsapp-status-badge verified">
-                            <i class="fas fa-check-circle"></i> Terverifikasi
-                        </span>
-                    `;
-                } else if (order.whatsappProofReceived) {
-                    whatsappStatusHTML = `
-                        <span class="whatsapp-status-badge received">
-                            <i class="fas fa-check"></i> Dikirim
-                        </span>
-                    `;
-                } else {
-                    whatsappStatusHTML = `
-                        <span class="whatsapp-status-badge waiting">
-                            <i class="fas fa-clock"></i> Menunggu
-                        </span>
-                    `;
-                }
-            }
-            
-            return `
+        });
+        
+        allPendingOrders = Array.from(orderMap.values());
+        
+        // 3. UPDATE ADMIN SYSTEM
+        adminSystem.orders = allPendingOrders;
+        
+        // 4. UPDATE TABLE
+        const table = document.getElementById('newOrdersTable');
+        if (!table) {
+            console.error('❌ Table element not found');
+            return;
+        }
+        
+        if (allPendingOrders.length === 0) {
+            table.innerHTML = `
                 <tr>
-                    <td>${order.orderNumber || 'ORD-' + (order.id || '').toString().slice(-6)}</td>
-                    <td>
-                        <div style="display: flex; flex-direction: column;">
-                            <strong>${customerName}</strong>
-                            ${order.customer?.phone ? 
-                                `<small style="color: #666; font-size: 0.8rem;">
-                                    <i class="fas fa-phone"></i> ${order.customer.phone}
-                                </small>` : ''
-                            }
-                        </div>
-                    </td>
-                    <td>Rp ${order.total?.toLocaleString() || '0'}</td>
-                    <td>${formattedTime}</td>
-                    <td>
-                        <span class="status-badge ${order.status === 'waiting_payment' ? 'status-waiting_payment' : 'status-pending'}">
-                            ${order.status === 'waiting_payment' ? 'Menunggu Pembayaran' : 'Menunggu'}
-                        </span>
-                    </td>
-                    <td>
-
-                
-                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                            <span style="color: #666; font-size: 0.9rem;">
-                                ${order.paymentMethod === 'whatsapp' ? 'WhatsApp' : 'QRIS'}
-                            </span>
-                            ${whatsappStatusHTML}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-primary btn-sm" onclick="viewOrderDetail('${order.id}')" title="Lihat detail pesanan">
-                                <i class="fas fa-eye"></i> Detail
-                            </button>
-                            <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')" title="Konfirmasi pesanan">
-                                <i class="fas fa-check"></i> Konfirmasi
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')" title="Tolak pesanan">
-                                <i class="fas fa-times"></i> Tolak
-                            </button>
-                            ${order.paymentMethod === 'whatsapp' && !order.whatsappProofReceived ? `
-                            <button class="btn btn-warning btn-sm" onclick="checkWhatsAppProof('${order.id}')" title="Cek bukti WhatsApp">
-                                <i class="fab fa-whatsapp"></i> Cek Bukti
-                            </button>` : ''}
-                        </div>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745; margin-bottom: 1rem;"></i>
+                        <p>Tidak ada pesanan baru</p>
+                        <small>Semua pesanan sudah diproses</small>
                     </td>
                 </tr>
             `;
-        }).join('');
+        } else {
+            table.innerHTML = allPendingOrders.map(order => {
+                // Format waktu
+                let formattedTime = '--:--';
+                try {
+                    if (order.createdAt) {
+                        const orderTime = new Date(order.createdAt);
+                        formattedTime = orderTime.toLocaleTimeString('id-ID', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Error formatting time:', e);
+                }
+                
+                // Ambil nama pelanggan
+                let customerName = order.customer?.name || 'Pelanggan';
+                
+                // Coba cari nama dari items jika tidak ada
+                if (!order.customer?.name && order.items && order.items.length > 0) {
+                    const firstItem = order.items[0];
+                    if (firstItem.customerName) {
+                        customerName = firstItem.customerName;
+                    } else if (firstItem.name && firstItem.name.includes(' - ')) {
+                        const parts = firstItem.name.split(' - ');
+                        if (parts.length > 1) {
+                            customerName = parts[0].trim();
+                        }
+                    }
+                }
+                
+                return `
+                    <tr>
+                        <td>${order.orderNumber || 'ORD-' + (order.id || '').toString().slice(-6)}</td>
+                        <td>
+                            <div style="display: flex; flex-direction: column;">
+                                <strong>${customerName}</strong>
+                                ${order.customer?.phone ? 
+                                    `<small style="color: #666; font-size: 0.8rem;">
+                                        <i class="fas fa-phone"></i> ${order.customer.phone}
+                                    </small>` : ''
+                                }
+                            </div>
+                        </td>
+                        <td>Rp ${order.total?.toLocaleString() || '0'}</td>
+                        <td>${formattedTime}</td>
+                        <td>
+                            <span class="status-badge ${order.status === 'waiting_payment' ? 'status-waiting_payment' : 'status-pending'}">
+                                ${order.status === 'waiting_payment' ? 'Menunggu Pembayaran' : 'Menunggu'}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="color: #666; font-size: 0.9rem;">
+                                ${order.paymentMethod === 'whatsapp' ? 'WhatsApp' : 'QRIS'}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="viewOrderDetail('${order.id}')" title="Lihat detail pesanan">
+                                    <i class="fas fa-eye"></i> Detail
+                                </button>
+                                <button class="btn btn-success btn-sm" onclick="confirmOrder('${order.id}')" title="Konfirmasi pesanan">
+                                    <i class="fas fa-check"></i> Konfirmasi
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectOrder('${order.id}')" title="Tolak pesanan">
+                                    <i class="fas fa-times"></i> Tolak
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // 5. UPDATE NOTIFICATIONS
+        updateNotifications();
+        
+        console.log('✅ New orders loaded:', allPendingOrders.length);
+        
+    } catch (error) {
+        console.error('❌ Error loading new orders:', error);
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-exclamation-triangle"></i> Gagal memuat pesanan
+                    <br><small>${error.message}</small>
+                </td>
+            </tr>
+        `;
     }
+}
+
+// Fungsi untuk memeriksa pesanan baru secara otomatis
+function setupOrderChecker() {
+    // Periksa setiap 3 detik
+    setInterval(() => {
+        if (adminSystem && adminSystem.initialized) {
+            checkForNewOrders();
+        }
+    }, 3000);
+}
+
+async function checkForNewOrders() {
+    try {
+        // Cek flag dari pelanggan
+        const hasNewOrder = localStorage.getItem('new_order_flag') === 'true';
+        const lastCheckTime = localStorage.getItem('last_admin_check') || '0';
+        const currentTime = Date.now();
+        
+        // Jika ada pesanan baru atau belum dicek dalam 10 detik terakhir
+        if (hasNewOrder || (currentTime - parseInt(lastCheckTime) > 10000)) {
+            console.log('🔄 Checking for new orders...');
+            
+            // Refresh data orders
+            await refreshOrders();
+            
+            // Clear flag jika ada
+            if (hasNewOrder) {
+                localStorage.removeItem('new_order_flag');
+                
+                // Tampilkan notifikasi
+                const orderNumber = localStorage.getItem('new_order_number');
+                if (orderNumber) {
+                    showToast(`Pesanan baru: ${orderNumber}`, 'success');
+                    localStorage.removeItem('new_order_number');
+                }
+            }
+            
+            // Update timestamp
+            localStorage.setItem('last_admin_check', currentTime.toString());
+        }
+    } catch (error) {
+        console.error('Error checking for new orders:', error);
+    }
+}
+
+// Panggil di initializeAdminSystem()
+async function initializeAdminSystem() {
+    console.log('🚀 Initializing admin system...');
     
-    // 4. UPDATE NOTIFICATIONS
-    updateNotifications();
+    adminSystem = {
+        orders: [],
+        reservations: [],
+        allReservations: [],
+        allOrders: [],
+        menus: [],
+        activities: [],
+        isOnline: true,
+        autoRefreshInterval: null,
+        initialized: false
+    };
+
+    try {
+        // Check connection
+        adminSystem.isOnline = await checkSupabaseConnection();
+        console.log(adminSystem.isOnline ? '✅ Online mode' : '⚠️ Offline mode');
+        
+        // LOAD DATA DARI LOCALSTORAGE
+        loadLocalData();
+        
+        // SETUP AUTO-CHECK UNTUK PESANAN BARU
+        setupOrderChecker();
+        
+        // Setup auto-refresh
+        startAutoRefresh();
+        
+        adminSystem.initialized = true;
+        console.log('✅ Admin System initialized');
+        
+        // Load data pertama kali
+        loadNewOrders();
+        loadAllOrders();
+        updateNotifications();
+        
+    } catch (error) {
+        console.error('❌ Error initializing admin system:', error);
+    }
+}
+
+async function refreshOrders() {
+    if (!adminSystem) return;
     
-    console.log('✅ New orders loaded:', pendingOrders.length);
+    try {
+        console.log('🔄 Manual refresh orders...');
+        
+        // 1. Load dari semua sumber
+        loadLocalData();
+        
+        // 2. Update tampilan
+        loadNewOrders();
+        loadAllOrders();
+        
+        // 3. Update notifikasi
+        updateNotifications();
+        updateStats();
+        
+        showToast('Pesanan berhasil direfresh', 'success');
+        
+    } catch (error) {
+        console.error('Error refreshing orders:', error);
+        showToast('Gagal merefresh pesanan', 'error');
+    }
 }
     
     // 4. UPDATE NOTIFICATIONS
