@@ -2555,52 +2555,80 @@ async init() {
                 '<p class="text-center" style="padding: 2rem; color: #666;">Tidak ada promo saat ini</p>';
         }
     }
-
-    createMenuCard(menu, showCategory = false) {
-        const availableStock = menu.isDailyStock ? menu.currentDailyStock : menu.stock;
-        const isActive = menu.isActive !== false;
-        const hasStock = availableStock > 0;
-        
-        return `
-            <div class="menu-card ${!hasStock ? 'out-of-stock' : ''}">
-                ${menu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
-                ${showCategory ? `<span class="category-badge">${this.getCategoryText(menu.category)}</span>` : ''}
+createMenuCard(menu, showCategory = false) {
+    // Pastikan semua data ada
+    const safeMenu = {
+        id: menu.id || Date.now(),
+        name: menu.name || 'Menu',
+        description: menu.description || '',
+        price: Number(menu.price) || 0,
+        originalPrice: Number(menu.originalPrice) || null,
+        image: menu.image || menu.image_url || 'https://via.placeholder.com/400x300?text=Menu',
+        category: menu.category || 'minuman',
+        isPromo: Boolean(menu.isPromo),
+        isActive: menu.isActive !== false,
+        stock: Number(menu.stock) || 0,
+        isDailyStock: Boolean(menu.isDailyStock),
+        currentDailyStock: Number(menu.currentDailyStock) || 0
+    };
+    
+    // Hitung stok yang tersedia
+    let availableStock = safeMenu.stock;
+    if (safeMenu.isDailyStock) {
+        availableStock = safeMenu.currentDailyStock;
+    }
+    
+    const isActive = safeMenu.isActive;
+    const hasStock = availableStock > 0;
+    
+    return `
+        <div class="menu-card ${!hasStock ? 'out-of-stock' : ''}" 
+             data-menu-id="${safeMenu.id}"
+             data-menu-name="${safeMenu.name}">
+            
+            ${safeMenu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
+            
+            ${showCategory ? 
+                `<span class="category-badge">${this.getCategoryText(safeMenu.category)}</span>` : 
+                ''
+            }
+            
+            <!-- Badge stok -->
+            <div class="stock-badge ${!hasStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
+                <i class="fas fa-box${!hasStock ? '-open' : ''}"></i>
+                ${safeMenu.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
+                ${!hasStock ? 'HABIS' : availableStock}
+            </div>
+            
+            <!-- Gambar -->
+            <img src="${safeMenu.image}" 
+                 alt="${safeMenu.name}"
+                 onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(safeMenu.name)}'">
+            
+            <!-- Info menu -->
+            <div class="menu-info">
+                <h3>${safeMenu.name}</h3>
+                <p class="description">${safeMenu.description}</p>
                 
-                ${!isActive ? 
-                    '<span class="promo-badge" style="background: #6c757d; left: 1rem; right: auto;"><i class="fas fa-ban"></i> Tidak Aktif</span>' : 
-                    ''
+                ${safeMenu.originalPrice ? 
+                    `<p class="price">
+                        <span class="original-price">Rp ${safeMenu.originalPrice.toLocaleString()}</span>
+                        <span class="discount-price">Rp ${safeMenu.price.toLocaleString()}</span>
+                    </p>` :
+                    `<p class="price">Rp ${safeMenu.price.toLocaleString()}</p>`
                 }
                 
-                <div class="stock-badge ${!hasStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
-                    <i class="fas fa-box${!hasStock ? '-open' : ''}"></i>
-                    ${menu.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
-                    ${!hasStock ? 'HABIS' : availableStock}
-                </div>
-                
-                <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu'}" 
-                     alt="${menu.name}"
-                     onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(menu.name)}'"
-                     style="${!isActive ? 'filter: grayscale(0.7); opacity: 0.7;' : ''}">
-                
-                <div class="menu-info">
-                    <h3 style="${!isActive ? 'color: #999;' : ''}">${menu.name}</h3>
-                    <p class="description">${menu.description || ''}</p>
-                    ${menu.originalPrice ? 
-                        `<p class="price">
-                            <span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>
-                            <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
-                        </p>` :
-                        `<p class="price">Rp ${menu.price.toLocaleString()}</p>`
-                    }
-                    <button class="btn-order" onclick="addToCartFromMenu(${menu.id})" 
-                            ${!isActive || !hasStock ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
-                        <i class="fas fa-shopping-cart"></i> 
-                        ${!isActive ? 'Tidak Tersedia' : (!hasStock ? 'Stok Habis' : 'Tambah ke Keranjang')}
-                    </button>
-                </div>
+                <button class="btn-order" 
+                        onclick="addToCartFromMenu(${safeMenu.id})"
+                        data-menu-id="${safeMenu.id}"
+                        ${!isActive || !hasStock ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
+                    <i class="fas fa-shopping-cart"></i> 
+                    ${!isActive ? 'Tidak Tersedia' : (!hasStock ? 'Stok Habis' : 'Tambah ke Keranjang')}
+                </button>
             </div>
-        `;
-    }
+        </div>
+    `;
+}
 
     getCategoryText(category) {
         const categoryMap = {
@@ -2790,51 +2818,61 @@ async init() {
 
     // ==================== CART FUNCTIONS ====================
     // GANTI fungsi addToCart() di CustomerSystem class dengan ini:
+// Di dalam class CustomerSystem
+// GANTI fungsi addToCart() dengan ini:
 addToCart(menuId) {
     console.log('🛒 addToCart called with menuId:', menuId);
+    console.log('Available menus:', window.currentMenus?.length);
     
-    const menu = window.currentMenus?.find(item => item.id == menuId);
+    // Cari menu dengan cara yang lebih robust
+    const menu = window.currentMenus?.find(item => {
+        return item.id == menuId || item.id === menuId || item.id === parseInt(menuId);
+    });
+    
     if (!menu) {
-        console.error('Menu not found:', menuId);
+        console.error('Menu not found for ID:', menuId);
+        console.error('Available menu IDs:', window.currentMenus?.map(m => ({id: m.id, name: m.name})));
         showToast('Menu tidak ditemukan', 'error');
         return false;
     }
     
-    console.log('Menu found:', menu.name);
+    console.log('✅ Found menu:', menu.name, 'ID:', menu.id);
     
     // Cek ketersediaan
-    if (!menu.isActive) {
+    if (menu.isActive === false) {
         showToast('Menu tidak tersedia', 'error');
         return false;
     }
     
     // Hitung stok tersedia
-    let availableStock = menu.stock;
-    if (menu.isDailyStock) {
-        availableStock = menu.currentDailyStock || 0;
+    let availableStock = 0;
+    if (menu.isDailyStock && menu.currentDailyStock !== undefined) {
+        availableStock = menu.currentDailyStock;
+    } else {
+        availableStock = menu.stock || 0;
     }
     
-    console.log('Available stock:', availableStock);
+    console.log('📦 Available stock:', availableStock);
     
     if (availableStock <= 0) {
         showToast('Stok menu habis', 'error');
         return false;
     }
     
-    // Cek apakah item sudah ada di keranjang
-    const existingItem = this.cart.find(item => item.id == menuId);
+    // Cari apakah item sudah ada di keranjang
+    const cartItemIndex = this.cart.findIndex(item => item.id == menuId);
     
-    if (existingItem) {
+    if (cartItemIndex !== -1) {
         // Jika sudah ada, tambah quantity
-        const newQuantity = existingItem.quantity + 1;
+        const newQuantity = this.cart[cartItemIndex].quantity + 1;
         
         if (newQuantity > availableStock) {
             showToast(`Stok tersedia: ${availableStock}`, 'error');
             return false;
         }
         
-        existingItem.quantity = newQuantity;
-        console.log(`Updated quantity for ${menu.name}: ${newQuantity}`);
+        this.cart[cartItemIndex].quantity = newQuantity;
+        console.log(`📈 Updated quantity for ${menu.name}: ${newQuantity}`);
     } else {
         // Jika belum ada, tambah item baru
         if (1 > availableStock) {
@@ -2842,25 +2880,30 @@ addToCart(menuId) {
             return false;
         }
         
-        this.cart.push({
+        const newCartItem = {
             id: menu.id,
             name: menu.name,
             price: menu.price,
             quantity: 1,
-            image: menu.image || menu.image_url
-        });
-        console.log(`Added new item: ${menu.name}`);
+            image: menu.image || menu.image_url,
+            category: menu.category,
+            originalPrice: menu.originalPrice
+        };
+        
+        this.cart.push(newCartItem);
+        console.log(`➕ Added new item: ${menu.name}`);
     }
     
     // Simpan ke localStorage
     this.saveCart();
     
     // Debug: tampilkan isi keranjang
-    console.log('Cart after update:', this.cart);
-    console.log('Cart total items:', this.cart.reduce((sum, item) => sum + item.quantity, 0));
+    console.log('🛒 Cart contents after update:', this.cart);
+    console.log('🛒 Cart total items:', this.cart.reduce((sum, item) => sum + item.quantity, 0));
     
     return true;
 }
+
     removeFromCart(itemId) {
         this.cart = this.cart.filter(item => item.id != itemId);
         this.saveCart();
@@ -3296,6 +3339,7 @@ setTimeout(() => {
 
         // ==================== CART FUNCTIONS ====================
     // GANTI fungsi addToCartFromMenu() dengan ini:
+// ==================== GLOBAL FUNCTIONS ====================
 function addToCartFromMenu(menuId) {
     console.log('🛒 addToCartFromMenu called with menuId:', menuId);
     
@@ -3327,8 +3371,6 @@ function addToCartFromMenu(menuId) {
     return false;
 }
 
-       // Dalam fungsi updateCartDisplay() - perbaiki tampilan:
-// GANTI fungsi updateCartDisplay() dengan ini:
 function updateCartDisplay() {
     console.log('🔄 updateCartDisplay called');
     
@@ -3345,16 +3387,14 @@ function updateCartDisplay() {
     console.log('Cart length:', customerSystem.cart.length);
     
     if (customerSystem.cart.length === 0) {
-        console.log('Cart is empty');
         container.innerHTML = '';
-        emptyMessage.style.display = 'block';
-        totalDiv.style.display = 'none';
-        checkoutButtons.style.display = 'none';
+        if (emptyMessage) emptyMessage.style.display = 'block';
+        if (totalDiv) totalDiv.style.display = 'none';
+        if (checkoutButtons) checkoutButtons.style.display = 'none';
         return;
     }
     
-    console.log('Cart has items, updating display...');
-    emptyMessage.style.display = 'none';
+    if (emptyMessage) emptyMessage.style.display = 'none';
     
     let cartHTML = '';
     
@@ -3372,25 +3412,20 @@ function updateCartDisplay() {
                 </div>
                 <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: nowrap;">
                     <div class="quantity-control" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <button class="quantity-btn" 
-                                onclick="updateCartItemQuantity(${item.id}, ${item.quantity - 1})"
-                                style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #f0f0f0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <button class="quantity-btn" onclick="updateCartItemQuantity(${item.id}, ${item.quantity - 1})">
                             <i class="fas fa-minus" style="font-size: 0.7rem;"></i>
                         </button>
                         <span style="min-width: 30px; text-align: center; font-weight: bold; font-size: 0.9rem;">
                             ${item.quantity}
                         </span>
-                        <button class="quantity-btn" 
-                                onclick="updateCartItemQuantity(${item.id}, ${item.quantity + 1})"
-                                style="width: 28px; height: 28px; border-radius: 50%; border: none; background: #f0f0f0; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <button class="quantity-btn" onclick="updateCartItemQuantity(${item.id}, ${item.quantity + 1})">
                             <i class="fas fa-plus" style="font-size: 0.7rem;"></i>
                         </button>
                     </div>
                     <p style="font-weight: bold; font-size: 0.95rem; min-width: 100px; text-align: right;">
                         Rp ${itemTotal.toLocaleString()}
                     </p>
-                    <button onclick="removeCartItem(${item.id})" 
-                            style="color: #dc3545; background: none; border: none; cursor: pointer; padding: 0.3rem; font-size: 1rem; flex-shrink: 0;">
+                    <button onclick="removeCartItem(${item.id})" style="color: #dc3545; background: none; border: none; cursor: pointer; padding: 0.3rem; font-size: 1rem; flex-shrink: 0;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -3398,17 +3433,17 @@ function updateCartDisplay() {
         `;
     });
     
-    container.innerHTML = cartHTML;
+    if (container) container.innerHTML = cartHTML;
     
     // Update total
     const total = customerSystem.getCartTotal();
-    document.getElementById('total-amount').textContent = total.toLocaleString();
-    totalDiv.style.display = 'block';
-    checkoutButtons.style.display = 'flex';
-    
-    console.log('Cart display updated, total items:', customerSystem.cart.reduce((sum, item) => sum + item.quantity, 0));
+    if (document.getElementById('total-amount')) {
+        document.getElementById('total-amount').textContent = total.toLocaleString();
+    }
+    if (totalDiv) totalDiv.style.display = 'block';
+    if (checkoutButtons) checkoutButtons.style.display = 'flex';
 }
-      // GANTI fungsi updateCartItemQuantity() dengan ini:
+
 function updateCartItemQuantity(itemId, quantity) {
     console.log('📝 updateCartItemQuantity called - itemId:', itemId, 'quantity:', quantity);
     
@@ -3468,29 +3503,11 @@ function removeCartItem(itemId) {
     updateCartCount();
     showToast(`${item.name} dihapus dari keranjang`, 'info');
 }
-
-function clearCart() {
+function updateCartCount() {
     if (!customerSystem) return;
-    
-    if (customerSystem.cart.length === 0) {
-        showToast('Keranjang sudah kosong', 'info');
-        return;
-    }
-    
-    if (confirm('Yakin ingin mengosongkan keranjang?')) {
-        customerSystem.clearCart();
-        updateCartDisplay();
-        updateCartCount();
-        showToast('Keranjang dikosongkan', 'info');
-    }
+    const count = customerSystem.cart.reduce((total, item) => total + item.quantity, 0);
+    document.querySelector('.cart-count').textContent = count;
 }
-
-        function updateCartCount() {
-            if (!customerSystem) return;
-            const count = customerSystem.cart.reduce((total, item) => total + item.quantity, 0);
-            document.querySelector('.cart-count').textContent = count;
-        }
-
         function clearCart() {
             if (!customerSystem) return;
             
@@ -5259,29 +5276,29 @@ function validateGuestsCount() {
 
         // ==================== INITIALIZATION ====================
      // Di bagian DOMContentLoaded, pastikan:
+// Perbaiki DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Initializing MAN CAFE...');
     
     try {
         customerSystem = new CustomerSystem();
         
-        // Pastikan currentMenus sudah terload
-        window.currentMenus = await customerSystem.loadMenus();
-        console.log('✅ Menus loaded:', window.currentMenus?.length || 0);
-        
-        // Initialize cart
-        customerSystem.cart = JSON.parse(localStorage.getItem('customer_cart') || '[]');
-        console.log('✅ Cart loaded:', customerSystem.cart.length, 'items');
-        
-        // Update UI
-        updateCartDisplay();
-        updateCartCount();
+        // Inisialisasi customer system
+        await customerSystem.init();
         
         // Setup navigation
         setupNavigation();
         
         console.log('✅ MAN CAFE ready!');
-        console.log('🛒 Cart on load:', customerSystem.cart);
+        console.log('🛒 Initial cart:', customerSystem.cart);
+        console.log('📋 Available menus:', window.currentMenus?.length || 0);
+        
+        // Test: tambahkan item ke keranjang untuk testing
+        setTimeout(() => {
+            if (customerSystem.cart.length === 0) {
+                console.log('Cart is empty, ready for orders');
+            }
+        }, 1000);
         
     } catch (error) {
         console.error('❌ Initialization error:', error);
