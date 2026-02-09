@@ -3003,7 +3003,7 @@ function checkForNewOrders() {
        // ==================== SYNC MENUS WITH CONFLICT RESOLUTION ====================
 async function syncMenusFromSupabase() {
     try {
-        console.log('🔄 Syncing menus from Supabase...');
+        console.log('🔄 Syncing menus from Supabase (Admin)...');
         
         let { data: menus, error } = await supabaseClient
             .from('menu_items')
@@ -3016,7 +3016,7 @@ async function syncMenusFromSupabase() {
         }
         
         if (menus && menus.length > 0) {
-            // Format data dengan benar
+            // Format data untuk admin
             adminSystem.menus = menus.map(menu => ({
                 id: menu.id,
                 name: menu.name || 'Unnamed Menu',
@@ -3034,15 +3034,10 @@ async function syncMenusFromSupabase() {
                 last_updated: menu.updated_at || menu.created_at
             }));
             
-            // SIMPAN KE CACHE YANG SAMA DENGAN PELANGGAN
-            localStorage.setItem('cafe_menus_fresh', JSON.stringify(adminSystem.menus));
+            // Simpan ke cache ADMIN SAJA
             localStorage.setItem('admin_menus_fresh', JSON.stringify(adminSystem.menus));
-            localStorage.setItem('cafe_menus', JSON.stringify(adminSystem.menus));
             
-            localStorage.setItem('admin_menus_last_sync', Date.now().toString());
-            localStorage.setItem('force_menu_refresh', Date.now().toString());
-            
-            console.log(`✅ Synced ${menus.length} menus and updated all caches`);
+            console.log(`✅ Admin: Synced ${menus.length} menus`);
             
         } else {
             console.log('⚠️ No menus found in Supabase');
