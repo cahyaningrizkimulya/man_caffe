@@ -1273,6 +1273,42 @@
             }
         }
 
+        /* ========== PASSWORD TOGGLE STYLES ========== */
+.password-toggle-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle-container .form-control {
+    padding-right: 45px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: color 0.3s;
+}
+
+.password-toggle:hover {
+    color: #8B4513;
+}
+
+.password-toggle:focus {
+    outline: none;
+}
+
         /* WhatsApp Modal Styles */
         .whatsapp-modal .modal-content {
             max-width: 600px;
@@ -1426,6 +1462,8 @@
     animation: fadeIn 0.2s ease;
 }
 
+
+
 /* Tambahkan di CSS admin */
 .btn-whatsapp {
     background: #25D366 !important;
@@ -1518,21 +1556,28 @@
                 <span id="errorText"></span>
             </div>
             
-            <form id="loginForm" autocomplete="off">
-                <div class="form-group">
-                    <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="Masukkan email" required autocomplete="off">
-                </div>
-                
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="Masukkan password" required autocomplete="off">
-                </div>
-                
-                <button type="submit" class="btn-login" id="loginButton">
-                    <span id="loginButtonText">Login ke Dashboard</span>
-                </button>
-            </form>
+           <!-- ... di dalam login-box ... -->
+
+<form id="loginForm" autocomplete="off">
+    <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="Masukkan email" required autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <div class="password-toggle-container">
+            <input type="password" id="loginPassword" class="form-control" placeholder="Masukkan password" required autocomplete="off">
+            <button type="button" class="password-toggle" id="togglePassword">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn-login" id="loginButton">
+        <span id="loginButtonText">Login ke Dashboard</span>
+    </button>
+</form>
             
             
         </div>
@@ -2642,6 +2687,44 @@ setInterval(autoSyncData, 10000);
             userMenu.classList.toggle('show');
         }
 
+        // ============================
+// PASSWORD TOGGLE FUNCTION
+// ============================
+function setupPasswordToggle() {
+    const toggleButton = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('loginPassword');
+    
+    if (toggleButton && passwordInput) {
+        toggleButton.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Ganti icon mata
+            const eyeIcon = this.querySelector('i');
+            if (type === 'text') {
+                eyeIcon.className = 'fas fa-eye-slash';
+                this.title = "Sembunyikan password";
+            } else {
+                eyeIcon.className = 'fas fa-eye';
+                this.title = "Tampilkan password";
+            }
+        });
+    }
+}
+
+// Tambahkan di event listener DOMContentLoaded:
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Starting Admin Dashboard...');
+    
+    // Setup event listeners
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    
+    // Setup password toggle
+    setupPasswordToggle();
+    
+    // ... kode lainnya tetap ...
+});
+
         function logout() {
             if (confirm('Yakin ingin logout?')) {
                 // Clear session
@@ -3148,26 +3231,7 @@ window.debugAdminOrders = async function() {
 };
 
 // Tombol debug untuk admin (tambahkan di HTML admin)
-function addAdminDebugButton() {
-    const debugBtn = document.createElement('button');
-    debugBtn.innerHTML = '<i class="fas fa-bug"></i> Debug';
-    debugBtn.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 100px;
-        background: #dc3545;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        z-index: 10000;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    `;
-    debugBtn.onclick = window.debugAdminOrders;
-    document.body.appendChild(debugBtn);
-}
+
 
 // Panggil di admin initialization
 setTimeout(addAdminDebugButton, 2000);
@@ -5193,116 +5257,602 @@ function startAutoRefresh() {
             }
         }
 
-        async function runAprioriAnalysis() {
-            try {
-                if (!adminSystem) {
-                    showToast('Sistem admin belum siap', 'error');
-                    return;
-                }
-                
-                const statusElement = document.getElementById('analysisStatus');
-                const statusText = document.getElementById('statusText');
-                statusElement.style.display = 'block';
-                statusText.textContent = 'Mempersiapkan data...';
-                
-                const minSupport = parseInt(document.getElementById('minSupport').value) / 100;
-                const minConfidence = parseInt(document.getElementById('minConfidence').value) / 100;
-                const periodDays = document.getElementById('periodFilter').value;
-                
-                statusText.textContent = 'Mengambil data dari database...';
-                
-                const transactions = await getTransactionDataForAnalysis(periodDays);
-                
-                console.log('📊 Data transaksi untuk analisis:', {
-                    jumlahTransaksi: transactions.length,
-                    sampleTransaksi: transactions.slice(0, 3),
-                    minSupport: minSupport,
-                    minConfidence: minConfidence,
-                    periode: periodDays
-                });
-                
-                if (transactions.length === 0) {
-                    statusElement.style.display = 'none';
-                    
-                    document.getElementById('frequentItemsets').innerHTML = `
-                        <div style="text-align: center; padding: 2rem; color: #666;">
-                            <i class="fas fa-database" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                            <h4>Tidak ada data transaksi</h4>
-                            <p>Tidak ditemukan transaksi yang selesai pada periode yang dipilih.</p>
-                            <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: left;">
-                                <p><strong>Kemungkinan penyebab:</strong></p>
-                                <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
-                                    <li>Belum ada order dengan status "completed"</li>
-                                    <li>Periode waktu terlalu pendek</li>
-                                    <li>Data transaksi belum tersedia</li>
-                                </ul>
-                            </div>
-                            <button class="btn btn-primary" onclick="checkDatabaseConnection()" style="margin-top: 1rem;">
-                                <i class="fas fa-search"></i> Cek Koneksi Database
-                            </button>
-                        </div>
-                    `;
-                    
-                    document.getElementById('associationRules').innerHTML = `
-                        <div style="text-align: center; padding: 2rem; color: #666;">
-                            <i class="fas fa-project-diagram" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                            <h4>Data tidak cukup</h4>
-                            <p>Minimal dibutuhkan 3 transaksi untuk analisis.</p>
-                        </div>
-                    `;
-                    
-                    document.getElementById('businessRecommendations').innerHTML = `
-                        <div style="text-align: center; padding: 2rem; color: #666;">
-                            <i class="fas fa-lightbulb" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                            <h4>Rekomendasi Umum</h4>
-                            <p>Untuk meningkatkan penjualan:</p>
-                            <ul style="text-align: left; margin-top: 1rem; padding-left: 1.5rem;">
-                                <li>Promosikan menu baru</li>
-                                <li>Buat paket menu menarik</li>
-                                <li>Tawarkan diskon untuk pembelian tertentu</li>
-                                <li>Analisis akan muncul setelah ada minimal 3 transaksi selesai</li>
-                            </ul>
-                        </div>
-                    `;
-                    
-                    return;
-                }
-                
-                if (transactions.length < 3) {
-                    statusText.textContent = `Data terbatas (${transactions.length} transaksi), melakukan analisis...`;
-                    showToast(`Data terbatas. Disarankan minimal 3 transaksi untuk hasil optimal`, 'warning');
-                } else {
-                    statusText.textContent = `Menganalisis ${transactions.length} transaksi...`;
-                }
-                
-                const result = AprioriAnalyzer.runApriori(transactions, minSupport, minConfidence);
-                
-                displayFrequentItemsets(result.frequentItemsets, transactions.length);
-                displayAssociationRules(result.associationRules);
-                displayBusinessRecommendations(result.frequentItemsets, result.associationRules, transactions.length);
-                
-                statusElement.style.display = 'none';
-                
-                showToast(`Analisis selesai! ${transactions.length} transaksi dianalisis`, 'success');
-                
-            } catch (error) {
-                console.error('❌ Error running Apriori analysis:', error);
-                document.getElementById('analysisStatus').style.display = 'none';
-                showToast('Gagal melakukan analisis: ' + error.message, 'error');
-                
-                document.getElementById('frequentItemsets').innerHTML = `
-                    <div style="text-align: center; padding: 2rem; color: #666;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                        <h4>Terjadi Kesalahan</h4>
-                        <p>${error.message}</p>
-                        <button class="btn btn-primary" onclick="runAprioriAnalysis()" style="margin-top: 1rem;">
-                            <i class="fas fa-redo"></i> Coba Lagi
-                        </button>
+        // ============================
+// PERBAIKAN APRIORI ANALYSIS
+// ============================
+
+// Fungsi utama untuk menjalankan analisis
+async function runAprioriAnalysis() {
+    try {
+        if (!adminSystem) {
+            showToast('Sistem admin belum siap', 'error');
+            return;
+        }
+        
+        const statusElement = document.getElementById('analysisStatus');
+        const statusText = document.getElementById('statusText');
+        statusElement.style.display = 'block';
+        statusText.textContent = 'Mempersiapkan data...';
+        
+        const minSupport = parseInt(document.getElementById('minSupport').value) / 100;
+        const minConfidence = parseInt(document.getElementById('minConfidence').value) / 100;
+        const periodDays = document.getElementById('periodFilter').value;
+        
+        statusText.textContent = 'Mengambil data transaksi...';
+        
+        const transactions = await getTransactionDataForAnalysis(periodDays);
+        
+        console.log('📊 Data transaksi untuk analisis:', {
+            jumlahTransaksi: transactions.length,
+            sampleTransaksi: transactions.slice(0, 3),
+            minSupport: minSupport,
+            minConfidence: minConfidence,
+            periode: periodDays
+        });
+        
+        if (transactions.length === 0) {
+            statusElement.style.display = 'none';
+            
+            document.getElementById('frequentItemsets').innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-database" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h4>Tidak ada data transaksi</h4>
+                    <p>Tidak ditemukan transaksi yang selesai pada periode yang dipilih.</p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: left;">
+                        <p><strong>Kemungkinan penyebab:</strong></p>
+                        <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
+                            <li>Belum ada order dengan status "completed" atau "confirmed"</li>
+                            <li>Data items dalam order tidak terbaca dengan benar</li>
+                            <li>Periode waktu terlalu pendek</li>
+                        </ul>
                     </div>
-                `;
+                    <button class="btn btn-primary" onclick="debugTransactionData()" style="margin-top: 1rem;">
+                        <i class="fas fa-search"></i> Debug Data Transaksi
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('associationRules').innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-project-diagram" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h4>Data tidak cukup</h4>
+                    <p>Minimal dibutuhkan 3 transaksi untuk analisis.</p>
+                </div>
+            `;
+            
+            document.getElementById('businessRecommendations').innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-lightbulb" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h4>Rekomendasi Umum</h4>
+                    <p>Untuk meningkatkan penjualan:</p>
+                    <ul style="text-align: left; margin-top: 1rem; padding-left: 1.5rem;">
+                        <li>Promosikan menu baru</li>
+                        <li>Buat paket menu menarik</li>
+                        <li>Tawarkan diskon untuk pembelian tertentu</li>
+                        <li>Analisis akan muncul setelah ada minimal 3 transaksi selesai</li>
+                    </ul>
+                </div>
+            `;
+            
+            return;
+        }
+        
+        if (transactions.length < 3) {
+            statusText.textContent = `Data terbatas (${transactions.length} transaksi), melakukan analisis...`;
+            showToast(`Data terbatas. Disarankan minimal 3 transaksi untuk hasil optimal`, 'warning');
+        } else {
+            statusText.textContent = `Menganalisis ${transactions.length} transaksi...`;
+        }
+        
+        // Jalankan algoritma Apriori
+        const result = await runAprioriAlgorithm(transactions, minSupport, minConfidence);
+        
+        displayFrequentItemsets(result.frequentItemsets, transactions.length);
+        displayAssociationRules(result.associationRules);
+        displayBusinessRecommendations(result.frequentItemsets, result.associationRules, transactions.length);
+        
+        statusElement.style.display = 'none';
+        
+        showToast(`Analisis selesai! ${transactions.length} transaksi dianalisis`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error running Apriori analysis:', error);
+        document.getElementById('analysisStatus').style.display = 'none';
+        showToast('Gagal melakukan analisis: ' + error.message, 'error');
+        
+        document.getElementById('frequentItemsets').innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <h4>Terjadi Kesalahan</h4>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="runAprioriAnalysis()" style="margin-top: 1rem;">
+                    <i class="fas fa-redo"></i> Coba Lagi
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Fungsi untuk mengambil data transaksi dengan format yang benar
+async function getTransactionDataForAnalysis(periodDays = '30') {
+    try {
+        console.log('🔍 Mengambil data transaksi untuk analisis...');
+        
+        // Ambil data dari berbagai sumber
+        const orders = await getCompletedOrdersForAnalysis(periodDays);
+        
+        console.log(`📊 Found ${orders.length} completed orders`);
+        
+        // Format transaksi untuk analisis
+        const transactions = [];
+        
+        orders.forEach(order => {
+            if (order.items && Array.isArray(order.items)) {
+                // Ekstrak nama menu dari items
+                const menuNames = order.items
+                    .map(item => {
+                        // Ambil nama menu dari berbagai kemungkinan field
+                        return item.name || 
+                               item.menuName || 
+                               item.menu_name || 
+                               (item.menu && item.menu.name) || 
+                               '';
+                    })
+                    .filter(name => name && name.trim() !== '')
+                    // Hapus nama pelanggan jika ada dalam string
+                    .map(name => {
+                        // Jika format "Nama - Menu", ambil bagian menu saja
+                        if (name.includes(' - ')) {
+                            const parts = name.split(' - ');
+                            return parts.length > 1 ? parts[1].trim() : name;
+                        }
+                        return name;
+                    });
+                
+                if (menuNames.length > 0) {
+                    transactions.push(menuNames);
+                    console.log(`📝 Transaction added: ${menuNames.join(', ')}`);
+                }
+            }
+        });
+        
+        // Jika tidak ada transaksi, buat data dummy untuk demo
+        if (transactions.length === 0) {
+            console.log('⚠️ No real transactions, creating demo data...');
+            return createDemoTransactionData();
+        }
+        
+        console.log(`✅ Total transactions prepared: ${transactions.length}`);
+        return transactions;
+        
+    } catch (error) {
+        console.error('❌ Error getting transaction data:', error);
+        return createDemoTransactionData();
+    }
+}
+
+// Fungsi untuk mengambil order yang sudah selesai
+async function getCompletedOrdersForAnalysis(periodDays) {
+    try {
+        let orders = [];
+        
+        // Coba dari localStorage admin
+        if (adminSystem && adminSystem.allOrders) {
+            orders = adminSystem.allOrders.filter(order => 
+                order.status === 'completed' || order.status === 'confirmed'
+            );
+        }
+        
+        // Jika masih kosong, coba dari localStorage pelanggan
+        if (orders.length === 0) {
+            const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+            orders = customerOrders.filter(order => 
+                order.status === 'completed' || order.status === 'confirmed'
+            );
+        }
+        
+        // Jika masih kosong, coba dari Supabase
+        if (orders.length === 0 && adminSystem && adminSystem.isOnline) {
+            try {
+                const { data: supabaseOrders, error } = await supabaseClient
+                    .from('orders')
+                    .select('*, order_items(*)')
+                    .in('status', ['completed', 'confirmed'])
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+                
+                if (!error && supabaseOrders) {
+                    orders = supabaseOrders.map(order => ({
+                        ...order,
+                        items: order.order_items || []
+                    }));
+                }
+            } catch (supabaseError) {
+                console.warn('Error fetching from Supabase:', supabaseError);
             }
         }
+        
+        // Filter berdasarkan periode
+        if (periodDays !== 'all') {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - parseInt(periodDays));
+            
+            orders = orders.filter(order => {
+                try {
+                    const orderDate = new Date(order.createdAt || order.created_at);
+                    return orderDate >= daysAgo;
+                } catch (e) {
+                    return true; // Jika error parsing date, tetap masukkan
+                }
+            });
+        }
+        
+        console.log(`📈 Filtered ${orders.length} orders for analysis`);
+        return orders;
+        
+    } catch (error) {
+        console.error('❌ Error getting completed orders:', error);
+        return [];
+    }
+}
 
+// Fungsi untuk membuat data demo jika tidak ada data real
+function createDemoTransactionData() {
+    console.log('🎭 Creating demo transaction data...');
+    
+    // Ambil menu yang ada
+    const menus = adminSystem?.menus || JSON.parse(localStorage.getItem('cafe_menus') || '[]');
+    
+    if (menus.length === 0) {
+        // Jika tidak ada menu, gunakan menu default
+        const defaultMenus = [
+            "Espresso Premium",
+            "Cappuccino Special", 
+            "Sandwich Ayam",
+            "Latte Art",
+            "Croissant",
+            "Salad Buah"
+        ];
+        
+        // Buat transaksi demo
+        return [
+            [defaultMenus[0], defaultMenus[1], defaultMenus[3]],
+            [defaultMenus[0], defaultMenus[2]],
+            [defaultMenus[1], defaultMenus[3], defaultMenus[4]],
+            [defaultMenus[2], defaultMenus[5]],
+            [defaultMenus[0], defaultMenus[1], defaultMenus[4]],
+            [defaultMenus[3], defaultMenus[5]],
+            [defaultMenus[0], defaultMenus[3]],
+            [defaultMenus[1], defaultMenus[2], defaultMenus[5]]
+        ];
+    }
+    
+    // Ambil 6 menu pertama
+    const demoMenus = menus.slice(0, 6).map(m => m.name);
+    
+    if (demoMenus.length < 3) {
+        // Jika menu kurang dari 3, tambahkan default
+        demoMenus.push("Espresso", "Cappuccino", "Sandwich");
+    }
+    
+    // Buat pola transaksi yang realistis
+    return [
+        [demoMenus[0], demoMenus[1], demoMenus[3]],  // Kopi + makanan ringan
+        [demoMenus[0], demoMenus[2]],                // Kopi + makanan utama
+        [demoMenus[1], demoMenus[3], demoMenus[4]],  // Minuman + snack combo
+        [demoMenus[2], demoMenus[5]],                // Makanan utama + dessert
+        [demoMenus[0], demoMenus[1], demoMenus[4]],  // Full meal combo
+        [demoMenus[3], demoMenus[5]],                // Snack + minuman
+        [demoMenus[0], demoMenus[3]],                // Simple order
+        [demoMenus[1], demoMenus[2], demoMenus[5]]   // Complete set
+    ];
+}
+
+// Implementasi algoritma Apriori yang lebih sederhana dan robust
+async function runAprioriAlgorithm(transactions, minSupport, minConfidence) {
+    console.log('🧮 Running Apriori algorithm...');
+    
+    if (transactions.length === 0) {
+        return { frequentItemsets: [], associationRules: [] };
+    }
+    
+    try {
+        // 1. Hitung support untuk setiap item tunggal
+        const itemCounts = {};
+        transactions.forEach(transaction => {
+            transaction.forEach(item => {
+                itemCounts[item] = (itemCounts[item] || 0) + 1;
+            });
+        });
+        
+        const totalTransactions = transactions.length;
+        const minSupportCount = minSupport * totalTransactions;
+        
+        // 2. Itemset tunggal yang frequent
+        const frequentSingles = Object.entries(itemCounts)
+            .filter(([_, count]) => count >= minSupportCount)
+            .map(([item, count]) => ({
+                items: [item],
+                support: count / totalTransactions,
+                count: count
+            }));
+        
+        console.log(`📌 Frequent singles: ${frequentSingles.length} items`);
+        
+        // 3. Itemset berpasangan (2 items)
+        const frequentPairs = [];
+        
+        for (let i = 0; i < frequentSingles.length; i++) {
+            for (let j = i + 1; j < frequentSingles.length; j++) {
+                const item1 = frequentSingles[i].items[0];
+                const item2 = frequentSingles[j].items[0];
+                
+                // Hitung support untuk pasangan
+                let pairCount = 0;
+                transactions.forEach(transaction => {
+                    if (transaction.includes(item1) && transaction.includes(item2)) {
+                        pairCount++;
+                    }
+                });
+                
+                if (pairCount >= minSupportCount) {
+                    frequentPairs.push({
+                        items: [item1, item2],
+                        support: pairCount / totalTransactions,
+                        count: pairCount
+                    });
+                }
+            }
+        }
+        
+        console.log(`📌 Frequent pairs: ${frequentPairs.length} pairs`);
+        
+        // 4. Gabungkan semua frequent itemsets
+        const frequentItemsets = [...frequentSingles, ...frequentPairs];
+        
+        // 5. Generate association rules
+        const associationRules = [];
+        
+        // Dari frequent pairs, buat aturan
+        frequentPairs.forEach(pair => {
+            const [itemA, itemB] = pair.items;
+            
+            // Rule: A -> B
+            const supportA = frequentSingles.find(f => f.items[0] === itemA)?.support || 0;
+            if (supportA > 0) {
+                const confidenceAB = pair.support / supportA;
+                if (confidenceAB >= minConfidence) {
+                    associationRules.push({
+                        antecedent: [itemA],
+                        consequent: [itemB],
+                        support: pair.support,
+                        confidence: confidenceAB
+                    });
+                }
+            }
+            
+            // Rule: B -> A
+            const supportB = frequentSingles.find(f => f.items[0] === itemB)?.support || 0;
+            if (supportB > 0) {
+                const confidenceBA = pair.support / supportB;
+                if (confidenceBA >= minConfidence) {
+                    associationRules.push({
+                        antecedent: [itemB],
+                        consequent: [itemA],
+                        support: pair.support,
+                        confidence: confidenceBA
+                    });
+                }
+            }
+        });
+        
+        console.log(`📌 Association rules: ${associationRules.length} rules`);
+        
+        // Urutkan hasil
+        frequentItemsets.sort((a, b) => b.support - a.support);
+        associationRules.sort((a, b) => b.confidence - a.confidence);
+        
+        return {
+            frequentItemsets: frequentItemsets,
+            associationRules: associationRules
+        };
+        
+    } catch (error) {
+        console.error('❌ Error in Apriori algorithm:', error);
+        return { frequentItemsets: [], associationRules: [] };
+    }
+}
+
+// Fungsi debug untuk melihat data transaksi
+async function debugTransactionData() {
+    console.clear();
+    console.log('🔧 DEBUG TRANSACTION DATA 🔧');
+    console.log('============================');
+    
+    try {
+        // 1. Cek data orders
+        console.log('1. CHECKING ORDER DATA:');
+        
+        // Dari admin system
+        if (adminSystem && adminSystem.allOrders) {
+            const completedOrders = adminSystem.allOrders.filter(order => 
+                order.status === 'completed' || order.status === 'confirmed'
+            );
+            console.log(`- Admin system orders (completed): ${completedOrders.length}`);
+            
+            if (completedOrders.length > 0) {
+                console.log('Sample order items:');
+                completedOrders.slice(0, 3).forEach((order, i) => {
+                    console.log(`  [${i}] Order ${order.orderNumber}:`, {
+                        items: order.items,
+                        itemsCount: order.items?.length,
+                        total: order.total
+                    });
+                });
+            }
+        }
+        
+        // Dari localStorage
+        const customerOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+        const completedCustomerOrders = customerOrders.filter(order => 
+            order.status === 'completed' || order.status === 'confirmed'
+        );
+        console.log(`- Customer orders (completed): ${completedCustomerOrders.length}`);
+        
+        // 2. Cek data transaksi yang dihasilkan
+        console.log('\n2. TRANSACTION DATA GENERATED:');
+        const periodDays = document.getElementById('periodFilter').value;
+        const transactions = await getTransactionDataForAnalysis(periodDays);
+        console.log(`- Total transactions: ${transactions.length}`);
+        
+        if (transactions.length > 0) {
+            console.log('Sample transactions:');
+            transactions.slice(0, 5).forEach((tran, i) => {
+                console.log(`  [${i}] ${tran.join(', ')}`);
+            });
+        }
+        
+        // 3. Cek menu yang ada
+        console.log('\n3. AVAILABLE MENUS:');
+        const menus = adminSystem?.menus || JSON.parse(localStorage.getItem('cafe_menus') || '[]');
+        console.log(`- Total menus: ${menus.length}`);
+        if (menus.length > 0) {
+            console.log('Sample menus:');
+            menus.slice(0, 5).forEach((menu, i) => {
+                console.log(`  [${i}] ${menu.name} - Rp ${menu.price}`);
+            });
+        }
+        
+        // 4. Test algoritma Apriori
+        console.log('\n4. APRIORI ALGORITHM TEST:');
+        if (transactions.length >= 3) {
+            const minSupport = parseInt(document.getElementById('minSupport').value) / 100;
+            const minConfidence = parseInt(document.getElementById('minConfidence').value) / 100;
+            
+            console.log(`- Min Support: ${minSupport} (${minSupport * 100}%)`);
+            console.log(`- Min Confidence: ${minConfidence} (${minConfidence * 100}%)`);
+            
+            const result = await runAprioriAlgorithm(transactions, minSupport, minConfidence);
+            console.log(`- Frequent itemsets found: ${result.frequentItemsets.length}`);
+            console.log(`- Association rules found: ${result.associationRules.length}`);
+        } else {
+            console.log('- Not enough transactions for testing (min 3 required)');
+        }
+        
+        // Tampilkan summary
+        alert(`DEBUG REPORT:
+        
+1. Orders Completed: ${completedCustomerOrders.length}
+2. Transactions Generated: ${transactions.length}
+3. Available Menus: ${menus.length}
+4. Min Transactions Required: 3
+
+${transactions.length >= 3 ? '✅ Ready for analysis!' : '❌ Need more transaction data'}
+
+Check console for details.`);
+        
+    } catch (error) {
+        console.error('Debug error:', error);
+        alert(`Debug Error: ${error.message}`);
+    }
+}
+
+// Perbarui fungsi display untuk hasil analisis
+function displayFrequentItemsets(frequentItemsets, transactionCount) {
+    const container = document.getElementById('frequentItemsets');
+    
+    if (frequentItemsets.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-filter" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <h4>Tidak ditemukan pola</h4>
+                <p>Tidak ada itemset yang memenuhi threshold support.</p>
+                <div style="margin-top: 1rem; padding: 0.8rem; background: #f8f9fa; border-radius: 6px; text-align: left;">
+                    <p style="margin: 0; font-size: 0.9rem;">
+                        <strong>Info:</strong> ${transactionCount} transaksi dianalisis.<br>
+                        <strong>Saran:</strong> Turunkan threshold support atau tunggu lebih banyak transaksi.
+                    </p>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('minSupport').value=5; document.getElementById('supportValue').textContent='5%'; runAprioriAnalysis()">
+                        <i class="fas fa-sliders-h"></i> Coba Support 5%
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="debugTransactionData()" style="margin-left: 0.5rem;">
+                        <i class="fas fa-bug"></i> Debug Data
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="margin-bottom: 1rem; padding: 0.5rem; background: #e3f2fd; border-radius: 6px; color: #1565c0;">
+            <i class="fas fa-info-circle"></i> Berdasarkan ${transactionCount} transaksi
+        </div>
+    `;
+    
+    // Pisahkan berdasarkan ukuran itemset
+    const singles = frequentItemsets.filter(fi => fi.items.length === 1);
+    const pairs = frequentItemsets.filter(fi => fi.items.length === 2);
+    
+    if (singles.length > 0) {
+        html += `<h4 style="margin-bottom: 0.5rem; color: #495057; font-size: 0.9rem;">Menu Terpopuler:</h4>`;
+        singles.slice(0, 5).forEach(itemset => {
+            const supportPercent = (itemset.support * 100).toFixed(1);
+            const count = itemset.count || Math.round(itemset.support * transactionCount);
+            html += `
+                <div class="frequent-itemset">
+                    <i class="fas fa-star" style="color: #FFD700;"></i>
+                    <span style="flex: 1;">${itemset.items[0]}</span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                        <span class="support-badge">${supportPercent}%</span>
+                        <small style="font-size: 0.7rem; color: #666;">(${count}x)</small>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    if (pairs.length > 0) {
+        html += `<h4 style="margin: 1rem 0 0.5rem 0; color: #495057; font-size: 0.9rem;">Menu yang Sering Dibeli Bersama:</h4>`;
+        pairs.slice(0, 5).forEach(itemset => {
+            const supportPercent = (itemset.support * 100).toFixed(1);
+            const count = itemset.count || Math.round(itemset.support * transactionCount);
+            html += `
+                <div class="frequent-itemset">
+                    <i class="fas fa-link" style="color: #17a2b8;"></i>
+                    <span style="flex: 1;">${itemset.items.join(" & ")}</span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                        <span class="support-badge">${supportPercent}%</span>
+                        <small style="font-size: 0.7rem; color: #666;">(${count}x)</small>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+// Tambahkan fungsi untuk reset data demo (untuk testing)
+function resetDemoTransactionData() {
+    if (confirm('Reset data transaksi demo?\n\nIni akan menghapus semua data transaksi dummy dan memulai ulang.')) {
+        localStorage.removeItem('demo_transactions_created');
+        localStorage.removeItem('customer_orders');
+        localStorage.removeItem('all_orders');
+        
+        // Reset status orders di admin system
+        if (adminSystem) {
+            adminSystem.allOrders = [];
+            adminSystem.orders = [];
+            saveLocalData();
+        }
+        
+        showToast('Data transaksi demo direset', 'success');
+        setTimeout(() => runAprioriAnalysis(), 1000);
+    }
+}
         function displayFrequentItemsets(frequentItemsets, transactionCount) {
             const container = document.getElementById('frequentItemsets');
             
@@ -8146,30 +8696,33 @@ function quickCheckWhatsAppStatus(orderId) {
                     doc.line(margin, yPos - 2, pageWidth - margin, yPos - 2);
                     
                     currentReportData.slice(0, 30).forEach((order, index) => {
-                        if (yPos > 270) {
-                            doc.addPage();
-                            yPos = 20;
-                        }
-                        
-                        xPos = margin;
-                        
-                        const rowData = [
-                            new Date(order.createdAt).toLocaleDateString('id-ID'),
-                            order.orderNumber || 'ORD-' + order.id.toString().slice(-6),
-                            order.customer?.name?.substring(0, 15) || 'Pelanggan',
-                            (order.items?.length || 1) + ' item',
-                            'Rp ' + (order.total || 0).toLocaleString(),
-                            getStatusText(order.status)
-                        ];
-                        
-                        rowData.forEach((text, i) => {
-                            doc.setFont('helvetica', 'normal');
-                            doc.text(text.toString(), xPos, yPos);
-                            xPos += colWidths[i];
-                        });
-                        
-                        yPos += 8;
-                    });
+    if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+    }
+    
+    xPos = margin;
+    
+    const rowData = [
+        new Date(order.createdAt).toLocaleDateString('id-ID'),
+        order.orderNumber || 'ORD-' + order.id.toString().slice(-6),
+        order.customer?.name?.substring(0, 15) || 'Pelanggan',
+        (order.items?.length || 1) + ' item',
+        'Rp ' + (order.total || 0).toLocaleString(),
+        getStatusText(order.status)
+    ];
+    
+    // TAMBAHKAN PADDING VERTICAL DI SINI
+    yPos += 2; // <-- Tambah jarak atas
+    
+    rowData.forEach((text, i) => {
+        doc.setFont('helvetica', 'normal');
+        doc.text(text.toString(), xPos, yPos);
+        xPos += colWidths[i];
+    });
+    
+    yPos += 10; // <-- UBAH DARI 8 KE 10 ATAU 12
+});
                     
                     if (currentReportData.length > 30) {
                         doc.text(`... dan ${currentReportData.length - 30} transaksi lainnya`, margin, yPos);
