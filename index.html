@@ -1071,6 +1071,20 @@
     white-space: nowrap;
 }
 
+/* Tambahkan di CSS */
+.btn-order:disabled {
+    background: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    opacity: 0.7 !important;
+}
+
+.btn-order:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 .whatsapp-status-badge.verified {
     background: #d4edda;
     color: #155724;
@@ -2505,140 +2519,156 @@ async init() {
         ];
     }
 
-    renderMenus(menus) {
-        console.log('🎨 Rendering menus...', menus.length);
-        
-        // 1. Render All Menu
-        const allMenuGrid = document.getElementById('all-menu-items');
-        if (allMenuGrid) {
-            allMenuGrid.innerHTML = menus.length > 0 ? 
-                menus.map(menu => this.createMenuCard(menu, true)).join('') :
-                '<p class="text-center" style="padding: 2rem; color: #666;">Belum ada menu</p>';
-        }
-        
-        // 2. Render Featured Menu (max 4)
-        const featuredGrid = document.getElementById('featured-menu');
-        if (featuredGrid) {
-            const featured = menus.filter(menu => menu.isActive).slice(0, 4);
-            featuredGrid.innerHTML = featured.length > 0 ?
-                featured.map(menu => this.createMenuCard(menu)).join('') :
-                '<p class="text-center" style="padding: 2rem; color: #666;">Belum ada menu unggulan</p>';
-        }
-        
-        // 3. Render Promo Menu
-        const promoGrid = document.getElementById('promo-menu');
-        if (promoGrid) {
-            const promo = menus.filter(menu => menu.isPromo && menu.isActive);
-            promoGrid.innerHTML = promo.length > 0 ?
-                promo.map(menu => `
-                    <div class="promo-card">
-                        <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
-                        <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
-                             alt="${menu.name}"
-                             onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'">
-                        <div class="promo-info">
-                            <h3>${menu.name}</h3>
-                            <p class="description">${menu.description || ''}</p>
-                            <p class="price">
-                                ${menu.originalPrice ? 
-                                    `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
-                                    ''
-                                }
-                                <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
-                            </p>
-                            <button class="btn-order" onclick="addToCartFromMenu(${menu.id})">
-                                <i class="fas fa-bolt"></i> Tambah ke Keranjang
-                            </button>
-                        </div>
+   // Di dalam class CustomerSystem:
+renderMenus(menus) {
+    console.log('🎨 Rendering menus...', menus.length);
+    
+    // 1. ALL MENU
+    const allMenuGrid = document.getElementById('all-menu-items');
+    if (allMenuGrid) {
+        const html = menus.map(menu => createMenuCard(menu, true)).join('');
+        allMenuGrid.innerHTML = html;
+        console.log(`✅ All Menu: ${menus.length} items rendered`);
+    }
+    
+    // 2. FEATURED MENU (max 4)
+    const featuredGrid = document.getElementById('featured-menu');
+    if (featuredGrid) {
+        const featured = menus.filter(menu => menu.isActive).slice(0, 4);
+        const html = featured.map(menu => createMenuCard(menu)).join('');
+        featuredGrid.innerHTML = html;
+        console.log(`⭐ Featured: ${featured.length} items rendered`);
+    }
+    
+    // 3. PROMO MENU
+    const promoGrid = document.getElementById('promo-menu');
+    if (promoGrid) {
+        const promo = menus.filter(menu => menu.isPromo && menu.isActive);
+        if (promo.length > 0) {
+            const html = promo.map(menu => `
+                <div class="promo-card">
+                    <span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>
+                    <img src="${menu.image || 'https://via.placeholder.com/400x300?text=Menu+Promo'}" 
+                         alt="${menu.name}"
+                         onerror="this.src='https://via.placeholder.com/400x300?text=Menu+Promo'">
+                    <div class="promo-info">
+                        <h3>${menu.name}</h3>
+                        <p class="description">${menu.description || ''}</p>
+                        <p class="price">
+                            ${menu.originalPrice ? 
+                                `<span class="original-price">Rp ${menu.originalPrice.toLocaleString()}</span>` : 
+                                ''
+                            }
+                            <span class="discount-price">Rp ${menu.price.toLocaleString()}</span>
+                        </p>
+                        <button class="btn-order" onclick="addToCartFromMenu(${menu.id})">
+                            <i class="fas fa-bolt"></i> Tambah ke Keranjang
+                        </button>
                     </div>
-                `).join('') :
-                '<p class="text-center" style="padding: 2rem; color: #666;">Tidak ada promo saat ini</p>';
+                </div>
+            `).join('');
+            promoGrid.innerHTML = html;
+        } else {
+            promoGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">
+                    <i class="fas fa-tag" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p>Tidak ada promo saat ini</p>
+                </div>
+            `;
         }
     }
+}
+
+// Di createMenuCard(), pastikan onclick dipanggil dengan benar:
 createMenuCard(menu, showCategory = false) {
-    // Pastikan semua data ada
-    const safeMenu = {
-        id: menu.id || Date.now(),
-        name: menu.name || 'Menu',
-        description: menu.description || '',
-        price: Number(menu.price) || 0,
-        originalPrice: Number(menu.originalPrice) || null,
-        image: menu.image || menu.image_url || 'https://via.placeholder.com/400x300?text=Menu',
-        category: menu.category || 'minuman',
-        isPromo: Boolean(menu.isPromo),
-        isActive: menu.isActive !== false,
-        stock: Number(menu.stock) || 0,
-        isDailyStock: Boolean(menu.isDailyStock),
-        currentDailyStock: Number(menu.currentDailyStock) || 0
-    };
-    
-    // Hitung stok yang tersedia
-    let availableStock = safeMenu.stock;
-    if (safeMenu.isDailyStock) {
-        availableStock = safeMenu.currentDailyStock;
-    }
-    
-    const isActive = safeMenu.isActive;
-    const hasStock = availableStock > 0;
+    // ... kode lainnya ...
     
     return `
-        <div class="menu-card ${!hasStock ? 'out-of-stock' : ''}" 
-             data-menu-id="${safeMenu.id}"
-             data-menu-name="${safeMenu.name}">
+        <div class="menu-card">
+            <!-- ... elemen lainnya ... -->
             
-            ${safeMenu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
-            
-            ${showCategory ? 
-                `<span class="category-badge">${this.getCategoryText(safeMenu.category)}</span>` : 
-                ''
-            }
-            
-            <!-- Badge stok -->
-            <div class="stock-badge ${!hasStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
-                <i class="fas fa-box${!hasStock ? '-open' : ''}"></i>
-                ${safeMenu.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
-                ${!hasStock ? 'HABIS' : availableStock}
-            </div>
-            
-            <!-- Gambar -->
-            <img src="${safeMenu.image}" 
-                 alt="${safeMenu.name}"
-                 onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(safeMenu.name)}'">
-            
-            <!-- Info menu -->
-            <div class="menu-info">
-                <h3>${safeMenu.name}</h3>
-                <p class="description">${safeMenu.description}</p>
-                
-                ${safeMenu.originalPrice ? 
-                    `<p class="price">
-                        <span class="original-price">Rp ${safeMenu.originalPrice.toLocaleString()}</span>
-                        <span class="discount-price">Rp ${safeMenu.price.toLocaleString()}</span>
-                    </p>` :
-                    `<p class="price">Rp ${safeMenu.price.toLocaleString()}</p>`
-                }
-                
-                <button class="btn-order" 
-                        onclick="addToCartFromMenu(${safeMenu.id})"
-                        data-menu-id="${safeMenu.id}"
-                        ${!isActive || !hasStock ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
-                    <i class="fas fa-shopping-cart"></i> 
-                    ${!isActive ? 'Tidak Tersedia' : (!hasStock ? 'Stok Habis' : 'Tambah ke Keranjang')}
-                </button>
-            </div>
+            <button class="btn-order" 
+                    onclick="addToCartFromMenu(${menu.id})"
+                    data-menu-id="${menu.id}"
+                    ${!menu.isActive || availableStock <= 0 ? 'disabled' : ''}>
+                <i class="fas fa-shopping-cart"></i> 
+                ${availableStock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
+            </button>
         </div>
     `;
 }
+// Script debug untuk testing
+// ==================== FIXED ADD TO CART FUNCTION ====================
+// ======== TEMPATKAN INI DI AWAL SCRIPT SETELAH DEKLARASI customerSystem ========
 
-    getCategoryText(category) {
-        const categoryMap = {
-            'minuman': 'Minuman',
-            'makanan': 'Makanan',
-            'snack': 'Snack',
-            'dessert': 'Dessert'
-        };
-        return categoryMap[category] || category;
+// TAMBAHKAN INI di baris sekitar line 2900 (setelah: let customerSystem = null;)
+addToCartFromMenu(menuId) {
+    console.log('🛒 addToCartFromMenu dipanggil dengan menuId:', menuId);
+    
+    if (!customerSystem) {
+        console.error('Sistem customer belum siap');
+        showToast('Sistem belum siap', 'error');
+        return false;
     }
+    
+    // Cari menu
+    const menu = window.currentMenus?.find(item => item.id == menuId);
+    
+    if (!menu) {
+        console.error('Menu tidak ditemukan untuk ID:', menuId);
+        showToast('Menu tidak ditemukan', 'error');
+        return false;
+    }
+    
+    // Cek stok
+    let availableStock = menu.stock;
+    if (menu.isDailyStock && menu.currentDailyStock !== null && menu.currentDailyStock !== undefined) {
+        availableStock = menu.currentDailyStock || 0;
+    }
+    
+    if (availableStock <= 0) {
+        showToast(`Stok "${menu.name}" habis`, 'error');
+        return false;
+    }
+    
+    // Cari di keranjang
+    const cartItemIndex = customerSystem.cart.findIndex(item => item.id == menuId);
+    
+    if (cartItemIndex !== -1) {
+        // Tambah quantity
+        const newQuantity = customerSystem.cart[cartItemIndex].quantity + 1;
+        
+        if (newQuantity > availableStock) {
+            showToast(`Stok "${menu.name}" tersedia: ${availableStock}`, 'error');
+            return false;
+        }
+        
+        customerSystem.cart[cartItemIndex].quantity = newQuantity;
+    } else {
+        // Tambah item baru
+        customerSystem.cart.push({
+            id: menu.id,
+            name: menu.name,
+            price: menu.price,
+            quantity: 1,
+            image: menu.image || '',
+            category: menu.category || 'minuman'
+        });
+    }
+    
+    // Simpan
+    customerSystem.saveCart();
+    
+    // Update UI
+    updateCartDisplay();
+    updateCartCount();
+    
+    showToast(`${menu.name} ditambahkan ke keranjang`, 'success');
+    return true;
+}
+
+// Jadikan juga sebagai properti window (untuk backup)
+addToCartFromMenu = addToCartFromMenu;
 
     // ==================== ORDER FUNCTIONS ====================
     async createOrder(orderData) {
@@ -2820,39 +2850,26 @@ createMenuCard(menu, showCategory = false) {
     // GANTI fungsi addToCart() di CustomerSystem class dengan ini:
 // Di dalam class CustomerSystem
 // GANTI fungsi addToCart() dengan ini:
-addToCart(menuId) {
+// GANTI fungsi ini di CustomerSystem class dengan yang benar:
+async addToCart(menuId) {
     console.log('🛒 addToCart called with menuId:', menuId);
-    console.log('Available menus:', window.currentMenus?.length);
     
-    // Cari menu dengan cara yang lebih robust
-    const menu = window.currentMenus?.find(item => {
-        return item.id == menuId || item.id === menuId || item.id === parseInt(menuId);
-    });
+    // Cari menu dari currentMenus yang ada
+    const menu = window.currentMenus?.find(item => 
+        item.id == menuId || item.id === menuId || item.id === parseInt(menuId)
+    );
     
     if (!menu) {
         console.error('Menu not found for ID:', menuId);
-        console.error('Available menu IDs:', window.currentMenus?.map(m => ({id: m.id, name: m.name})));
         showToast('Menu tidak ditemukan', 'error');
         return false;
     }
     
-    console.log('✅ Found menu:', menu.name, 'ID:', menu.id);
-    
-    // Cek ketersediaan
-    if (menu.isActive === false) {
-        showToast('Menu tidak tersedia', 'error');
-        return false;
+    // Cek stok
+    let availableStock = menu.stock || 0;
+    if (menu.isDailyStock) {
+        availableStock = menu.currentDailyStock || 0;
     }
-    
-    // Hitung stok tersedia
-    let availableStock = 0;
-    if (menu.isDailyStock && menu.currentDailyStock !== undefined) {
-        availableStock = menu.currentDailyStock;
-    } else {
-        availableStock = menu.stock || 0;
-    }
-    
-    console.log('📦 Available stock:', availableStock);
     
     if (availableStock <= 0) {
         showToast('Stok menu habis', 'error');
@@ -2863,7 +2880,7 @@ addToCart(menuId) {
     const cartItemIndex = this.cart.findIndex(item => item.id == menuId);
     
     if (cartItemIndex !== -1) {
-        // Jika sudah ada, tambah quantity
+        // Tambah quantity jika sudah ada
         const newQuantity = this.cart[cartItemIndex].quantity + 1;
         
         if (newQuantity > availableStock) {
@@ -2872,35 +2889,31 @@ addToCart(menuId) {
         }
         
         this.cart[cartItemIndex].quantity = newQuantity;
-        console.log(`📈 Updated quantity for ${menu.name}: ${newQuantity}`);
     } else {
-        // Jika belum ada, tambah item baru
+        // Tambah item baru ke keranjang
         if (1 > availableStock) {
             showToast(`Stok tersedia: ${availableStock}`, 'error');
             return false;
         }
         
-        const newCartItem = {
+        this.cart.push({
             id: menu.id,
             name: menu.name,
             price: menu.price,
             quantity: 1,
             image: menu.image || menu.image_url,
-            category: menu.category,
-            originalPrice: menu.originalPrice
-        };
-        
-        this.cart.push(newCartItem);
-        console.log(`➕ Added new item: ${menu.name}`);
+            category: menu.category
+        });
     }
     
     // Simpan ke localStorage
     this.saveCart();
     
-    // Debug: tampilkan isi keranjang
-    console.log('🛒 Cart contents after update:', this.cart);
-    console.log('🛒 Cart total items:', this.cart.reduce((sum, item) => sum + item.quantity, 0));
+    // Update UI
+    updateCartDisplay();
+    updateCartCount();
     
+    console.log('✅ Item added to cart:', menu.name);
     return true;
 }
 
@@ -3184,7 +3197,10 @@ function setupOrdersRealtimeSubscription() {
         console.error('❌ Error setting up orders subscription:', error);
     }
 }
-        function createMenuCard(menu, showCategory = false) {
+       // Di dalam class CustomerSystem atau sebagai fungsi global:
+function createMenuCard(menu, showCategory = false) {
+    console.log(`Creating card for: ${menu.name} (ID: ${menu.id})`);
+    
     // Pastikan semua field ada
     const safeMenu = {
         id: menu.id || Date.now(),
@@ -3195,7 +3211,7 @@ function setupOrdersRealtimeSubscription() {
         image: menu.image_url || menu.image || 'https://via.placeholder.com/400x300?text=Menu',
         category: menu.category || 'minuman',
         isPromo: Boolean(menu.isPromo),
-        isActive: menu.isActive !== false, // default true
+        isActive: menu.isActive !== false,
         stock: Number(menu.stock) || 0,
         isDailyStock: Boolean(menu.isDailyStock),
         currentDailyStock: Number(menu.currentDailyStock) || 0
@@ -3211,33 +3227,39 @@ function setupOrdersRealtimeSubscription() {
     const hasStock = availableStock > 0;
     const shouldDisable = !isActive || !hasStock;
     
-    console.log(`Card for ${safeMenu.name}: Active=${isActive}, Stock=${availableStock}, Disabled=${shouldDisable}`);
+    console.log(`Card ${safeMenu.name}: Active=${isActive}, Stock=${availableStock}, Disable=${shouldDisable}`);
+    
+    // Buat button HTML dengan onclick yang benar
+    const buttonHtml = shouldDisable ? 
+        `<button class="btn-order" disabled style="background: #cccccc; cursor: not-allowed;">
+            <i class="fas fa-shopping-cart"></i> 
+            ${!isActive ? 'Tidak Tersedia' : 'Stok Habis'}
+        </button>` :
+        `<button class="btn-order" onclick="addToCartFromMenu(${safeMenu.id})">
+            <i class="fas fa-shopping-cart"></i> Tambah ke Keranjang
+        </button>`;
     
     return `
-        <div class="menu-card ${shouldDisable ? 'out-of-stock' : ''}" style="position: relative;">
+        <div class="menu-card ${shouldDisable ? 'out-of-stock' : ''}" data-menu-id="${safeMenu.id}">
             ${safeMenu.isPromo ? '<span class="promo-badge"><i class="fas fa-tag"></i> Promo</span>' : ''}
             ${showCategory ? `<span class="category-badge">${getCategoryText(safeMenu.category)}</span>` : ''}
             
-            <!-- Badge untuk menu tidak aktif -->
             ${!isActive ? 
                 '<span class="promo-badge" style="background: #6c757d; left: 1rem; right: auto;"><i class="fas fa-ban"></i> Tidak Aktif</span>' : 
                 ''
             }
             
-            <!-- Badge stok -->
             <div class="stock-badge ${!hasStock ? 'stock-empty' : (availableStock <= 5 ? 'stock-low' : '')}">
                 <i class="fas fa-box${!hasStock ? '-open' : ''}"></i>
                 ${safeMenu.isDailyStock ? 'Stok Harian: ' : 'Stok: '}
                 ${!hasStock ? 'HABIS' : availableStock}
             </div>
             
-            <!-- Gambar -->
             <img src="${safeMenu.image}" 
                  alt="${safeMenu.name}"
                  onerror="this.src='https://via.placeholder.com/400x300?text=${encodeURIComponent(safeMenu.name)}'"
                  style="${!isActive ? 'filter: grayscale(0.7); opacity: 0.7;' : ''}">
             
-            <!-- Info menu -->
             <div class="menu-info">
                 <h3 style="${!isActive ? 'color: #999;' : ''}">${safeMenu.name}</h3>
                 <p class="description">${safeMenu.description}</p>
@@ -3248,11 +3270,7 @@ function setupOrdersRealtimeSubscription() {
                     </p>` :
                     `<p class="price">Rp ${safeMenu.price.toLocaleString()}</p>`
                 }
-                <button class="btn-order" onclick="addToCartFromMenu(${safeMenu.id})" 
-                        ${shouldDisable ? 'disabled style="background: #cccccc; cursor: not-allowed;"' : ''}>
-                    <i class="fas fa-shopping-cart"></i> 
-                    ${!isActive ? 'Tidak Tersedia' : (!hasStock ? 'Stok Habis' : 'Tambah ke Keranjang')}
-                </button>
+                ${buttonHtml}
             </div>
         </div>
     `;
@@ -3340,8 +3358,9 @@ setTimeout(() => {
         // ==================== CART FUNCTIONS ====================
     // GANTI fungsi addToCartFromMenu() dengan ini:
 // ==================== GLOBAL FUNCTIONS ====================
+// Fungsi GLOBAL yang dipanggil dari button onclick
 function addToCartFromMenu(menuId) {
-    console.log('🛒 addToCartFromMenu called with menuId:', menuId);
+    console.log('🛒 addToCartFromMenu called:', menuId);
     
     if (!customerSystem) {
         console.error('Customer system not initialized');
@@ -3353,22 +3372,17 @@ function addToCartFromMenu(menuId) {
     const success = customerSystem.addToCart(menuId);
     
     if (success) {
-        // Update UI
-        updateCartDisplay();
-        updateCartCount();
-        
-        // Ambil nama menu untuk pesan toast
+        // Ambil nama menu untuk toast notification
         const menu = window.currentMenus?.find(item => item.id == menuId);
         if (menu) {
             const cartItem = customerSystem.cart.find(item => item.id == menuId);
             const quantity = cartItem ? cartItem.quantity : 1;
             showToast(`${menu.name} (${quantity}x) ditambahkan ke keranjang`, 'success');
         }
-        
-        return true;
+
     }
     
-    return false;
+    return success;
 }
 
 function updateCartDisplay() {
@@ -5126,7 +5140,11 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     }
+
+    
 }
+
+
 
 function validateGuestsCount() {
     const guestsCount = document.getElementById('guestsCount');
@@ -5277,6 +5295,7 @@ function validateGuestsCount() {
         // ==================== INITIALIZATION ====================
      // Di bagian DOMContentLoaded, pastikan:
 // Perbaiki DOMContentLoaded
+// Di bagian DOMContentLoaded, pastikan:
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Initializing MAN CAFE...');
     
@@ -5293,12 +5312,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('🛒 Initial cart:', customerSystem.cart);
         console.log('📋 Available menus:', window.currentMenus?.length || 0);
         
-        // Test: tambahkan item ke keranjang untuk testing
+        // Test: tambahkan event listener untuk debugging
         setTimeout(() => {
-            if (customerSystem.cart.length === 0) {
-                console.log('Cart is empty, ready for orders');
-            }
-        }, 1000);
+            console.log('===== SYSTEM STATUS =====');
+            console.log('Current menus:', window.currentMenus?.map(m => ({id: m.id, name: m.name, active: m.isActive})));
+            console.log('Cart count:', customerSystem.cart.length);
+            
+            // Test jika button onclick sudah terpasang
+            document.querySelectorAll('.btn-order').forEach(btn => {
+                console.log('Button found, onclick:', btn.getAttribute('onclick'));
+            });
+        }, 1500);
         
     } catch (error) {
         console.error('❌ Initialization error:', error);
